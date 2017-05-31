@@ -1,2 +1,2 @@
-buildroot/* linguist-vendored
-*.cpp linguist-language=C++
+* linguist-vendored
+*.cpp linguist-vendored=false
