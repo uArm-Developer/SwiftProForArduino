@@ -994,7 +994,7 @@ void Temperature::init() {
       #if ENABLED(FAST_PWM_FAN)
 	  	#ifndef SWIFT_TEST_MODE
 		#ifdef UARM_SWIFT
-			if (get_user_mode() != USER_MODE_LASER)
+			if (is_fan_enable())
 		#endif		  
         setPwmFrequency(FAN_PIN, 1); // No prescaling. Pwm frequency = F_CPU/256/8
         #endif
@@ -1460,7 +1460,7 @@ void Temperature::isr() {
           soft_pwm_fan[0] = fanSpeedSoftPwm[0] / 2;
 		#ifndef SWIFT_TEST_MODE
 		#ifdef UARM_SWIFT
-			if (get_user_mode() != USER_MODE_LASER)
+			if (is_fan_enable())
 		#endif		
           WRITE_FAN(soft_pwm_fan[0] > 0 ? 1 : 0);
 		#endif
@@ -1498,7 +1498,7 @@ void Temperature::isr() {
       #if HAS_FAN0
 	  #ifndef SWIFT_TEST_MODE
 		#ifdef UARM_SWIFT
-			if (get_user_mode() != USER_MODE_LASER)
+			if (is_fan_enable())
 		#endif		  
         if (soft_pwm_fan[0] < pwm_count) WRITE_FAN(0);
 	  #endif
@@ -1591,7 +1591,7 @@ void Temperature::isr() {
           soft_pwm_fan[0] = fanSpeedSoftPwm[0] / 2;
 		#ifndef SWIFT_TEST_MODE
 		#ifdef UARM_SWIFT
-			if (get_user_mode() != USER_MODE_LASER)
+			if (is_fan_enable())
 		#endif			
           WRITE_FAN(soft_pwm_fan[0] > 0 ? 1 : 0);
 		#endif
@@ -1608,7 +1608,7 @@ void Temperature::isr() {
       #if HAS_FAN0
 	  #ifndef SWIFT_TEST_MODE
 		#ifdef UARM_SWIFT
-			if (get_user_mode() != USER_MODE_LASER)
+			if (is_fan_enable())
 		#endif		  
         if (soft_pwm_fan[0] < pwm_count) WRITE_FAN(0);
 		#endif

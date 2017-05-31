@@ -500,7 +500,7 @@ void Planner::check_axes_activity() {
 
 		#ifndef SWIFT_TEST_MODE
 	  	#ifdef UARM_SWIFT
-			if (get_user_mode() != USER_MODE_LASER)
+			if (is_fan_enable())
 		#endif	
         analogWrite(FAN_PIN, CALC_FAN_SPEED(0));
       	#endif

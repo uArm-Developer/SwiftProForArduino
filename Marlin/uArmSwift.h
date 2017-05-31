@@ -30,6 +30,10 @@ void swift_init();
 
 void swift_run();
 
+bool is_fan_disable();
+bool is_fan_enable();
+
+void set_fan_disable(bool disable);
 
 
 void update_current_pos();

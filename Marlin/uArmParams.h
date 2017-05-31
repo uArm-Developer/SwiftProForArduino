@@ -85,4 +85,8 @@
 
 #define UNLOCK_NUM	22765
 
+#define REPORT_TYPE_POS		3
+#define REPORT_TYPE_GROVE	10
+
+
 #endif // _UARMPARAMS_H_

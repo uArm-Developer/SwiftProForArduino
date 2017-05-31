@@ -245,6 +245,27 @@ extern float code_value_float();
 extern uint8_t code_value_byte();
 extern uint16_t code_value_ushort();
 
+bool fan_disable = false;
+
+
+	
+
+bool is_fan_disable()
+{
+	return fan_disable;
+}
+
+bool is_fan_enable()
+{
+	return !fan_disable;
+}
+
+
+void set_fan_disable(bool disable)
+{
+	fan_disable = disable;
+}
+
 void uarm_gcode_G0()
 {
 	if (get_user_mode() == USER_MODE_LASER || get_user_mode() == USER_MODE_PEN) 

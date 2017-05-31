@@ -196,6 +196,9 @@ void init_user_mode()
 		save_user_mode(mode);
 	}
 
+	
+	
+
 	float height = read_height_offset();
 
 	if (isnan(height) || height > 150 || height < 0)
@@ -258,6 +261,8 @@ void init_user_mode()
 	user_mode = mode;
 	front_end_offset = front;
 	height_offset = height;
+
+	set_fan_disable(user_mode != USER_MODE_3D_PRINT);
 
 	debugPrint("Mode=%d, height=%f, front=%f\r\n", mode, height, front);
 	
@@ -326,19 +331,19 @@ void set_user_mode(UserMode_t mode)
 	case USER_MODE_LASER:
 		front_end_offset = DEFAULT_LASER_FRONT;
 		height_offset = DEFAULT_LASER_HEIGHT;
-		
+		set_fan_disable(true);
 		break;
 
 	case USER_MODE_3D_PRINT:
 		front_end_offset = DEFAULT_3DPRINT_FRONT;
 		height_offset = DEFAULT_3DPRINT_HEIGHT;	
-	
+		set_fan_disable(false);
 		break;
 
 	case USER_MODE_PEN:
 		front_end_offset = DEFAULT_PEN_FRONT;
 		height_offset = DEFAULT_PEN_HEIGHT;	
-
+		set_fan_disable(true);
 
 		break;		
 
@@ -346,7 +351,7 @@ void set_user_mode(UserMode_t mode)
 	default:
 		front_end_offset = DEFAULT_NORMAL_FRONT;
 		height_offset = DEFAULT_NORMAL_HEIGHT;	
-
+		set_fan_disable(true);
 
 		break;
 	}
@@ -420,6 +425,8 @@ UserMode_t get_user_mode()
 {
 	return user_mode;
 }
+
+
 
 /*!
    \brief set front end offset(mm)

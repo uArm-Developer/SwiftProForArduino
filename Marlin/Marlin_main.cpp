@@ -1818,7 +1818,7 @@ unsigned char inverse_kinematics(const float in_cartesian[3], float angle[3]) {
 
 	if (x < 0.1)
 	{
-		return -1;
+		x = 0.1;
 	}
 
 	// Calculate value of theta 1: the rotation angle
