@@ -11,6 +11,7 @@
 #include "macros.h"
 #include "stepper_indirection.h"
 #include "servo.h"
+#include "uArmServo.h"
 
 // CAUTION: E_AXIS means FrontEnd Servo not extruder0
 //float current_angle[NUM_AXIS] = { 0.0 };
@@ -111,7 +112,10 @@ void swift_init()
 	enable_e0();
 #else
 	enable_all_steppers();
-	servo[0].attach(SERVO0_PIN);
+	if (getHWSubversion() > 0)
+	{
+		servo[0].attach(SERVO0_PIN);
+	}
 
 #endif	
 	delay(1000);
@@ -148,6 +152,8 @@ void tickTaskRun()
 	led_B.tick();
 
 	pump_run();
+
+	servo_tick();
 
 }
 
@@ -245,25 +251,30 @@ extern float code_value_float();
 extern uint8_t code_value_byte();
 extern uint16_t code_value_ushort();
 
-bool fan_disable = false;
+bool fan_enable = false;
+bool heater_enable = false;
 
-
-	
-
-bool is_fan_disable()
+bool is_heater_enable()
 {
-	return fan_disable;
+	return heater_enable;
 }
+
+void set_heater_function(bool enable)
+{
+	heater_enable = enable;
+}
+
+
 
 bool is_fan_enable()
 {
-	return !fan_disable;
+	return fan_enable;
 }
 
 
-void set_fan_disable(bool disable)
+void set_fan_function(bool enable)
 {
-	fan_disable = disable;
+	fan_enable = enable;
 }
 
 void uarm_gcode_G0()
@@ -385,8 +396,14 @@ void rotate_frontend_motor()
 	}
 
 
-	
-	servo[0].write((int)angle);
+	if (getHWSubversion() > 0)
+	{	
+		servo[0].write((int)angle);
+	}
+	else
+	{
+		servo_write((double)angle);
+	}
 	
 }
 
@@ -446,7 +463,10 @@ void uarm_gcode_M2201()
 			break;
 
 		case 3:
-			servo[0].attach(SERVO0_PIN);
+			if (getHWSubversion() > 0)
+			{			
+				servo[0].attach(SERVO0_PIN);
+			}
 			break;
 
 		}
@@ -501,7 +521,14 @@ uint8_t uarm_gcode_M2203(char reply[])
 			break;
 
 		case 3:
-			attached = servo[0].attached();
+			if (getHWSubversion() > 0)
+			{	
+				attached = servo[0].attached();
+			}
+			else
+			{
+				attached = 0;
+			}
 			break;
 
 		}
@@ -914,6 +941,8 @@ void uarm_gcode_M2300()
 {
 	uint8_t type;
 
+	uint8_t port = 0;
+	
 	if (code_seen('N'))
 	{
 		type = code_value_byte();
@@ -923,7 +952,12 @@ void uarm_gcode_M2300()
 		return;
 	}
 
-	initGroveModule(type);
+	if (code_seen('V'))
+	{
+		port = code_value_byte();
+	}
+
+	initGroveModule(type, port);
 }
 
 void uarm_gcode_M2301()
@@ -951,6 +985,32 @@ void uarm_gcode_M2301()
 
 	setGroveModuleReportInterval(type, time);
 }
+
+void uarm_gcode_M2302()
+{
+	uint8_t type;
+	uint16_t value;
+
+	if (code_seen('N'))
+	{
+		type = code_value_byte();
+	}
+	else
+	{
+		return;
+	}
+
+	if (code_seen('V'))
+	{
+		value = code_value_ushort();
+	}
+	else
+	{
+		return;
+	}
+	setGroveModuleValue(type, value);
+}
+
 
 void uarm_gcode_M2400()
 {

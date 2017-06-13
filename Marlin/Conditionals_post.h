@@ -494,7 +494,11 @@
   /**
    * Helper Macros for heaters and extruder fan
    */
+  #ifdef UARM_SWIFT
+  #define WRITE_HEATER_0P(v) do {if (is_heater_enable()) WRITE(HEATER_0_PIN, v);} while(0)
+  #else
   #define WRITE_HEATER_0P(v) WRITE(HEATER_0_PIN, v)
+  #endif
   #if HOTENDS > 1 || ENABLED(HEATERS_PARALLEL)
     #define WRITE_HEATER_1(v) WRITE(HEATER_1_PIN, v)
     #if HOTENDS > 2

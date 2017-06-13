@@ -2,7 +2,7 @@
   Ultrasonic.h - Ultrasonic driver Library
   2011 Copyright (c) Seeed Technology Inc.  All right reserved.
   For Ultrasonic v1.0 firmware.
-
+ 
   Original Author: LG
   
   This library is free software; you can redistribute it and/or
@@ -19,48 +19,19 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-#include <stdio.h>
-#include <string.h>
-#include <inttypes.h>
-#include "Ultrasonic.h"
+#ifndef Grovefan
+#define Grovefan_H
 
-#if defined(ARDUINO) && ARDUINO >= 100
-#include "Arduino.h"
-#else
-#include "WProgram.h"
+class Grovefan
+{
+	public:
+		Grovefan(int pin);
+
+		void setPin(int pin);
+		void on(void);
+		void off(void);
+		void speed(uint8_t   speed );
+	private:
+		int _pin;
+};
 #endif
-
-Ultrasonic::Ultrasonic(int pin)
-{
-	_pin = pin;
-}
-
-void Ultrasonic::setPin(int pin)
-{
-	_pin = pin;
-}
-
-void Ultrasonic::MeasureInCentimeters(void)
-{
-	pinMode(_pin, OUTPUT);
-	digitalWrite(_pin, LOW);
-	delayMicroseconds(2);
-	digitalWrite(_pin, HIGH);
-	delayMicroseconds(5);
-	digitalWrite(_pin,LOW);
-	pinMode(_pin,INPUT);
-	duration = pulseIn(_pin,HIGH);
-	RangeInCentimeters = duration/29/2;	
-}
-void Ultrasonic::MeasureInInches(void)
-{
-	pinMode(_pin, OUTPUT);
-	digitalWrite(_pin, LOW);
-	delayMicroseconds(2);
-	digitalWrite(_pin, HIGH);
-	delayMicroseconds(5);
-	digitalWrite(_pin,LOW);
-	pinMode(_pin,INPUT);
-	duration = pulseIn(_pin,HIGH);
-	RangeInInches = duration/74/2;
-}

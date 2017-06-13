@@ -8204,7 +8204,11 @@ void process_next_command() {
 
 	case 2301:
 		uarm_gcode_M2301();
-		break;				
+		break;
+	
+	case 2302:
+		uarm_gcode_M2302();
+		break;	
 	
 	case 2240:
 		uarm_gcode_M2240();

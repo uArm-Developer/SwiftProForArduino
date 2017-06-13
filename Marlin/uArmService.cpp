@@ -11,7 +11,7 @@
 #include "macros.h"
 #include "stepper_indirection.h"
 #include "servo.h"
-
+#include "uArmServo.h"
 
 
 uArmService service;
@@ -453,7 +453,10 @@ void uArmService::handleButtonEvent(BUTTON_ID button, unsigned char event)
 
 				
 				disable_all_steppers();
-				servo[0].detach();
+				if (getHWSubversion() > 0)
+				{
+					servo[0].detach();
+				}
 				break;
 
 			case LEARNING_MODE:
@@ -584,7 +587,10 @@ void uArmService::recorderTick()
 			
 			//controller.attachAllServo();
 			enable_all_steppers();
-			servo[0].attach(SERVO0_PIN);
+			if (getHWSubversion() > 0)
+			{			
+				servo[0].attach(SERVO0_PIN);
+			}
 
 			delay(500);
 
@@ -748,6 +754,16 @@ void uArmService::run()
 
 bool uArmService::play()
 {
+	
+	static unsigned long lastPlayTime = 0;
+
+	if(millis() - lastPlayTime < TICK_INTERVAL)
+	{
+		return;
+	}   
+
+	lastPlayTime = millis();
+
 	unsigned char data[5]; // 0: L  1: R  2: Rotation 3: hand rotation 4:gripper
 
 	if (mRecordAddr >= 65535)
@@ -776,11 +792,19 @@ bool uArmService::play()
 
 	recorder.read(mRecordAddr, data, 5);
 	mRecordAddr += 5;
-	debugPrint("mRecordAddr = %d, data=%d, %d, %d", mRecordAddr, data[0], data[1], data[2]);
+	debugPrint("mRecordAddr = %d, data=%d, %d, %d, %d", mRecordAddr, data[0], data[1], data[2], data[3]);
 
 	if(data[0] != 255)
 	{
-		servo[0].write((double)data[3]);
+		if (getHWSubversion() > 0)
+		{
+			servo[0].write((double)data[3]);
+		}
+		else
+		{
+			servo_write((double)data[3], true);
+		}
+		
 		if (data[4] >= 0x10)
 		{
 			gripperCatch();
@@ -853,7 +877,7 @@ bool uArmService::record()
 				data[4] = getGripperStatus() > 0 ? 0x10 : 0;
 			}
 
-			debugPrint("b=%d, l=%d, r= %d", data[0], data[1], data[2]);
+			debugPrint("b=%d, l=%d, r= %d,  t=%d", data[0], data[1], data[2], data[3]);
 		}
 		else
 		{

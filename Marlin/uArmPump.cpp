@@ -14,6 +14,11 @@
 pump_state_t pump_state = PUMP_STATE_OFF;
 
 
+pump_state_t pump_get_state()
+{	
+	return pump_state;
+}
+
 void pump_set_state(pump_state_t state)
 {
 	if (state >= PUMP_STATE_COUNT)

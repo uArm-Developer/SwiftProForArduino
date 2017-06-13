@@ -175,6 +175,7 @@ void clearMacFlag()
 void swift_api_init()
 {
 	Serial1.begin(115200);
+	Serial2.begin(115200);
 
 	getMacAddr();
 	getHWVersions();
@@ -262,7 +263,8 @@ void init_user_mode()
 	front_end_offset = front;
 	height_offset = height;
 
-	set_fan_disable(user_mode != USER_MODE_3D_PRINT);
+	set_fan_function(user_mode == USER_MODE_3D_PRINT);
+	set_heater_function(user_mode == USER_MODE_3D_PRINT);
 
 	debugPrint("Mode=%d, height=%f, front=%f\r\n", mode, height, front);
 	
@@ -308,10 +310,10 @@ void set_acceleration(UserMode_t mode)
 	case USER_MODE_NORMAL:	
 	default:
 
-		planner.acceleration = 100;
-		planner.travel_acceleration = 100;
-		planner.max_xy_jerk = 50;
-		planner.max_z_jerk = 50;		
+		planner.acceleration = 200;
+		planner.travel_acceleration = 200;
+		planner.max_xy_jerk = 5;
+		planner.max_z_jerk = 5;		
 		break;
 	}	
 }
@@ -331,28 +333,30 @@ void set_user_mode(UserMode_t mode)
 	case USER_MODE_LASER:
 		front_end_offset = DEFAULT_LASER_FRONT;
 		height_offset = DEFAULT_LASER_HEIGHT;
-		set_fan_disable(true);
+		set_fan_function(false);
+		set_heater_function(false);
 		break;
 
 	case USER_MODE_3D_PRINT:
 		front_end_offset = DEFAULT_3DPRINT_FRONT;
 		height_offset = DEFAULT_3DPRINT_HEIGHT;	
-		set_fan_disable(false);
+		set_fan_function(true);
+		set_heater_function(true);
 		break;
 
 	case USER_MODE_PEN:
 		front_end_offset = DEFAULT_PEN_FRONT;
 		height_offset = DEFAULT_PEN_HEIGHT;	
-		set_fan_disable(true);
-
+		set_fan_function(false);
+		set_heater_function(false);
 		break;		
 
 	case USER_MODE_NORMAL:	
 	default:
 		front_end_offset = DEFAULT_NORMAL_FRONT;
 		height_offset = DEFAULT_NORMAL_HEIGHT;	
-		set_fan_disable(true);
-
+		set_fan_function(false);
+		set_heater_function(false);
 		break;
 	}
 
@@ -821,7 +825,7 @@ void pumpOn()
 {
 
 	digitalWrite(VALVE_EN, LOW); 
-	//digitalWrite(VALVE_EN, HIGH);
+
 	PORTG |= 0x10;
 
 	pump_set_state(PUMP_STATE_ON);
@@ -833,13 +837,15 @@ void pumpOn()
 void pumpOff()
 {
 
+	if (pump_get_state() == PUMP_STATE_ON)
+	{
 
+		digitalWrite(VALVE_EN, HIGH); 
+	
+		PORTG &= 0xef;
 
-	digitalWrite(VALVE_EN, HIGH); 
-	//digitalWrite(VALVE_EN, LOW);
-	PORTG &= 0xef;
-
-	pump_set_state(PUMP_STATE_VALVE_ON);
+		pump_set_state(PUMP_STATE_VALVE_ON);
+	}
 
 }
 

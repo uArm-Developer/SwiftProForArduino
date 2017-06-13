@@ -29,6 +29,8 @@ class Ultrasonic
 		long RangeInCentimeters;
 		long RangeInInches;
 		long duration;
+
+		void setPin(int pin);
 		void MeasureInCentimeters(void);
 		void MeasureInInches(void);
 	private:

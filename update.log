@@ -1,3 +1,8 @@
+v3.1.6	20170613
+support grove mini fan(use D8 port or D9 port)
+fix the jerk of 4th axis in moving and playing mode
+fix the unpredictable working of valve during the learning mode
+
 v3.1.4	20170527
 support grove ultrasonic(use D8 port)
 

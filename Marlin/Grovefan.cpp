@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
-#include "Ultrasonic.h"
+#include "Grovefan.h"
 
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
@@ -30,37 +30,30 @@
 #include "WProgram.h"
 #endif
 
-Ultrasonic::Ultrasonic(int pin)
+Grovefan::Grovefan(int pin)
 {
 	_pin = pin;
 }
 
-void Ultrasonic::setPin(int pin)
+void Grovefan::setPin(int pin)
 {
 	_pin = pin;
 }
 
-void Ultrasonic::MeasureInCentimeters(void)
+void Grovefan::off(void)
 {
 	pinMode(_pin, OUTPUT);
 	digitalWrite(_pin, LOW);
-	delayMicroseconds(2);
-	digitalWrite(_pin, HIGH);
-	delayMicroseconds(5);
-	digitalWrite(_pin,LOW);
-	pinMode(_pin,INPUT);
-	duration = pulseIn(_pin,HIGH);
-	RangeInCentimeters = duration/29/2;	
+	
 }
-void Ultrasonic::MeasureInInches(void)
+void Grovefan::on(void)
 {
 	pinMode(_pin, OUTPUT);
-	digitalWrite(_pin, LOW);
-	delayMicroseconds(2);
 	digitalWrite(_pin, HIGH);
-	delayMicroseconds(5);
-	digitalWrite(_pin,LOW);
-	pinMode(_pin,INPUT);
-	duration = pulseIn(_pin,HIGH);
-	RangeInInches = duration/74/2;
+}
+
+void Grovefan::speed(uint8_t   speed )
+{
+	pinMode(_pin, OUTPUT);
+	analogWrite(_pin, speed);
 }

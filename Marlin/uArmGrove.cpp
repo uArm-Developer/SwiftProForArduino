@@ -11,9 +11,12 @@
 #include "GroveColorSensor.h"
 #include "paj7620.h" 
 #include "Ultrasonic.h"
+#include "Grovefan.h"
 
 GroveColorSensor colorSensor;
 Ultrasonic ultrasonic(8);
+Grovefan grovefan(8);
+
 
 void GestureReport()
 {
@@ -59,7 +62,7 @@ void GestureReport()
 				}
 				else
 				{
-					gesture = GES_RIGHT_FLAG;
+					gesture = GES_LEFT_FLAG;
 				}          
 				break;
 			case GES_UP_FLAG:
@@ -157,7 +160,7 @@ void UltrasonicReport()
 	reportString(result);
 }
 
-void initGroveModule(GroveType type)
+void initGroveModule(GroveType type, GrovePort port)
 {
 	uint8_t error = 0;
 
@@ -177,7 +180,31 @@ void initGroveModule(GroveType type)
 		break;
 
 	case GROVE_ULTRASONIC:
+		switch (port)
+		{
+		case GROVE_PORT_D1:
+			ultrasonic.setPin(9);
+			break;
+
+		case GROVE_PORT_D0:
+		default:
+			ultrasonic.setPin(8);
+			break;
+		}
 		break;
+
+	case GROVE_FAN:
+		switch (port)
+		{
+		case GROVE_PORT_D1:
+			grovefan.setPin(9);
+			break;
+
+		case GROVE_PORT_D0:
+		default:
+			grovefan.setPin(8);
+			break;
+		}
 
 	default:
 		break;
@@ -212,3 +239,31 @@ void setGroveModuleReportInterval(GroveType type, long interval)
 		}	
 	}
 }
+
+void setGroveModuleValue(GroveType type, long value)
+{
+	switch (type) {
+	case GROVE_COLOR_SENSOR:
+
+		break;
+
+	case GROVE_GESTURE_SERSOR:
+		
+		break;
+
+	case GROVE_ULTRASONIC:
+
+		break;
+	case GROVE_FAN:
+		grovefan.speed(value);
+
+		break;
+		
+		
+	default:
+		break;
+		
+	}
+}
+
+

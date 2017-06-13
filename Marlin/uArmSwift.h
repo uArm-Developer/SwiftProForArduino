@@ -30,10 +30,12 @@ void swift_init();
 
 void swift_run();
 
-bool is_fan_disable();
 bool is_fan_enable();
+void set_fan_function(bool disable);
 
-void set_fan_disable(bool disable);
+
+bool is_heater_enable();
+void set_heater_function(bool enable);
 
 
 void update_current_pos();
@@ -78,6 +80,8 @@ void uarm_gcode_M2240();
 
 void uarm_gcode_M2300();
 void uarm_gcode_M2301();
+void uarm_gcode_M2302();
+
 
 void uarm_gcode_M2400();
 uint8_t uarm_gcode_M2401(char reply[]);
