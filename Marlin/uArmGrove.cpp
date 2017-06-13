@@ -244,21 +244,17 @@ void setGroveModuleValue(GroveType type, long value)
 {
 	switch (type) {
 	case GROVE_COLOR_SENSOR:
-
 		break;
 
 	case GROVE_GESTURE_SERSOR:
-		
 		break;
 
 	case GROVE_ULTRASONIC:
-
-		break;
-	case GROVE_FAN:
-		grovefan.speed(value);
-
 		break;
 		
+	case GROVE_FAN:
+		grovefan.speed(value);
+		break;
 		
 	default:
 		break;
