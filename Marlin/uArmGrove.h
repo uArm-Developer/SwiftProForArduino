@@ -13,19 +13,13 @@
 #include <Arduino.h>
 #include "Marlin.h"
 
-enum GrovePort
+enum GrovePortType
 {
-	GROVE_PORT_DEFAULT = 0,	
+	GROVE_PORT_DIGITAL,	
+	GROVE_PORT_ANALOG,
+	GROVE_PORT_I2C,
 	
-	GROVE_PORT_D0,	// D8
-	GROVE_PORT_D1,	// D9
-	GROVE_PORT_D2,
-	GROVE_PORT_A0,	// A13
-	GROVE_PORT_A1,
-	GROVE_PORT_I2C0,	// I2C
-	GROVE_PORT_I2C1,
-	
-	GROVE_PORT_COUNT
+	GROVE_PORT_TYPE_COUNT
 };
 
 
@@ -42,7 +36,7 @@ enum GroveType
 	GROVE_TYPE_COUNT
 };
 
-void initGroveModule(GroveType type, GrovePort port);
+void initGroveModule(GroveType type, GrovePortType portType, unsigned char pin);
 
 void setGroveModuleReportInterval(GroveType type, long interval);
 

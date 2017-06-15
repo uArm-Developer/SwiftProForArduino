@@ -104,10 +104,10 @@ float get_current_angle(uint8_t index)
 		angle = reference_angle[index];
 	}
 
-	debugPrint("cur_value = %d\r\n", cur_value);
-	debugPrint("reference_value = %d\r\n", reference_angle_value[index]);
+	//debugPrint("cur_value = %d\r\n", cur_value);
+	//debugPrint("reference_value = %d\r\n", reference_angle_value[index]);
 
-	debugPrint("angle = %f\r\n", angle);
+	//debugPrint("angle = %f\r\n", angle);
 
 	float origin_angle = angle;
 	float min = 0, max = 0;
@@ -121,7 +121,7 @@ float get_current_angle(uint8_t index)
 	{
 		angle += 360;
 	}	
-	debugPrint("angle2 = %f\r\n", angle);
+	//debugPrint("angle2 = %f\r\n", angle);
 
 	switch (index)
 	{

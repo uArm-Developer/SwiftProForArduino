@@ -1952,6 +1952,7 @@ inline void line_to_destination(float fr_mm_m) {
 		planner.buffer_line(delta_angle[X_AXIS], delta_angle[Y_AXIS], delta_angle[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder);
 		}
 
+
 	  }
 }
 #else

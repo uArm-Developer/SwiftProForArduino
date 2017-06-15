@@ -13,9 +13,24 @@
 #include "Ultrasonic.h"
 #include "Grovefan.h"
 
+
+
+
+#define DIGITAL_PIN_8	8
+#define DIGITAL_PIN_9	9
+
+#define ALALOG_PIN_13	13
+
+
+#define DEFAULT_DIGITAL_PIN	DIGITAL_PIN_8
+#define DEFAULT_ALALOG_PIN	ALALOG_PIN_13
+
+
 GroveColorSensor colorSensor;
 Ultrasonic ultrasonic(8);
 Grovefan grovefan(8);
+
+
 
 
 void GestureReport()
@@ -160,7 +175,7 @@ void UltrasonicReport()
 	reportString(result);
 }
 
-void initGroveModule(GroveType type, GrovePort port)
+void initGroveModule(GroveType type, GrovePortType portType, unsigned char pin)
 {
 	uint8_t error = 0;
 
@@ -180,29 +195,29 @@ void initGroveModule(GroveType type, GrovePort port)
 		break;
 
 	case GROVE_ULTRASONIC:
-		switch (port)
+		switch (pin)
 		{
-		case GROVE_PORT_D1:
-			ultrasonic.setPin(9);
+		case DIGITAL_PIN_8:
+		case DIGITAL_PIN_9:
+			ultrasonic.setPin(pin);
 			break;
 
-		case GROVE_PORT_D0:
 		default:
-			ultrasonic.setPin(8);
+			ultrasonic.setPin(DEFAULT_DIGITAL_PIN);
 			break;
 		}
 		break;
 
 	case GROVE_FAN:
-		switch (port)
+		switch (pin)
 		{
-		case GROVE_PORT_D1:
-			grovefan.setPin(9);
+		case DIGITAL_PIN_8:
+		case DIGITAL_PIN_9:
+			grovefan.setPin(pin);
 			break;
 
-		case GROVE_PORT_D0:
 		default:
-			grovefan.setPin(8);
+			grovefan.setPin(DEFAULT_DIGITAL_PIN);
 			break;
 		}
 

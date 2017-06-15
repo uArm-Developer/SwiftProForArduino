@@ -790,26 +790,46 @@ bool uArmService::play()
 		return false;
 	}
 
-	recorder.read(mRecordAddr, data, 5);
-	mRecordAddr += 5;
-	debugPrint("mRecordAddr = %d, data=%d, %d, %d, %d", mRecordAddr, data[0], data[1], data[2], data[3]);
+	recorder.read(mRecordAddr, data, 10);
+	mRecordAddr += 10;
 
-	if(data[0] != 255)
+	uint16_t angledata[5];
+	double realdata[5];
+	
+
+	for (int i = 0; i < 5; i++)
+	{
+		angledata[i] = (data[2*i] << 8) + data[2*i+1];
+		realdata[i] = ((double)angledata[i]) / 100;
+		
+	}
+
+
+
+	debugPrint("mRecordAddr = %d, data=%f, %f, %f, %f\r\n", mRecordAddr, realdata[0], realdata[1], realdata[2], realdata[3]);
+
+	// !!! Do not comment
+	// !!! Tt's weird that the program will die if not use debugPrint or msprintf. Why???
+	char buf[200];
+	msprintf(buf, "mRecordAddr = %d, data=%f, %f, %f, %f\r\n", mRecordAddr, realdata[0], realdata[1], realdata[2], realdata[3]);
+
+
+	if (angledata[0] != 0xffff)
 	{
 		if (getHWSubversion() > 0)
 		{
-			servo[0].write((double)data[3]);
+			servo[0].write((double)realdata[3]);
 		}
 		else
 		{
-			servo_write((double)data[3], true);
+			servo_write((double)realdata[3], true);
 		}
 		
-		if (data[4] >= 0x10)
+		if (angledata[4] >= 0x10)
 		{
 			gripperCatch();
 		}
-		else if (data[4] >= 0x01)
+		else if (angledata[4] >= 0x01)
 		{
 			pumpOn();
 		}
@@ -819,7 +839,7 @@ bool uArmService::play()
 			gripperRelease();
 		}
 
-		getXYZFromAngle(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], data[0], data[1], data[2]);
+		getXYZFromAngle(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], realdata[0], realdata[1], realdata[2]);
 
 		float target[NUM_AXIS];
 		LOOP_XYZE(i) target[i] = destination[i];
@@ -831,7 +851,7 @@ bool uArmService::play()
 
 	  
 	  	float cartesian_mm = sqrt(sq(difference[X_AXIS]) + sq(difference[Y_AXIS]) + sq(difference[Z_AXIS]));
-	  	feedrate_mm_m = cartesian_mm * 20 * 60; // the interval of points is 50ms
+	  	feedrate_mm_m = cartesian_mm * 20 * 60 * 2; // the interval of points is 50ms  2x speed
 
 		prepare_move_to_destination();
 
@@ -856,39 +876,57 @@ bool uArmService::play()
 
 bool uArmService::record()
 {
-	debugPrint("mRecordAddr = %d", mRecordAddr);
+	debugPrint("mRecordAddr = %d  ", mRecordAddr);
 
-	if(mRecordAddr <= 65530)
+	if(mRecordAddr <= 65525)
 	{
-		unsigned char data[5]; // 0: L  1: R  2: Rotation 3: hand rotation 4:gripper
-		if((mRecordAddr != 65530) && (mSysStatus != LEARNING_MODE_STOP))
+		uint8_t data[10]; // 0: L  1: R  2: Rotation 3: hand rotation 4:gripper
+		uint16_t angledata[5];
+		if((mRecordAddr != 65525) && (mSysStatus != LEARNING_MODE_STOP))
 		{
 
-			data[0] = (unsigned char)get_current_angle(0);
-			data[1] = (unsigned char)get_current_angle(1);
-			data[2] = (unsigned char)get_current_angle(2);
-			data[3] = (unsigned char)get_current_angle(3);
+			angledata[0] = (uint16_t)(get_current_angle(0) * 100);
+			angledata[1] = (uint16_t)(get_current_angle(1) * 100);
+			angledata[2] = (uint16_t)(get_current_angle(2) * 100);
+			angledata[3] = (uint16_t)(get_current_angle(3) * 100);
 			if (!getSwitchState())
 			{
-				data[4] = getPumpStatus() > 0 ? 1 : 0;
+				angledata[4] = getPumpStatus() > 0 ? 1 : 0;
 			}
 			else
 			{
-				data[4] = getGripperStatus() > 0 ? 0x10 : 0;
+				angledata[4] = getGripperStatus() > 0 ? 0x10 : 0;
 			}
 
-			debugPrint("b=%d, l=%d, r= %d,  t=%d", data[0], data[1], data[2], data[3]);
+			debugPrint("b=%d, l=%d, r= %d,  t=%d\r\n", angledata[0], angledata[1], angledata[2], angledata[3]);
 		}
 		else
 		{
-			data[0] = 255;//255 is the ending flag
-			recorder.write(mRecordAddr, data, 5);
+			//angledata[0] = 0xffff;//ending flag
+			for (int i = 0; i < 10; i++)
+			{
+				data[i] = 255;
+			}
+
+			
+			delay(5);
+			recorder.write(mRecordAddr, data, 10);
+
+
 
 			return false;
 		}
 
-		recorder.write(mRecordAddr, data, 5);
-		mRecordAddr += 5;
+
+		for (int i = 0; i < 5; i++)
+		{
+			data[2 * i] = (angledata[i] & 0xff00 ) >> 8;
+			data[2*i + 1] = angledata[i] & 0xff;
+		}
+
+
+		recorder.write(mRecordAddr, data, 10);
+		mRecordAddr += 10;
 
 		return true;
 	}

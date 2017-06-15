@@ -25,7 +25,7 @@ void uArmRecorder::write(unsigned int addr, unsigned char data[], int num)
 	unsigned char i=0;
 	i = (addr % 128);
 	// Since the eeprom's sector is 128 byte, if we want to write 5 bytes per cycle we need to care about when there's less than 5 bytes left
-	if((i >= 124) && (num == 5))
+	if((i >= 119) && (num == 10))
 	{
 		i = 128 - i;
 		iic_writebuf(data, EXTERNAL_EEPROM_USER_ADDRESS, addr, i);// write data
@@ -44,7 +44,7 @@ void uArmRecorder::read(unsigned int addr, unsigned char data[], int num)
 	unsigned char i=0;
 	i= (addr % 128);
 	// Since the eeprom's sector is 128 byte, if we want to write 5 bytes per cycle we need to care about when there's less than 5 bytes left
-	if( (i >= 124) && (num == 5))
+	if( (i >= 119) && (num == 10))
 	{
 		i = 128 - i;
 		iic_readbuf(data, EXTERNAL_EEPROM_USER_ADDRESS, addr, i);// write data

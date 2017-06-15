@@ -941,7 +941,9 @@ void uarm_gcode_M2300()
 {
 	uint8_t type;
 
-	uint8_t port = 0;
+	uint8_t pin = 0;
+
+	GrovePortType portType = 0;
 	
 	if (code_seen('N'))
 	{
@@ -952,12 +954,25 @@ void uarm_gcode_M2300()
 		return;
 	}
 
-	if (code_seen('V'))
+	if (code_seen('D'))
 	{
-		port = code_value_byte();
+		portType = GROVE_PORT_DIGITAL;
+		pin = code_value_byte();
 	}
 
-	initGroveModule(type, port);
+	if (code_seen('A'))
+	{
+		portType = GROVE_PORT_ANALOG;
+		pin = code_value_byte();
+	}	
+
+	if (code_seen('I'))
+	{
+		portType = GROVE_PORT_I2C;
+		pin = code_value_byte();
+	}		
+
+	initGroveModule(type, portType, pin);
 }
 
 void uarm_gcode_M2301()
