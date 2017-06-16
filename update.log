@@ -1,3 +1,6 @@
+v3.1.7	20170615
+improve learning performence.
+
 v3.1.6	20170613
 support grove mini fan(use D8 port or D9 port)
 fix the jerk of 4th axis in moving and playing mode
