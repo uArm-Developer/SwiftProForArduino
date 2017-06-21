@@ -88,7 +88,7 @@ void buttons_init()
 void swift_init()
 {
 
-
+	
 	// setup stepper driver micro
 	pinMode(7, OUTPUT);
 	digitalWrite(7, HIGH);

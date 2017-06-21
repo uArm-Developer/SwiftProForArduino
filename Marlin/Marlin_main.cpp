@@ -1935,7 +1935,7 @@ inline void line_to_destination(float fr_mm_m) {
 		float fraction = float(s) * inv_steps;
   
 		LOOP_XYZE(i)
-		  target[i] = current_position[i] + difference[i] * fraction;\
+		  target[i] = current_position[i] + difference[i] * fraction;
 
 
 

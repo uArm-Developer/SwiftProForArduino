@@ -8,10 +8,10 @@
   */
 
 #include "uArmGrove.h" 
-#include "GroveColorSensor.h"
 #include "paj7620.h" 
 #include "Ultrasonic.h"
 #include "Grovefan.h"
+#include "Adafruit_TCS34725.h"
 
 
 
@@ -26,9 +26,11 @@
 #define DEFAULT_ALALOG_PIN	ALALOG_PIN_13
 
 
-GroveColorSensor colorSensor;
+
 Ultrasonic ultrasonic(8);
 Grovefan grovefan(8);
+
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_1X);
 
 
 
@@ -148,16 +150,25 @@ void GestureReport()
 
 }
 
+void getRawData_noDelay(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c)
+{
+  *c = tcs.read16(TCS34725_CDATAL);
+  *r = tcs.read16(TCS34725_RDATAL);
+  *g = tcs.read16(TCS34725_GDATAL);
+  *b = tcs.read16(TCS34725_BDATAL);
+}
+
+
 void GroveColorReport()
 {
 	char result[128];
-	int red, green, blue;
+	uint16_t red, green, blue, c;
 	
 
-	colorSensor.readRGB(&red, &green, &blue);		//Read RGB values to variables.
+	getRawData_noDelay(&red, &green, &blue, &c);
 
+	tcs.clearInterrupt();
 
-	colorSensor.clearInterrupt();
 
 	msprintf(result, "@%d N%d R%d G%d B%d\r\n", REPORT_TYPE_GROVE, GROVE_COLOR_SENSOR, red, green, blue);
 	reportString(result);
@@ -179,10 +190,19 @@ void initGroveModule(GroveType type, GrovePortType portType, unsigned char pin)
 {
 	uint8_t error = 0;
 
+	debugPrint("initGroveModule %d\n", type);
+
 	switch (type) {
 	case GROVE_COLOR_SENSOR:
-		debugPrint("initGroveModule\n");
-		colorSensor.init();
+		
+		//colorSensor.init();
+		if (tcs.begin()) {
+		    //Serial.println("Found sensor");
+  			tcs.write8(TCS34725_PERS, TCS34725_PERS_NONE); 
+  			tcs.setInterrupt(true);		    
+		} else {
+		    Serial.println("No TCS34725 found ... check your connections");
+		}		
 		break;
 	
 	case GROVE_GESTURE_SERSOR:
