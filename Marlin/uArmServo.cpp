@@ -42,7 +42,7 @@ void servo_write(double value, bool remember = false)
 	}
 	else 
 	{
-		if (last_value == value && abs(value - last_write_value) > SERVO_VALUE_DIFF)
+		if (abs(last_value - value) < 0.0001 && abs(value - last_write_value) > SERVO_VALUE_DIFF)
 		{	
 			_servo_write(value);
 			last_write_value = value;

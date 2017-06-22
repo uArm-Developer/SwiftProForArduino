@@ -1906,6 +1906,43 @@ unsigned char inverse_kinematics(const float in_cartesian[3], float angle[3]) {
 
 }
 
+bool line_to_destination_play_mode(float fr_mm_m) {
+
+	float target[NUM_AXIS];
+	LOOP_XYZE(i) target[i] = destination[i];
+	
+
+  	float difference[NUM_AXIS];
+	  LOOP_XYZE(i) difference[i] = target[i] - current_position[i];
+
+
+	  
+	  float cartesian_mm = sqrt(sq(difference[X_AXIS]) + sq(difference[Y_AXIS]) + sq(difference[Z_AXIS]));
+	  if (cartesian_mm < 0.000001) cartesian_mm = abs(difference[E_AXIS]);
+	  if (cartesian_mm < 0.000001) return false;
+	  
+	  float _feedrate_mm_s = MMM_TO_MMS_SCALED(feedrate_mm_m);
+	  float seconds = cartesian_mm / _feedrate_mm_s;
+
+
+ 
+
+
+
+
+		if (inverse_kinematics(target, delta_angle) == 0)
+		{
+
+  
+			planner.buffer_line(delta_angle[X_AXIS], delta_angle[Y_AXIS], delta_angle[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder);
+			return true;
+		}
+
+		return false;
+
+
+}
+
 
 inline void line_to_destination(float fr_mm_m) {
 
@@ -8231,6 +8268,10 @@ void process_next_command() {
 	  case 2411:
 	  	uarm_gcode_M2411();
 	  	break;		
+
+	case 2500:
+	  uarm_gcode_M2500();
+	  break;	  
 
 	  
 #endif //UARM_SWIFT

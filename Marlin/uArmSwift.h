@@ -89,6 +89,7 @@ void uarm_gcode_M2410();
 void uarm_gcode_M2411();
 
 uint8_t uarm_gcode_M2420(char reply[]);
+void uarm_gcode_M2500();
 
 
 uint8_t uarm_gcode_P2200(char reply[]);

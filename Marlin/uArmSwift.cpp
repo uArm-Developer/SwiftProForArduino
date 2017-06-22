@@ -116,6 +116,10 @@ void swift_init()
 	{
 		servo[0].attach(SERVO0_PIN);
 	}
+	else
+	{
+		servo_write(90.0);
+	}
 
 #endif	
 	delay(1000);
@@ -1125,6 +1129,17 @@ void uarm_gcode_M2411()
 		}		
 	}	
 }
+
+
+void uarm_gcode_M2500()
+{
+	float value = 0;
+
+	debugPrint("M2500\r\n");
+	ok_to_send();
+	commSerial.setSerialPort(&Serial2);
+}
+
 
 
 

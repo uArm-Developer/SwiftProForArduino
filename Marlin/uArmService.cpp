@@ -14,6 +14,14 @@
 #include "uArmServo.h"
 
 
+//#define SERVICE_DEBUG
+
+#ifdef SERVICE_DEBUG
+#define service_debug	debugPrint
+#else
+#define service_debug
+#endif
+
 uArmService service;
 
 extern uArmButton button_menu;
@@ -750,26 +758,643 @@ void uArmService::run()
 }
 
 
+struct point_data
+{
+	double x;
+	double y;
+	double z;
+};
 
+#define POINT_DATA_MAX	10
+
+
+class PointDataFilter
+{
+private:
+	struct point_data points_data[POINT_DATA_MAX];
+	int point_count = 0; 
+	int point_index = 0; 	
+
+public:
+	PointDataFilter()
+	{
+		point_count = 0;
+		point_index = 0;
+	}
+
+	void reset()
+	{
+		point_count = 0;
+		point_index = 0;
+	}
+
+	void filter(point_data& in, point_data& out)
+	{
+		/*
+		out.x = in.x;
+		out.y = in.y;
+		out.z = in.z;
+		return;
+		*/
+
+		debugPrint("in %f, %f, %f\r\n", in.x, in.y, in.z);
+		
+		points_data[point_index].x = in.x;
+		points_data[point_index].y = in.y;
+		points_data[point_index].z = in.z;
+
+/*
+		for (int i = 0; i < POINT_DATA_MAX; i++)
+		{
+			debugPrint("%d %f, %f, %f\r\n", i, points_data[i].x, points_data[i].y, points_data[i].z);		
+		}
+*/
+
+		point_index++;
+
+		point_index %= POINT_DATA_MAX;
+
+		point_count++;
+
+		point_count = point_count > POINT_DATA_MAX ? POINT_DATA_MAX : point_count;
+
+		if (point_count <= 1)
+		{
+			out.x = in.x;
+			out.y = in.y;
+			out.z = in.z;
+			debugPrint("out %f, %f, %f\r\n", out.x, out.y, out.z);	
+			return ;
+		}
+
+		point_data even_data = {0};
+		even_data.x = 0;
+		even_data.y = 0;
+		even_data.z = 0;
+
+		int start_pos = point_index - 1 - (point_count - 1) + POINT_DATA_MAX;
+
+		start_pos %= POINT_DATA_MAX;
+
+		//debugPrint("start_pos %d\r\n", start_pos);
+		
+		for (int i = 0; i < point_count-1; i++)
+		{
+			int pos = (start_pos+i)% POINT_DATA_MAX;
+
+			//debugPrint("pos %d\r\n", pos);
+			
+			even_data.x += points_data[pos].x;
+			even_data.y += points_data[pos].y;
+			even_data.z += points_data[pos].z;
+		}
+
+		even_data.x /= (point_count - 1);
+		even_data.y /= (point_count - 1);		
+		even_data.z /= (point_count - 1);	
+
+		//debugPrint("even %f, %f, %f\r\n", even_data.x, even_data.y, even_data.z);
+
+
+		out.x = in.x * 0.8 + even_data.x * 0.2;
+		out.y = in.y * 0.8 + even_data.y * 0.2;
+		out.z = in.z * 0.8 + even_data.z * 0.2;
+		
+		debugPrint("out %f, %f, %f\r\n", out.x, out.y, out.z);		
+	}	
+};
+
+
+#define SPEED_X 1
+
+extern bool line_to_destination_play_mode(float fr_mm_m);
+
+enum PlayState
+{
+	PLAY_STATE_IDLE,
+	PLAY_STATE_START,
+	PLAY_STATE_RUN,
+	PLAY_STATE_WAIT,
+	PLAY_STATE_DELAY,
+	PLAY_STATE_GET_NEXT,
+	PLAY_STATE_REPLACE_CUR,
+	PLAY_STATE_END,
+	PALY_STATE_END2,
+	PLAY_STATE_DONE,
+};
+
+static PlayState play_state = PLAY_STATE_IDLE;
+
+struct PlayData
+{
+	double x;
+	double y;
+	double z;
+	double e;
+	uint16_t eef;
+};
+
+
+#define PLAY_DATA_RECORD_MAX	5
+class PlayDataRecord
+{
+private:
+	PlayData _data[PLAY_DATA_RECORD_MAX];
+	int pre_2;
+	int pre;
+	int cur;
+	int next;
+	int next_2;
+
+public:
+	PlayDataRecord()
+	{
+		pre_2 = 0;
+		pre = 1;
+		cur = 2;
+		next = 3;
+		next_2 = 4;
+	}
+
+	void initData(int type, PlayData data)
+	{
+		_data[type].x = data.x;
+		_data[type].y = data.y;
+		_data[type].z = data.z;
+		_data[type].e = data.e;
+		_data[type].eef = data.eef;
+	}
+
+	void indexInc()
+	{
+		pre_2++;
+		pre++;
+		cur++;
+		next++;
+		next_2++;
+
+		pre_2 %= PLAY_DATA_RECORD_MAX;
+		pre %= PLAY_DATA_RECORD_MAX;
+		cur %= PLAY_DATA_RECORD_MAX;
+		next %= PLAY_DATA_RECORD_MAX;
+		next_2 %= PLAY_DATA_RECORD_MAX;
+	}
+
+	void setNext(PlayData data)
+	{
+		indexInc();
+
+		_data[next_2].x = data.x;
+		_data[next_2].y = data.y;
+		_data[next_2].z = data.z;
+		_data[next_2].e = data.e;
+		_data[next_2].eef = data.eef;		
+	}
+
+	void getData(int type, PlayData& data)
+	{
+		
+	}
+
+	void setData(int type, PlayData data)
+	{
+		
+	}
+
+	void getCurData(PlayData& data)
+	{
+		data.x = _data[cur].x;
+		data.y = _data[cur].y;
+		data.z = _data[cur].z;
+		data.e = _data[cur].e;
+		data.eef = _data[cur].eef;
+		
+	}
+
+	void replaceInvalidData(PlayData data)
+	{
+		_data[cur].x = _data[next].x;
+		_data[cur].y = _data[next].y;
+		_data[cur].z = _data[next].z;
+		_data[cur].e = _data[next].e;
+		_data[cur].eef = _data[next].eef;		
+
+		_data[next].x = _data[next_2].x;
+		_data[next].y = _data[next_2].y;
+		_data[next].z = _data[next_2].z;
+		_data[next].e = _data[next_2].e;
+		_data[next].eef = _data[next_2].eef;	
+
+		_data[next_2].x = data.x;
+		_data[next_2].y = data.y;
+		_data[next_2].z = data.z;
+		_data[next_2].e = data.e;
+		_data[next_2].eef = data.eef;		
+	}
+
+	bool isDataValid(int dir[4])
+	{
+		service_debug("dir: %d, %d, %d, %d\r\n", dir[0], dir[1], dir[2], dir[3]);
+
+		if (dir[1] != 0 && dir[0] != 0 && dir[2] != 0 && dir[1] != dir[0] && dir[1] != dir[2])
+		{
+			service_debug("!!!!!!!!!!!!!!!Invalid data!\r\n");
+			return false;
+		}
+
+		return true;
+	}
+
+	bool isXDataValid()
+	{
+		int dir[4] = {0};
+
+
+		int cur_pos = pre;
+		int last_pos = 0;
+		
+		for (int i = 0; i < (PLAY_DATA_RECORD_MAX-1); i++)
+		{
+			cur_pos = (pre + i) % PLAY_DATA_RECORD_MAX;
+			last_pos = (pre + i - 1 + PLAY_DATA_RECORD_MAX) % PLAY_DATA_RECORD_MAX;
+
+			if (abs(_data[cur_pos].x - _data[last_pos].x) < 0.00001)
+			{
+				dir[i] = 0;
+			}
+			else if (_data[cur_pos].x > _data[last_pos].x)
+			{
+				dir[i] = 1;
+			}
+			else
+			{
+				dir[i] = -1;
+			}
+		}
+
+		service_debug("x data: %f, %f, %f, %f, %f\r\n", _data[pre_2].x, _data[pre].x, _data[cur].x, _data[next].x, _data[next_2].x);
+
+		return isDataValid(dir);
+	}
+
+	bool isYDataValid()
+	{
+		int dir[4] = {0};
+
+
+		int cur_pos = pre;
+		int last_pos = 0;
+		
+		for (int i = 0; i < (PLAY_DATA_RECORD_MAX-1); i++)
+		{
+			cur_pos = (pre + i) % PLAY_DATA_RECORD_MAX;
+			last_pos = (pre + i - 1 + PLAY_DATA_RECORD_MAX) % PLAY_DATA_RECORD_MAX;
+
+			if (abs(_data[cur_pos].y - _data[last_pos].y) < 0.00001)
+			{
+				dir[i] = 0;
+			}
+			else if (_data[cur_pos].y > _data[last_pos].y)
+			{
+				dir[i] = 1;
+			}
+			else
+			{
+				dir[i] = -1;
+			}
+		}
+
+		service_debug("y data: %f, %f, %f, %f, %f\r\n", _data[pre_2].y, _data[pre].y, _data[cur].y, _data[next].y, _data[next_2].y);
+		return isDataValid(dir);	
+	}
+
+	bool isZDateValid()
+	{
+		int dir[4] = {0};
+
+
+		int cur_pos = pre;
+		int last_pos = 0;
+		
+		for (int i = 0; i < (PLAY_DATA_RECORD_MAX-1); i++)
+		{
+			cur_pos = (pre + i) % PLAY_DATA_RECORD_MAX;
+			last_pos = (pre + i - 1 + PLAY_DATA_RECORD_MAX) % PLAY_DATA_RECORD_MAX;
+
+			if (abs(_data[cur_pos].z - _data[last_pos].z) < 0.00001)
+			{
+				dir[i] = 0;
+			}
+			else if (_data[cur_pos].z > _data[last_pos].z)
+			{
+				dir[i] = 1;
+			}
+			else
+			{
+				dir[i] = -1;
+			}
+		}
+		service_debug("z data: %f, %f, %f, %f, %f\r\n", _data[pre_2].z, _data[pre].z, _data[cur].z, _data[next].z, _data[next_2].z);
+
+		return isDataValid(dir);		
+	}
+
+	bool isCurDataValid()
+	{
+		if (!isXDataValid())
+			return false;
+
+		if (!isYDataValid())
+			return false;
+
+		if (!isZDateValid())
+			return false;
+
+		return true;
+	}
+
+	bool isCurDataDelay()
+	{
+		if (abs(_data[cur].x - _data[pre].x) > 0.1)
+			return false;
+
+		if (abs(_data[cur].y - _data[pre].y) > 0.1)
+			return false;	
+
+		if (abs(_data[cur].z - _data[pre].z) > 0.1)
+			return false;	
+
+		return true;
+	}
+	
+};
+
+bool readNextData(PlayData& data, uint16_t& addr)
+{
+	if (addr > 65520)
+	{
+		return false;
+	}
+
+	unsigned char chdata[10];
+
+	recorder.read(addr, chdata, 10);
+	
+	
+	uint16_t angledata[5];
+	double realdata[5];
+
+	
+
+	for (int i = 0; i < 5; i++)
+	{
+		angledata[i] = (chdata[2*i] << 8) + chdata[2*i+1];
+		realdata[i] = ((double)angledata[i]) / 100;
+	}	
+
+	service_debug("mRecordAddr = %d, data=%f, %f, %f, %f\r\n", addr, realdata[0], realdata[1], realdata[2], realdata[3]);
+
+	addr += 10;
+
+	if (angledata[0] == 0xffff)
+		return false;
+
+	data.x = realdata[0];
+	data.y = realdata[1];
+	data.z = realdata[2];
+	data.e = realdata[3];
+	data.eef = angledata[4];
+
+
+
+	return true;
+}
 
 bool uArmService::play()
 {
-	
+	static PlayDataRecord play_data_record;
+	static PointDataFilter point_data_filter;
+	PlayData data;
+	PlayData curData;
 	static unsigned long lastPlayTime = 0;
 
-	if(millis() - lastPlayTime < TICK_INTERVAL)
+	if (mSysStatus != SINGLE_PLAY_MODE && mSysStatus != LOOP_PLAY_MODE)
+	{
+		if (play_state != PLAY_STATE_IDLE)
+		{
+			ledAllOff();		
+
+			pumpOff();
+			gripperRelease();
+
+			mRecordAddr = 65535;
+
+			play_state = PLAY_STATE_IDLE;
+		}
+		
+		return;
+	}
+	
+	switch (play_state)
+	{
+	case PLAY_STATE_IDLE:
+		if (mSysStatus == SINGLE_PLAY_MODE || mSysStatus == LOOP_PLAY_MODE)
+		{
+			play_state = PLAY_STATE_START;
+			mRecordAddr = 0;
+			point_data_filter.reset();
+		}
+		break;
+		
+	case PLAY_STATE_START:
+		// read first 5 data
+		service_debug("PLAY_STATE_START \r\n");
+		for (int i = 0; i < PLAY_DATA_RECORD_MAX; i++)
+		{
+			delay(5);
+			if (readNextData(data, mRecordAddr))
+			{
+				play_data_record.initData(i, data);
+			}
+			else
+			{
+				play_state = PLAY_STATE_DONE;
+				return;
+			}
+		}
+
+		play_state = PLAY_STATE_RUN;
+		break;
+		
+	case PLAY_STATE_RUN:
+		if (play_data_record.isCurDataValid())
+		{
+			
+			play_data_record.getCurData(curData);
+			
+			if (getHWSubversion() > 0)
+			{
+				servo[0].write(curData.e);
+			}
+			else
+			{
+				servo_write(curData.e, true);
+			}
+			
+			if (curData.eef >= 0x10)
+			{
+				gripperCatch();
+			}
+			else if (curData.eef >= 0x01)
+			{
+				pumpOn();
+			}
+			else
+			{
+				pumpOff();
+				gripperRelease();
+			}
+
+		
+			if (play_data_record.isCurDataDelay())
+			{
+				play_state = PLAY_STATE_WAIT;
+			}
+			else
+			{
+				/*
+				point_data in;
+				point_data out;
+				
+				in.x = curData.x;
+				in.y = curData.y;
+				in.z = curData.z;
+				
+				
+				point_data_filter.filter(in, out)
+				
+			
+				getXYZFromAngle(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], out.x, out.y, out.z);
+				*/
+
+				getXYZFromAngle(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], curData.x, curData.y, curData.z);
+				
+				float target[NUM_AXIS];
+				LOOP_XYZE(i) target[i] = destination[i];
+			
+		
+				float difference[NUM_AXIS];
+				LOOP_XYZE(i) difference[i] = target[i] - current_position[i];
+		
+		
+			  
+				float cartesian_mm = sqrt(sq(difference[X_AXIS]) + sq(difference[Y_AXIS]) + sq(difference[Z_AXIS]));
+				feedrate_mm_m = cartesian_mm * 20 * 60 * SPEED_X; // the interval of points is 50ms
+		
+				line_to_destination_play_mode(feedrate_mm_m);
+
+				set_current_to_destination();
+				
+				play_state = PLAY_STATE_GET_NEXT;
+			}
+		
+		}
+		else
+		{
+			service_debug("PLAY_STATE_REPLACE_CUR \r\n");
+			play_state = PLAY_STATE_REPLACE_CUR;
+		}
+		break;
+		
+	case PLAY_STATE_WAIT:
+		if (!get_block_running())
+		{
+			service_debug("PLAY_STATE_DELAY \r\n");
+			play_state = PLAY_STATE_DELAY;
+			lastPlayTime = millis();
+		}
+		break;
+
+	case PLAY_STATE_DELAY:
+		if (millis() - lastPlayTime >= TICK_INTERVAL)
+		{
+			play_state = PLAY_STATE_GET_NEXT;
+		}
+		break;
+
+	case PLAY_STATE_GET_NEXT:
+		if (readNextData(data, mRecordAddr))
+		{
+			play_data_record.setNext(data);
+			play_state = PLAY_STATE_RUN;
+		}
+		else
+		{
+			play_state = PLAY_STATE_DONE;
+		}
+		break;
+
+	case PLAY_STATE_REPLACE_CUR:
+		
+		if (readNextData(data, mRecordAddr))
+		{
+			play_data_record.replaceInvalidData(data);
+			play_state = PLAY_STATE_RUN;
+		}
+		else
+		{
+			play_state = PLAY_STATE_DONE;
+		}		
+		break;
+
+	
+		
+	case PLAY_STATE_END:
+		break;
+		
+	case PALY_STATE_END2:
+		break;
+		
+	case PLAY_STATE_DONE:
+		service_debug("PLAY_STATE_DONE \r\n");
+		if (mSysStatus == SINGLE_PLAY_MODE)
+			mSysStatus = NORMAL_MODE;
+		ledAllOff();		
+
+		pumpOff();
+		gripperRelease();
+
+		mRecordAddr = 65535;
+		
+		play_state = PLAY_STATE_IDLE;
+		break;
+			
+	}
+}
+
+
+#if 0
+bool uArmService::play()
+{
+	static bool need_check = false;
+	static unsigned long lastPlayTime = 0;
+	static PointDataFilter point_data_filter;
+
+	if(/*need_check &&*/ (millis() - lastPlayTime < TICK_INTERVAL))
 	{
 		return;
 	}   
 
+	need_check = false;
 	lastPlayTime = millis();
 
-	unsigned char data[5]; // 0: L  1: R  2: Rotation 3: hand rotation 4:gripper
+	unsigned char data[10]; // 0: L  1: R  2: Rotation 3: hand rotation 4:gripper
 
-	if (mRecordAddr >= 65535)
+	if (mRecordAddr >= 65530)
 	{
 		mRecordAddr = 0;
-
+		point_data_filter.reset();
+		
 		if (mSysStatus == SINGLE_PLAY_MODE)
 		{
 			mSysStatus = NORMAL_MODE;
@@ -787,6 +1412,7 @@ bool uArmService::play()
 
 	if (mSysStatus != SINGLE_PLAY_MODE && mSysStatus != LOOP_PLAY_MODE)
 	{
+		point_data_filter.reset();
 		return false;
 	}
 
@@ -804,9 +1430,21 @@ bool uArmService::play()
 		
 	}
 
-
-
 	debugPrint("mRecordAddr = %d, data=%f, %f, %f, %f\r\n", mRecordAddr, realdata[0], realdata[1], realdata[2], realdata[3]);
+
+
+	point_data in;
+	point_data out;
+
+	in.x = realdata[0];
+	in.y = realdata[1];
+	in.z = realdata[2];
+
+	point_data_filter.filter(in, out);
+
+
+
+	
 
 	// !!! Do not comment
 	// !!! Tt's weird that the program will die if not use debugPrint or msprintf. Why???
@@ -839,7 +1477,7 @@ bool uArmService::play()
 			gripperRelease();
 		}
 
-		getXYZFromAngle(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], realdata[0], realdata[1], realdata[2]);
+		getXYZFromAngle(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], out.x, out.y, out.z);
 
 		float target[NUM_AXIS];
 		LOOP_XYZE(i) target[i] = destination[i];
@@ -851,8 +1489,18 @@ bool uArmService::play()
 
 	  
 	  	float cartesian_mm = sqrt(sq(difference[X_AXIS]) + sq(difference[Y_AXIS]) + sq(difference[Z_AXIS]));
-	  	feedrate_mm_m = cartesian_mm * 20 * 60 * 2; // the interval of points is 50ms  2x speed
+	  	feedrate_mm_m = cartesian_mm * 20 * 60 * SPEED_X; // the interval of points is 50ms
 
+		/*
+		if (line_to_destination_play_mode(feedrate_mm_m))
+		{
+			need_check = false;
+		}
+		else
+		{
+			need_check = true;
+		}
+		*/
 		prepare_move_to_destination();
 
 		set_current_to_destination();
@@ -865,7 +1513,7 @@ bool uArmService::play()
 		gripperRelease();
 
 		mRecordAddr = 65535;
-
+		point_data_filter.reset();
 		return false;
 		
 	}
@@ -874,9 +1522,12 @@ bool uArmService::play()
 	return true;
 }
 
+#endif // 0
+
 bool uArmService::record()
 {
-	debugPrint("mRecordAddr = %d  ", mRecordAddr);
+	service_debug("mRecordAddr = %d  ", mRecordAddr);
+
 
 	if(mRecordAddr <= 65525)
 	{
@@ -898,7 +1549,7 @@ bool uArmService::record()
 				angledata[4] = getGripperStatus() > 0 ? 0x10 : 0;
 			}
 
-			debugPrint("b=%d, l=%d, r= %d,  t=%d\r\n", angledata[0], angledata[1], angledata[2], angledata[3]);
+			service_debug("b=%d, l=%d, r= %d,  t=%d\r\n", angledata[0], angledata[1], angledata[2], angledata[3]);
 		}
 		else
 		{

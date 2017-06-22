@@ -47,7 +47,7 @@ uint16_t get_current_angle_adc(uint8_t index)
 
 	switch(index)
 	{
-	case X_AXIS:
+	case X_AXIS:	
 		value =  X_IIC_Read_OneByte((0x36<<1),0x0e);   
 		value <<= 8;
 		value |= X_IIC_Read_OneByte((0x36<<1),0x0f); 	
@@ -86,7 +86,47 @@ float get_current_angle(uint8_t index)
 		return get_current_angle_adc(index);
 
 	float angle = 0.0;
-	uint16_t cur_value = get_current_angle_adc(index);
+
+	
+	uint16_t value[5] = {0.0};
+	uint16_t max_value = 0;
+	uint16_t min_value = 0xffff;
+	uint32_t sum_value = 0;
+	bool invalid = false;
+
+	do 
+	{
+		invalid = false;
+		sum_value = 0;
+		max_value = 0;
+		min_value = 0xffff;
+		
+		for (int i = 0 ; i < 5; i++)
+		{
+			value[i] =  get_current_angle_adc(index);
+			//debugPrint("value[%d] = %d\r\n", i, value[i]);
+
+			if (max_value < value[i])
+				max_value = value[i];
+
+			if (min_value > value[i])
+				min_value = value[i];
+
+			sum_value += value[i];
+
+			
+		}
+
+		if (max_value - min_value > 20)
+			invalid = true;
+	}while(invalid);
+	
+	uint16_t cur_value = (sum_value - max_value - min_value) / 3;//get_current_angle_adc(index);
+	
+	//debugPrint("cur_value = %d\r\n", cur_value);
+	
+
+	//uint16_t cur_value = get_current_angle_adc(index);
 	uint16_t diff = 0;
 
 	if (cur_value > reference_angle_value[index])
