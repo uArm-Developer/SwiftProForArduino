@@ -1,3 +1,6 @@
+v3.1.10	20170628
+Add grove Temperature & Humidity /PIR Motion /Electromagnet sensor lib
+
 v3.1.9	20170622
 Improve learning mode performence
 Add M2500 cmd to use OpenMV.
