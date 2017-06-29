@@ -12,7 +12,9 @@
 #include "Ultrasonic.h"
 #include "Grovefan.h"
 #include "Adafruit_TCS34725.h"
-
+#include "Groveelectromagnet.h"
+#include "Grove_TH02_dev.h"
+#include "Grovepirmotion.h"
 
 
 
@@ -29,6 +31,9 @@
 
 Ultrasonic ultrasonic(8);
 Grovefan grovefan(8);
+Groveelectromagnet groveelectromagnet(8);
+TH02_dev grove_TH;	
+Grovepirmotion grovepirmotion(8);
 
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_1X);
 
@@ -186,6 +191,27 @@ void UltrasonicReport()
 	reportString(result);
 }
 
+/*
+*Temperature & Humidity report
+*/
+void GroveTHReport()
+{
+	char result[128];
+
+	msprintf(result, "@%d N%d T%f H%f\r\n", REPORT_TYPE_GROVE, GROVE_TEMPERATURE_HUMIDITY_SENSOR, grove_TH.ReadTemperature(), grove_TH.ReadHumidity());
+	reportString(result);
+}
+/*
+*PIR Motion report
+*/
+void GrovePIRMotionReport()
+{
+	char result[128];
+
+	msprintf(result, "@%d N%d V%d\r\n", REPORT_TYPE_GROVE, GROVE_PIR_MOTION_SENSOR, grovepirmotion.getstatus());
+	reportString(result);
+}
+
 void initGroveModule(GroveType type, GrovePortType portType, unsigned char pin)
 {
 	uint8_t error = 0;
@@ -235,11 +261,45 @@ void initGroveModule(GroveType type, GrovePortType portType, unsigned char pin)
 		case DIGITAL_PIN_9:
 			grovefan.setPin(pin);
 			break;
+		default:
+			grovefan.setPin(DEFAULT_DIGITAL_PIN);
+			break;			
+		}
+		break;		
+
+	case GROVE_ELECTROMAGNET:
+		switch (pin)
+		{
+		case DIGITAL_PIN_8:
+		case DIGITAL_PIN_9:
+			groveelectromagnet.setPin(pin);
+			break;
+
+		default:
+			groveelectromagnet.setPin(DEFAULT_DIGITAL_PIN);
+			break;
+		}
+		break;		
+
+	case GROVE_TEMPERATURE_HUMIDITY_SENSOR:
+		debugPrint("initGrove Temperature & Humidity Module\n");
+		grove_TH.begin();
+		break;	
+
+	case GROVE_PIR_MOTION_SENSOR:
+		switch (pin)
+		{
+		case DIGITAL_PIN_8:
+		case DIGITAL_PIN_9:
+			grovepirmotion.setPin(pin);
+			break;
 
 		default:
 			grovefan.setPin(DEFAULT_DIGITAL_PIN);
 			break;
 		}
+
+		break;
 
 	default:
 		break;
@@ -268,7 +328,15 @@ void setGroveModuleReportInterval(GroveType type, long interval)
 		case GROVE_ULTRASONIC:
 			addReportService(type, interval, UltrasonicReport);	
 			break;
-			
+
+		case GROVE_TEMPERATURE_HUMIDITY_SENSOR:
+			addReportService(type, interval, GroveTHReport);	
+			break;			
+
+		case GROVE_PIR_MOTION_SENSOR:
+			addReportService(type, interval, GrovePIRMotionReport);	
+			break;				
+
 		default:
 			break;
 		}	
@@ -290,6 +358,17 @@ void setGroveModuleValue(GroveType type, long value)
 	case GROVE_FAN:
 		grovefan.speed(value);
 		break;
+
+	case GROVE_ELECTROMAGNET:
+		if(value)
+		{
+			groveelectromagnet.on();
+		}
+		else
+		{
+			groveelectromagnet.off();
+		}
+		break;			
 		
 	default:
 		break;
