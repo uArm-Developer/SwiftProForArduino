@@ -941,6 +941,41 @@ void uarm_gcode_M2240()
 	}
 }
 
+extern void code_value_string(char* buf, uint16_t buf_len);
+
+uint8_t uarm_gcode_M2245(char reply[])
+{
+
+	// bt name no more than 11 characters
+	char btName[12] = {0};
+	
+
+	if (code_seen('V'))
+	{
+		code_value_string(btName, 11);
+	}
+	else
+	{
+		strcpy(reply, "Format Error!");
+		return E_FAIL;		
+	}	
+
+	debugPrint("btname = %s\r\n", btName);
+
+	if (setBtName(btName))
+	{
+		return E_OK;
+	}
+	else
+	{
+		strcpy(reply, "Set BT name fail!");
+		return E_FAIL;
+	}
+
+	
+}
+
+
 void uarm_gcode_M2300()
 {
 	uint8_t type;

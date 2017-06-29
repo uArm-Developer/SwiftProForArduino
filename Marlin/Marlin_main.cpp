@@ -1314,6 +1314,18 @@ inline float code_value_float() {
   return ret;
 }
 
+void code_value_string(char* buf, uint16_t buf_len) {
+	int strLength = strlen(seen_pointer + 1);
+
+	strLength = strLength < buf_len ? strLength : buf_len;
+
+	strncpy(buf, seen_pointer + 1, strLength);
+
+	debugPrint("str len=%d: %s\r\n", strLength, buf);
+
+}
+
+
 inline unsigned long code_value_ulong() { return strtoul(seen_pointer + 1, NULL, 10); }
 
 inline long code_value_long() { return strtol(seen_pointer + 1, NULL, 10); }
@@ -7375,41 +7387,7 @@ void process_next_command() {
 	uint8_t result = 0;
 	char *pch;
 
-	pch = strstr(current_command, "M2245 V");
-	if (pch != NULL)
-	{
-		pch += strlen("M2245 V");
-		int strLength = strlen(pch);
-		char btName[20];
-
-		if (strLength <= 0)
-		{
-			return ;
-		}
-		else if (strLength > BT_NAME_MAX_LEN)
-		{
-			strncpy(btName, pch, BT_NAME_MAX_LEN);
-			btName[BT_NAME_MAX_LEN] = '\0';
-		}
-		else
-		{
-			strcpy(btName, pch);
-		}
-
-		if (setBtName(btName))
-		{
-			MYSERIAL.println(MSG_OK);
-		}
-		else
-		{
-			MYSERIAL.print("E25");
-		}
-
-		return;
-	}
-
-
-
+	// handle cmd index
 	if (*current_command == '#') 
 	{
 		// Get and skip the code number
@@ -8250,7 +8228,12 @@ void process_next_command() {
 	
 	case 2240:
 		uarm_gcode_M2240();
-		break;			
+		break;
+	
+	case 2245:
+		needReply = 1;
+		result = uarm_gcode_M2245(replyBuf);
+		break;		
 
 	  case 2400:
 	  	uarm_gcode_M2400();
@@ -8416,7 +8399,9 @@ ExitUnknownCommand:
 		else
 		{
 			MYSERIAL.print("E");
-			MYSERIAL.println(result);
+			MYSERIAL.print(result);
+			MYSERIAL.print(" ");
+			MYSERIAL.println(replyBuf);
 		}
 	  }
 	  else
