@@ -1173,6 +1173,7 @@ void uarm_gcode_M2500()
 	debugPrint("M2500\r\n");
 	ok_to_send();
 	commSerial.setSerialPort(&Serial2);
+	
 }
 
 

@@ -629,18 +629,17 @@ double getE2PROMData(unsigned char device, unsigned int addr, unsigned char type
 
 		unsigned char i=0;
 		i = (addr % 128);
-		// Since the eeprom's sector is 128 byte, if we want to write 5 bytes per cycle we need to care about when there's less than 5 bytes left
+
 		if (i >= (129-num)) 
 		{
 			i = 128 - i;
-			iic_readbuf(FData.data, deviceAddr, addr, i);// write data
+			iic_readbuf(FData.data, deviceAddr, addr, i);
 			delay(5);
-			iic_readbuf(FData.data + i, deviceAddr, addr + i, num - i);// write data
+			iic_readbuf(FData.data + i, deviceAddr, addr + i, num - i);
 		}
-		//if the left bytes are greater than 5, just do it
 		else
 		{
-			iic_readbuf(FData.data, deviceAddr, addr, num);// write data
+			iic_readbuf(FData.data, deviceAddr, addr, num);
 		}      
 
 

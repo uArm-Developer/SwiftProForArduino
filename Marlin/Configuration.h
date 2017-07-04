@@ -131,7 +131,7 @@
 //#define SWIFT_TEST_MODE
 
 #define HW_VER  	"3.3"
-#define SW_VER_BASE  "3.1.10"
+#define SW_VER_BASE  "3.1.11"
 
 #ifdef SWIFT_TEST_MODE
 #define SW_VER  SW_VER_BASE"_t"

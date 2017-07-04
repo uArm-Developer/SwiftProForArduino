@@ -1,3 +1,6 @@
+v3.1.11	20170629
+optimize M2245 (change Bluetooth name)
+
 v3.1.10	20170628
 Add grove Temperature & Humidity /PIR Motion /electromagnet sensor lib
 
