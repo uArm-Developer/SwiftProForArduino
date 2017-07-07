@@ -8,7 +8,7 @@ cache:
 install:
 - pip install -U platformio
 script:
-- platformio ci --project-conf=platformio.ini .
+- platformio run --disable-auto-clean
 deploy:
   provider: releases
   api_key:
