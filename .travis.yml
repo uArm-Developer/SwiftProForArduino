@@ -8,12 +8,13 @@ cache:
 install:
 - pip install -U platformio
 script:
-- platformio run --disable-auto-clean
+- mkdir /tmp/build
+- platformio ci --build-dir="/tmp/build" --keep-build-dir --project-conf=platformio.ini .
 deploy:
   provider: releases
   api_key:
     secure: cldWYIBGnKpJg8bpcgul/omtBVDJOPN8n09aeOGRwu02tNYnIUWBtohi2FgwnfDhh6/2MTx+hX/8bYDLM3LOtaSKgVN3CUTbSsyu16wqS+VFOcsUddXPX4cJVhHLdN61uoAdIeKnuf5IKGF8+80Ft29RBgNFEceu0AR/7mPHfwlVSlPbqXBdwIvAs3Xene4FCXSWKPCoyVYU/ot7h/Q/sU2iC0ZRoNygUuBbARWJZ2eNjgHWzQDj3ooclcwCK4XixLjrzVvdlkY3QKTap4xLL8DHf8kIPAle9qltbWSbkL5Vfs+zI9lA7DN5pCcFTLwqLsUrYmDgLipId9qFuhCZFoZXndd1ky9CieKgPAW1CwjLXCulxlH9DJeEyxab8PmCjFH3HBfp1hR8QSru6LO5/yspLBztTd5R9nv3DdDCSPR6A07WsFimo+X5rg0Rp8FZUdEpb+3CCUSQADkmr5okKKY4a+3pWAb5ZcN5SRPegPzgji21RM6rE+WmzqyjeW12rpqRFyT6I4M48C06cpesKrWTTiBahWKTf6CajIlUDkC+n78LPt3xHgvxwI49UFakz1Q9mBGzpwoG46QHA78jiOD6+fPsM3BuzOEWs9RloA8gY8mnyryY0fT5L941fJXm4Sk+FQ9/OJoEL5GUU4F873PqBbUCrMRvV8QYiI73Cjc=
-  file: "$TRAVIS_BUILD_DIR/.pioenvs/megaatmega2560/firmware.hex"
+  file: "/tmp/build/.pioenvs/megaatmega2560/firmware.hex"
   on:
     repo: uArm-Developer/SwiftProForArduino
     branch: travis
