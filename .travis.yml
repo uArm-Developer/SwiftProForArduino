@@ -57,7 +57,7 @@ install:
     - pip install -U platformio
 
 script:
-    - platformio run
+    - platformio ci --project-conf=platformio.ini
 branches:
   only:
   - travis
