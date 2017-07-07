@@ -63,3 +63,6 @@ install:
 
 script:
     - platformio ci --lib="." --board=megaatmega2560
+branches:
+  only:
+  - travis
