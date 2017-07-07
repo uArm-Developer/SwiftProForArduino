@@ -53,11 +53,6 @@ cache:
     directories:
         - "~/.platformio"
 
-# env:
-    # - PLATFORMIO_CI_SRC=path/to/test/file.c
-    # - PLATFORMIO_CI_SRC=
-    # - PLATFORMIO_CI_SRC=path/to/test/directory
-
 install:
     - pip install -U platformio
 
