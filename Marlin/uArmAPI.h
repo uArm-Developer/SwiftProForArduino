@@ -207,6 +207,11 @@ void clearMacFlag();
    \return true if success
  */
 bool setBtName(char btName[]);
+/*!
+   \brief set lcd display 
+   \return true 
+ */
+bool RGB_LCD_displaytext(char row,uint8_t strLength,char lcdtext[]);
 
 /*!
    \brief test e2prom available

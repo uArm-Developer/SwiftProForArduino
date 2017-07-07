@@ -8225,6 +8225,10 @@ void process_next_command() {
 	case 2302:
 		uarm_gcode_M2302();
 		break;	
+
+  case 2303:
+    uarm_gcode_M2303();
+    break;      
 	
 	case 2240:
 		uarm_gcode_M2240();
@@ -9413,7 +9417,9 @@ void kill(const char* lcd_msg) {
 
   cli(); // Stop interrupts
   thermalManager.disable_all_heaters();
-  disable_all_steppers();
+  #ifndef UARM_SWIFT
+   disable_all_steppers();
+  #endif
 
   #if HAS_POWER_SWITCH
     pinMode(PS_ON_PIN, INPUT);

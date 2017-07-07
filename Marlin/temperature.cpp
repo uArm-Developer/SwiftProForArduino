@@ -501,6 +501,9 @@ int Temperature::getHeaterPower(int heater) {
 void Temperature::_temp_error(int e, const char* serial_msg, const char* lcd_msg) {
   static bool killed = false;
   if (IsRunning()) {
+    #ifdef UARM_SWIFT
+    MYSERIAL.println("@7 temp_error");
+    #endif
     SERIAL_ERROR_START;
     serialprintPGM(serial_msg);
     SERIAL_ERRORPGM(MSG_STOPPED_HEATER);

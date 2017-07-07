@@ -1,3 +1,7 @@
+v3.1.12	20170707
+Add grove LCD_RGB lib 
+report 3D Printer temperature error (@7 temp_error)
+
 v3.1.11	20170629
 optimize M2245 (change Bluetooth name)
 

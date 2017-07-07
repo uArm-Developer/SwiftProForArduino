@@ -12,6 +12,7 @@
 #include "stepper_indirection.h"
 #include "servo.h"
 #include "uArmServo.h"
+#include "Grovergb_lcd.h"
 
 // CAUTION: E_AXIS means FrontEnd Servo not extruder0
 //float current_angle[NUM_AXIS] = { 0.0 };
@@ -316,7 +317,8 @@ void uarm_gcode_G1()
 			
 			static uint8_t power = 255;
 
-			if (code_seen('P'))
+			if (code_seen('P'))
+
 			{
 				power = code_value_byte();
 			}
@@ -1043,7 +1045,41 @@ void uarm_gcode_M2301()
 void uarm_gcode_M2302()
 {
 	uint8_t type;
-	uint16_t value;
+	uint16_t value;		
+	
+	if (code_seen('N'))
+	{
+		type = code_value_byte();
+	}
+	else
+	{
+		return;
+	}
+	
+	if (code_seen('V'))
+	{
+		value = code_value_ushort();			
+	}
+	else
+	{
+		return;
+	}
+
+	setGroveModuleValue(type, value);
+}
+extern Grovergb_lcd grovergb_lcd;
+
+void uarm_gcode_M2303()
+{
+	uint8_t type = 0;
+	uint8_t cmdtype = 0;
+	long redvalue = 0;
+	long greenvalue = 0;
+	long bluevalue = 0;
+
+	long value = 0;	
+
+	char stringtype[17] = {0};	
 
 	if (code_seen('N'))
 	{
@@ -1054,15 +1090,57 @@ void uarm_gcode_M2302()
 		return;
 	}
 
-	if (code_seen('V'))
+	if(code_seen('T'))
 	{
-		value = code_value_ushort();
+		cmdtype = code_value_byte();
 	}
 	else
 	{
 		return;
 	}
-	setGroveModuleValue(type, value);
+
+	if(code_seen('R'))
+	{
+		redvalue = code_value_byte();
+	}
+	if(code_seen('G'))
+	{
+		greenvalue = code_value_byte();
+	}		
+	if(code_seen('B'))
+	{
+		bluevalue = code_value_byte();
+	}
+
+	switch (cmdtype) 
+	{
+		case GROVE_CMD_TYPE_DISPLAYROW1:
+		case GROVE_CMD_TYPE_DISPLAYROW2:
+			if (code_seen('V'))
+			{
+				code_value_string(stringtype, LCD_TEXT_LEN);
+			}			
+			break;												
+
+		case GROVE_CMD_TYPE_COLOR:
+			if(code_seen('V')) return;
+			value = ((redvalue << 16) | (greenvalue << 8) | bluevalue);
+			break;		
+
+		break;	
+
+		default:
+			break;
+	}
+
+	if(cmdtype == GROVE_CMD_TYPE_DISPLAYROW1 || cmdtype == GROVE_CMD_TYPE_DISPLAYROW2)
+	{
+		setGroveLCDModuleString(type,cmdtype,stringtype);
+	}
+	else
+	{
+		setGroveLCDModuleValue(type,cmdtype,value);
+	}
 }
 
 
@@ -1350,7 +1428,8 @@ uint8_t uarm_gcode_P2242(char reply[])
 {
 	uint16_t value[3];
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
+
 	{
 		value[i] = get_current_angle_adc(i);
 	}
@@ -1364,14 +1443,16 @@ uint8_t uarm_gcode_P2245(char reply[])
 {
 	strcpy(reply, "");
 	return E_OK;
-}
+}
+
 
 
 uint8_t uarm_gcode_P2400(char reply[])
 {
 	msprintf(reply, "V%d", get_user_mode());
 	return E_OK;
-}
+}
+
 
 #ifdef SWIFT_TEST_MODE
 extern uint8_t get_test_result();

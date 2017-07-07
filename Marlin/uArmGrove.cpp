@@ -15,6 +15,7 @@
 #include "Groveelectromagnet.h"
 #include "Grove_TH02_dev.h"
 #include "Grovepirmotion.h"
+#include "Grovergb_lcd.h"
 
 
 
@@ -34,6 +35,7 @@ Grovefan grovefan(8);
 Groveelectromagnet groveelectromagnet(8);
 TH02_dev grove_TH;	
 Grovepirmotion grovepirmotion(8);
+Grovergb_lcd grovergb_lcd;
 
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_1X);
 
@@ -298,8 +300,11 @@ void initGroveModule(GroveType type, GrovePortType portType, unsigned char pin)
 			grovefan.setPin(DEFAULT_DIGITAL_PIN);
 			break;
 		}
-
 		break;
+	case GROVE_RGBLCD:
+		debugPrint("initGrove  grovergb_lcd Module\n");
+		grovergb_lcd.begin(16,2);
+		break;		
 
 	default:
 		break;
@@ -369,11 +374,61 @@ void setGroveModuleValue(GroveType type, long value)
 			groveelectromagnet.off();
 		}
 		break;			
-		
+
 	default:
 		break;
 		
 	}
 }
 
+void setGroveLCDModuleValue(GroveType type,GrovelcdType cmd,long value)
+{
+	switch (type) {
+			
+	case GROVE_RGBLCD:
+		switch (cmd) 
+		{
+			case GROVE_RGBCOLOR:
+				grovergb_lcd.setRGB(((value & 0xff0000) >> 16),((value & 0xff00) >> 8),(value & 0xff));				
+				break;				
+			case GROVE_LCD_TYPE_DISPLAY:
+				grovergb_lcd.display();
+				break;								
+			case GROVE_LCD_TYPE_NODISPLAY:
+				grovergb_lcd.noDisplay();
+				break;	
 
+			case GROVE_LCD_TYPE_CLEAR:
+				grovergb_lcd.clear();
+				break;								
+
+		}
+		break;	
+
+	default:
+		break;
+		
+	}
+}
+
+void setGroveLCDModuleString(GroveType type,GrovelcdType cmd,char string[])
+{
+	switch (type) {
+			
+	case GROVE_RGBLCD:
+		switch (cmd) 
+		{
+			case GROVE_LCD_TYPE_DISPLAYTEXT_FIRST:
+			case GROVE_LCD_TYPE_DISPLAYTEXT_SECOND:
+				debugPrint("lcdtext:%s\r\n",string);
+				RGB_LCD_displaytext(cmd,strlen(string),string);
+				break;												
+
+		}
+		break;	
+
+	default:
+		break;
+		
+	}
+}

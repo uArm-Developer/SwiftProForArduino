@@ -13,6 +13,8 @@
 #include <Arduino.h>
 #include "Marlin.h"
 
+#define LCD_TEXT_LEN 30
+
 enum GrovePortType
 {
 	GROVE_PORT_DIGITAL,	
@@ -34,9 +36,37 @@ enum GroveType
 	GROVE_FAN = 13,
 	GROVE_ELECTROMAGNET = 14,
 	GROVE_TEMPERATURE_HUMIDITY_SENSOR = 15,
-	GROVE_PIR_MOTION_SENSOR = 16,	
-	
+	GROVE_PIR_MOTION_SENSOR = 16,
+	GROVE_RGBLCD = 17,	
+
 	GROVE_TYPE_COUNT
+};
+
+
+enum GrovelcdType
+{
+	GROVE_LCD_TYPE_NONE = 0,
+
+	GROVE_LCD_TYPE_DISPLAYTEXT_FIRST ,
+	GROVE_LCD_TYPE_DISPLAYTEXT_SECOND ,
+	GROVE_RGBCOLOR ,
+	GROVE_LCD_TYPE_DISPLAY ,
+	GROVE_LCD_TYPE_NODISPLAY ,
+	GROVE_LCD_TYPE_CLEAR ,
+
+	GROVE_LCD_TYPE_COUNT
+};
+
+enum GrovecmdType
+{
+	GROVE_CMD_TYPE_NONE = 0,
+
+	GROVE_CMD_TYPE_DISPLAYROW1 ,
+	GROVE_CMD_TYPE_DISPLAYROW2 ,
+	GROVE_CMD_TYPE_COLOR ,
+
+
+	GROVE_CMD_TYPE_COUNT
 };
 
 void initGroveModule(GroveType type, GrovePortType portType, unsigned char pin);
@@ -44,6 +74,10 @@ void initGroveModule(GroveType type, GrovePortType portType, unsigned char pin);
 void setGroveModuleReportInterval(GroveType type, long interval);
 
 void setGroveModuleValue(GroveType type, long value);
+
+void setGroveLCDModuleValue(GroveType type,GrovelcdType cmd,long value);
+
+void setGroveLCDModuleString(GroveType type,GrovelcdType cmd,char string[]);
 
 
 #endif // _UARMGROVE_H_
