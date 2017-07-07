@@ -1,63 +1,22 @@
-# Continuous Integration (CI) is the practice, in software
-# engineering, of merging all developer working copies with a shared mainline
-# several times a day < http://docs.platformio.org/page/ci/index.html >
-#
-# Documentation:
-#
-# * Travis CI Embedded Builds with PlatformIO
-#   < https://docs.travis-ci.com/user/integration/platformio/ >
-#
-# * PlatformIO integration with Travis CI
-#   < http://docs.platformio.org/page/ci/travis.html >
-#
-# * User Guide for `platformio ci` command
-#   < http://docs.platformio.org/page/userguide/cmd_ci.html >
-#
-#
-# Please choice one of the following templates (proposed below) and uncomment
-# it (remove "# " before each line) or use own configuration according to the
-# Travis CI documentation (see above).
-#
-
-
-#
-# Template #1: General project. Test it using existing `platformio.ini`.
-#
-
-# language: python
-# python:
-#     - "2.7"
-#
-# sudo: false
-# cache:
-#     directories:
-#         - "~/.platformio"
-#
-# install:
-#     - pip install -U platformio
-#
-# script:
-#     - platformio run
-
-
-#
-# Template #2: The project is intended to by used as a library with examples
-#
-
 language: python
 python:
-    - "2.7"
-
+- '2.7'
 sudo: false
 cache:
-    directories:
-        - "~/.platformio"
-
+  directories:
+  - "~/.platformio"
 install:
-    - pip install -U platformio
-
+- pip install -U platformio
 script:
-    - platformio ci --project-conf=platformio.ini
+- platformio ci --project-conf=platformio.ini .
+deploy:
+  provider: releases
+  api_key:
+    secure: cldWYIBGnKpJg8bpcgul/omtBVDJOPN8n09aeOGRwu02tNYnIUWBtohi2FgwnfDhh6/2MTx+hX/8bYDLM3LOtaSKgVN3CUTbSsyu16wqS+VFOcsUddXPX4cJVhHLdN61uoAdIeKnuf5IKGF8+80Ft29RBgNFEceu0AR/7mPHfwlVSlPbqXBdwIvAs3Xene4FCXSWKPCoyVYU/ot7h/Q/sU2iC0ZRoNygUuBbARWJZ2eNjgHWzQDj3ooclcwCK4XixLjrzVvdlkY3QKTap4xLL8DHf8kIPAle9qltbWSbkL5Vfs+zI9lA7DN5pCcFTLwqLsUrYmDgLipId9qFuhCZFoZXndd1ky9CieKgPAW1CwjLXCulxlH9DJeEyxab8PmCjFH3HBfp1hR8QSru6LO5/yspLBztTd5R9nv3DdDCSPR6A07WsFimo+X5rg0Rp8FZUdEpb+3CCUSQADkmr5okKKY4a+3pWAb5ZcN5SRPegPzgji21RM6rE+WmzqyjeW12rpqRFyT6I4M48C06cpesKrWTTiBahWKTf6CajIlUDkC+n78LPt3xHgvxwI49UFakz1Q9mBGzpwoG46QHA78jiOD6+fPsM3BuzOEWs9RloA8gY8mnyryY0fT5L941fJXm4Sk+FQ9/OJoEL5GUU4F873PqBbUCrMRvV8QYiI73Cjc=
+  file: ".pioenvs/megaatmega2560/firmware.hex"
+  on:
+    repo: uArm-Developer/SwiftProForArduino
+    branch: travis
 branches:
   only:
   - travis
