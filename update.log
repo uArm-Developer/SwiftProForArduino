@@ -1,5 +1,8 @@
+v3.1.13	20170711
+update grove RGBLCD lib 
+
 v3.1.12	20170707
-Add grove LCD_RGB lib 
+Add grove RGBLCD lib 
 report 3D Printer temperature error (@7 temp_error)
 
 v3.1.11	20170629

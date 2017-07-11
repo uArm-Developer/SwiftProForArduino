@@ -381,29 +381,19 @@ void setGroveModuleValue(GroveType type, long value)
 	}
 }
 
-void setGroveLCDModuleValue(GroveType type,GrovelcdType cmd,long value)
+void setGroveLCDModuleValue(GroveType type,GrovelcdcmdType cmd,long value)
 {
-	switch (type) {
-			
-	case GROVE_RGBLCD:
-		switch (cmd) 
-		{
-			case GROVE_RGBCOLOR:
-				grovergb_lcd.setRGB(((value & 0xff0000) >> 16),((value & 0xff00) >> 8),(value & 0xff));				
-				break;				
-			case GROVE_LCD_TYPE_DISPLAY:
-				grovergb_lcd.display();
-				break;								
-			case GROVE_LCD_TYPE_NODISPLAY:
-				grovergb_lcd.noDisplay();
-				break;	
-
-			case GROVE_LCD_TYPE_CLEAR:
-				grovergb_lcd.clear();
-				break;								
-
-		}
-		break;	
+	switch (cmd) {			
+									
+		case GROVE_LCD_TYPE_NODISPLAY:
+			grovergb_lcd.noDisplay();
+			break;	
+		case GROVE_LCD_TYPE_DISPLAY:
+			grovergb_lcd.display();
+			break;				
+		case GROVE_LCD_TYPE_CLEAR:
+			grovergb_lcd.clear();
+			break;								
 
 	default:
 		break;
@@ -411,24 +401,23 @@ void setGroveLCDModuleValue(GroveType type,GrovelcdType cmd,long value)
 	}
 }
 
-void setGroveLCDModuleString(GroveType type,GrovelcdType cmd,char string[])
+void setGroveLCDModuleString(GroveType type,GrovelcdstringType cmd,char string[])
 {
-	switch (type) {
+	switch (cmd) {
 			
-	case GROVE_RGBLCD:
-		switch (cmd) 
-		{
-			case GROVE_LCD_TYPE_DISPLAYTEXT_FIRST:
-			case GROVE_LCD_TYPE_DISPLAYTEXT_SECOND:
-				debugPrint("lcdtext:%s\r\n",string);
-				RGB_LCD_displaytext(cmd,strlen(string),string);
-				break;												
-
-		}
-		break;	
+		case GROVE_CMD_TYPE_DISPLAYROW1:
+		case GROVE_CMD_TYPE_DISPLAYROW2:
+			debugPrint("lcdtext:%s\r\n",string);
+			RGB_LCD_displaytext(cmd,strlen(string),string);
+			break;													
 
 	default:
 		break;
 		
 	}
+}
+
+void setGroveLCDModuleRGB(GroveType type,GrovelcdcmdType cmd,long value)
+{
+	grovergb_lcd.setRGB(((value & 0xff0000) >> 16),((value & 0xff00) >> 8),(value & 0xff));				
 }

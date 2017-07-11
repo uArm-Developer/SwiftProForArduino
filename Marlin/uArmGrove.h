@@ -43,21 +43,16 @@ enum GroveType
 };
 
 
-enum GrovelcdType
+enum GrovelcdcmdType
 {
-	GROVE_LCD_TYPE_NONE = 0,
-
-	GROVE_LCD_TYPE_DISPLAYTEXT_FIRST ,
-	GROVE_LCD_TYPE_DISPLAYTEXT_SECOND ,
-	GROVE_RGBCOLOR ,
-	GROVE_LCD_TYPE_DISPLAY ,
 	GROVE_LCD_TYPE_NODISPLAY ,
+	GROVE_LCD_TYPE_DISPLAY ,
 	GROVE_LCD_TYPE_CLEAR ,
 
 	GROVE_LCD_TYPE_COUNT
 };
 
-enum GrovecmdType
+enum GrovelcdstringType
 {
 	GROVE_CMD_TYPE_NONE = 0,
 
@@ -75,9 +70,11 @@ void setGroveModuleReportInterval(GroveType type, long interval);
 
 void setGroveModuleValue(GroveType type, long value);
 
-void setGroveLCDModuleValue(GroveType type,GrovelcdType cmd,long value);
+void setGroveLCDModuleValue(GroveType type,GrovelcdcmdType cmd,long value);
 
-void setGroveLCDModuleString(GroveType type,GrovelcdType cmd,char string[]);
+void setGroveLCDModuleString(GroveType type,GrovelcdstringType cmd,char string[]);
+
+void setGroveLCDModuleRGB(GroveType type,GrovelcdcmdType cmd,long value);
 
 
 #endif // _UARMGROVE_H_

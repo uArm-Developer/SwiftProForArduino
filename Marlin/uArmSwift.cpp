@@ -1093,54 +1093,43 @@ void uarm_gcode_M2303()
 	if(code_seen('T'))
 	{
 		cmdtype = code_value_byte();
+		if(code_seen('V'))
+		{
+			value = code_value_ushort();			
+		}
+		setGroveLCDModuleValue(type,cmdtype,value);
+	}
+	else if(code_seen('S'))
+	{
+		cmdtype = code_value_byte();
+		if (code_seen('V'))
+		{
+			code_value_string(stringtype, LCD_TEXT_LEN);
+		}	
+		setGroveLCDModuleString(type,cmdtype,stringtype);		
+	}
+	else if(code_seen('R') || code_seen('G') || code_seen('B'))
+	{
+		if(code_seen('R'))
+		{
+			redvalue = code_value_byte();
+		}
+		if(code_seen('G'))
+		{
+			greenvalue = code_value_byte();
+		}		
+		if(code_seen('B'))
+		{
+			bluevalue = code_value_byte();
+		}
+		value = ((redvalue << 16) | (greenvalue << 8) | bluevalue);	
+		setGroveLCDModuleRGB(type, cmdtype, value);
 	}
 	else
 	{
 		return;
 	}
 
-	if(code_seen('R'))
-	{
-		redvalue = code_value_byte();
-	}
-	if(code_seen('G'))
-	{
-		greenvalue = code_value_byte();
-	}		
-	if(code_seen('B'))
-	{
-		bluevalue = code_value_byte();
-	}
-
-	switch (cmdtype) 
-	{
-		case GROVE_CMD_TYPE_DISPLAYROW1:
-		case GROVE_CMD_TYPE_DISPLAYROW2:
-			if (code_seen('V'))
-			{
-				code_value_string(stringtype, LCD_TEXT_LEN);
-			}			
-			break;												
-
-		case GROVE_CMD_TYPE_COLOR:
-			if(code_seen('V')) return;
-			value = ((redvalue << 16) | (greenvalue << 8) | bluevalue);
-			break;		
-
-		break;	
-
-		default:
-			break;
-	}
-
-	if(cmdtype == GROVE_CMD_TYPE_DISPLAYROW1 || cmdtype == GROVE_CMD_TYPE_DISPLAYROW2)
-	{
-		setGroveLCDModuleString(type,cmdtype,stringtype);
-	}
-	else
-	{
-		setGroveLCDModuleValue(type,cmdtype,value);
-	}
 }
 
 
