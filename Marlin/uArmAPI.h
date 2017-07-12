@@ -198,6 +198,82 @@ uint8_t read_user_mode();
 void save_user_mode(uint8_t mode);
 
 /*!
+   \brief get Print acceleration from E2PROM(mm)
+ */
+float read_print_acceleration();
+
+/*!
+   \brief Save Print acceleration to E2PROM(mm)
+ */
+void save_print_acceleration(float acceleration);
+
+/*!
+   \brief get Retract acceleration from E2PROM(mm)
+ */
+float read_retract_acceleration();
+
+/*!
+   \brief Save Retract acceleration to E2PROM(mm)
+ */
+void save_retract_acceleration(float acceleration);
+
+/*!
+   \brief get Travel acceleration from E2PROM(mm)
+ */
+float read_travel_acceleration();
+
+/*!
+   \brief Save Travel acceleration to E2PROM(mm)
+ */
+void save_travel_acceleration(float acceleration);
+
+/*!
+   \brief cheack  data from E2PROM(mm) if null return false or true
+ */
+bool cheack_acceleration_jerk();
+
+/*!
+   \brief Save acceleration_jerk to E2PROM(mm)
+ */
+void save_P_T_acceleration(float p_acceleration,float t_acceleration);
+
+/*!
+   \brief read acceleration flag from E2PROM(mm)
+ */
+uint8_t read_acceleration_flag();
+
+/*!
+   \brief save acceleration flag to E2PROM(mm)
+ */
+void save_acceleration_flag(uint8_t flag);
+
+/*!
+   \brief clear acceleration flag from E2PROM(mm)
+ */
+void clear_acceleration_flag();
+
+
+
+/*!
+   \brief get max xy jerk from E2PROM(mm)
+ */
+float read_max_xy_jerx();
+
+/*!
+   \brief Save max xy jerk to E2PROM(mm)
+ */
+void save_max_xy_jerk(float max_xy_jerk);
+/*!
+   \brief get max z jerk from E2PROM(mm)
+ */
+float read_max_z_jerx();
+/*!
+   \brief Save max z jerk to E2PROM(mm)
+ */
+void save_max_z_jerk(float max_z_jerk);
+
+
+/*!
    \brief clear mac flag stored in E2PROM, it will read mac from Bluetooth when power up.
  */
 void clearMacFlag();

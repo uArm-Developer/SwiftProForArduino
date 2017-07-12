@@ -1089,8 +1089,19 @@ void uarm_gcode_M2303()
 	{
 		return;
 	}
+	
+	if(code_seen('S'))
+	{
+		cmdtype = code_value_byte();
 
-	if(code_seen('T'))
+		if (code_seen('V'))
+		{
+			code_value_string(stringtype, LCD_TEXT_LEN);
+		}	
+		
+		setGroveLCDModuleString(type,cmdtype,stringtype);		
+	}
+	else if(code_seen('T'))
 	{
 		cmdtype = code_value_byte();
 		if(code_seen('V'))
@@ -1098,15 +1109,6 @@ void uarm_gcode_M2303()
 			value = code_value_ushort();			
 		}
 		setGroveLCDModuleValue(type,cmdtype,value);
-	}
-	else if(code_seen('S'))
-	{
-		cmdtype = code_value_byte();
-		if (code_seen('V'))
-		{
-			code_value_string(stringtype, LCD_TEXT_LEN);
-		}	
-		setGroveLCDModuleString(type,cmdtype,stringtype);		
 	}
 	else if(code_seen('R') || code_seen('G') || code_seen('B'))
 	{

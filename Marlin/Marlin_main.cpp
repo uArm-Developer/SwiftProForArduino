@@ -5729,22 +5729,36 @@ inline void gcode_M204() {
     planner.travel_acceleration = planner.acceleration = code_value_linear_units();
     SERIAL_ECHOPAIR("Setting Print and Travel Acceleration: ", planner.acceleration);
     SERIAL_EOL;
+    #ifdef UARM_SWIFT
+    save_print_acceleration(planner.acceleration);
+    save_travel_acceleration(planner.travel_acceleration);
+    #endif
   }
   if (code_seen('P')) {
     planner.acceleration = code_value_linear_units();
     SERIAL_ECHOPAIR("Setting Print Acceleration: ", planner.acceleration);
     SERIAL_EOL;
+    #ifdef UARM_SWIFT
+    save_print_acceleration(planner.acceleration);
+    #endif
   }
   if (code_seen('R')) {
     planner.retract_acceleration = code_value_linear_units();
     SERIAL_ECHOPAIR("Setting Retract Acceleration: ", planner.retract_acceleration);
     SERIAL_EOL;
+    #ifdef UARM_SWIFT
+    save_retract_acceleration(planner.retract_acceleration);
+    #endif
   }
   if (code_seen('T')) {
     planner.travel_acceleration = code_value_linear_units();
     SERIAL_ECHOPAIR("Setting Travel Acceleration: ", planner.travel_acceleration);
     SERIAL_EOL;
+    #ifdef UARM_SWIFT
+    save_travel_acceleration(planner.travel_acceleration);
+    #endif
   }
+
 }
 
 /**

@@ -198,8 +198,6 @@ void init_user_mode()
 		save_user_mode(mode);
 	}
 
-	
-	
 
 	float height = read_height_offset();
 
@@ -257,9 +255,23 @@ void init_user_mode()
 
 	}	
 
-	set_acceleration(mode);
+	debugPrint("acceleration_flag:%d\n",read_acceleration_flag());
 
+	if((read_acceleration_flag() != EEPROM_ACCELERATION_FLAG)) 
+	{
+		set_acceleration(mode);
+		save_acceleration_flag(EEPROM_ACCELERATION_FLAG);
+	}
+	else
+	{
+		planner.acceleration = read_print_acceleration();
+		planner.travel_acceleration = read_travel_acceleration();
+		planner.max_xy_jerk = read_max_xy_jerx();
+		planner.max_z_jerk = read_max_z_jerx();
+	}
 	
+	debugPrint("acceleration P:%f T:%f max_xy_jerk:%f max_z_jerk:%f\r\n",planner.acceleration,planner.travel_acceleration,planner.max_xy_jerk,planner.max_z_jerk);
+
 	user_mode = mode;
 	front_end_offset = front;
 	height_offset = height;
@@ -280,44 +292,53 @@ void set_acceleration(UserMode_t mode)
 		return;
 
 
+		switch(mode)
+		{
+		case USER_MODE_LASER:
 
-	switch(mode)
-	{
-	case USER_MODE_LASER:
+			planner.acceleration = MODE_LASER_ACCELERATION;
+			planner.travel_acceleration = MODE_LASER_TRAVEL_ACCELERATION;
+			planner.max_xy_jerk = MODE_LASER_MAX_XY_JERX;
+			planner.max_z_jerk = MODE_LASER_MAX_Z_JERX;
+			
+			break;
 
-		planner.acceleration = 25;
-		planner.travel_acceleration = 25;
-		planner.max_xy_jerk = 0.5;
-		planner.max_z_jerk = 0.5;
-		
-		break;
+		case USER_MODE_3D_PRINT:
 
-	case USER_MODE_3D_PRINT:
+			planner.acceleration = MODE_3D_PRINT_ACCELERATION;
+			planner.travel_acceleration = MODE_3D_PRINT_TRAVEL_ACCELERATION;
+			planner.max_xy_jerk = MODE_3D_PRINT_MAX_XY_JERX;
+			planner.max_z_jerk = MODE_3D_PRINT_MAX_Z_JERX;		
+			break;
 
-		planner.acceleration = 25;
-		planner.travel_acceleration = 25;
-		planner.max_xy_jerk = 0.5;
-		planner.max_z_jerk = 0.5;		
-		break;
+		case USER_MODE_PEN:
 
-	case USER_MODE_PEN:
+			planner.acceleration = MODE_PEN_ACCELERATION;
+			planner.travel_acceleration = MODE_PEN_TRAVEL_ACCELERATION;
+			planner.max_xy_jerk = MODE_PEN_MAX_XY_JERX;
+			planner.max_z_jerk = MODE_PEN_MAX_Z_JERX;		
+			break;		
 
-		planner.acceleration = 25;
-		planner.travel_acceleration = 25;
-		planner.max_xy_jerk = 0.5;
-		planner.max_z_jerk = 0.5;		
-		break;		
+		case USER_MODE_NORMAL:	
+		default:
 
-	case USER_MODE_NORMAL:	
-	default:
+			planner.acceleration = MODE_NORMAL_ACCELERATION;
+			planner.travel_acceleration = MODE_NORMAL_TRAVEL_ACCELERATION;
+			planner.max_xy_jerk = MODE_NORMAL_MAX_XY_JERX;
+			planner.max_z_jerk = MODE_NORMAL_MAX_Z_JERX;	
+			break;
+		}
 
-		planner.acceleration = 200;
-		planner.travel_acceleration = 200;
-		planner.max_xy_jerk = 5;
-		planner.max_z_jerk = 5;		
-		break;
-	}	
+	save_P_T_acceleration(planner.acceleration,planner.travel_acceleration);
+	delay(10);
+	save_max_xy_jerk(planner.max_xy_jerk);
+	delay(10);
+	save_max_z_jerk(planner.max_z_jerk);
+	debugPrint("acceleration set P:%f T:%f max_xy_jerk:%f max_z_jerk:%f\r\n",planner.acceleration,planner.travel_acceleration,planner.max_xy_jerk,planner.max_z_jerk);
+
+
 }
+
 
 /*!
    \brief Set working mode and set parameters according to the mode.
@@ -539,6 +560,117 @@ void save_user_mode(uint8_t mode)
 	setE2PROMData(EEPROM_ON_CHIP, EEPROM_MODE_ADDR, DATA_TYPE_BYTE, mode);
 }
 
+/*!
+   \brief get Print acceleration from E2PROM(mm)
+ */
+float read_print_acceleration()
+{
+	return getE2PROMData(EEPROM_ON_CHIP, EEPROM_PRINT_ACCELERATION_ADDR, DATA_TYPE_FLOAT);
+}
+/*!
+   \brief Save Print acceleration to E2PROM(mm)
+ */
+void save_print_acceleration(float acceleration)
+{
+	setE2PROMData(EEPROM_ON_CHIP, EEPROM_PRINT_ACCELERATION_ADDR, DATA_TYPE_FLOAT, acceleration);
+}
+
+/*!
+   \brief get Retract acceleration from E2PROM(mm)
+ */
+float read_retract_acceleration()
+{
+	return getE2PROMData(EEPROM_ON_CHIP, EEPROM_RETRACT_ACCELERATION_ADDR, DATA_TYPE_FLOAT);
+}
+/*!
+   \brief Save Retract acceleration to E2PROM(mm)
+ */
+void save_retract_acceleration(float acceleration)
+{
+	setE2PROMData(EEPROM_ON_CHIP, EEPROM_RETRACT_ACCELERATION_ADDR, DATA_TYPE_FLOAT, acceleration);
+}
+
+/*!
+   \brief get Travel acceleration from E2PROM(mm)
+ */
+float read_travel_acceleration()
+{
+	return getE2PROMData(EEPROM_ON_CHIP, EEPROM_TRAVEL_ACCELERATION_ADDR, DATA_TYPE_FLOAT);
+}
+/*!
+   \brief Save Travel acceleration to E2PROM(mm)
+ */
+void save_travel_acceleration(float acceleration)
+{
+	setE2PROMData(EEPROM_ON_CHIP, EEPROM_TRAVEL_ACCELERATION_ADDR, DATA_TYPE_FLOAT, acceleration);
+}
+
+
+/*!
+   \brief get max xy jerk from E2PROM(mm)
+ */
+float read_max_xy_jerx()
+{
+	return getE2PROMData(EEPROM_ON_CHIP, EEPROM_MAX_XY_JERK_ADDR, DATA_TYPE_FLOAT);
+}
+/*!
+   \brief Save max xy jerk to E2PROM(mm)
+ */
+void save_max_xy_jerk(float max_xy_jerk)
+{
+	setE2PROMData(EEPROM_ON_CHIP, EEPROM_MAX_XY_JERK_ADDR, DATA_TYPE_FLOAT, max_xy_jerk);
+}
+
+/*!
+   \brief get max z jerk from E2PROM(mm)
+ */
+float read_max_z_jerx()
+{
+	return getE2PROMData(EEPROM_ON_CHIP, EEPROM_MAX_Z_JERK_ADDR, DATA_TYPE_FLOAT);
+}
+/*!
+   \brief Save max z jerk to E2PROM(mm)
+ */
+void save_max_z_jerk(float max_z_jerk)
+{
+	setE2PROMData(EEPROM_ON_CHIP, EEPROM_MAX_Z_JERK_ADDR, DATA_TYPE_FLOAT, max_z_jerk);
+}
+
+
+
+/*!
+   \brief Save acceleration_jerk to E2PROM(mm)
+ */
+void save_P_T_acceleration(float p_acceleration,float t_acceleration)
+{
+	setE2PROMData(EEPROM_ON_CHIP, EEPROM_PRINT_ACCELERATION_ADDR, DATA_TYPE_FLOAT, p_acceleration);
+	delay(10);
+	setE2PROMData(EEPROM_ON_CHIP, EEPROM_TRAVEL_ACCELERATION_ADDR, DATA_TYPE_FLOAT, t_acceleration);
+}
+
+/*!
+   \brief read acceleration flag from E2PROM(mm)
+ */
+uint8_t read_acceleration_flag()
+{
+ 	return getE2PROMData(EEPROM_ON_CHIP, EEPROM_ACCELERATION_FLAG_ADDR, DATA_TYPE_BYTE) ;
+}
+
+/*!
+   \brief save acceleration flag to E2PROM(mm)
+ */
+void save_acceleration_flag(uint8_t flag)
+{
+	setE2PROMData(EEPROM_ON_CHIP, EEPROM_ACCELERATION_FLAG_ADDR, DATA_TYPE_BYTE, flag);
+}
+
+/*!
+   \brief clear acceleration flag from E2PROM(mm)
+ */
+void clear_acceleration_flag()
+{
+	setE2PROMData(EEPROM_ON_CHIP, EEPROM_ACCELERATION_FLAG_ADDR, DATA_TYPE_BYTE, 0);
+}
 
 
 unsigned char getXYZFromAngle(float& x, float& y, float& z, float rot, float left, float right)

@@ -1,3 +1,7 @@
+v3.1.14	20170712
+fix bug: LCD cannot display the content that begins with "T"
+Add save acceleration function
+
 v3.1.13	20170711
 update grove RGBLCD lib 
 
