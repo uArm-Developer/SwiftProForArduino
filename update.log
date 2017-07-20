@@ -1,3 +1,7 @@
+v3.1.15	20170720
+update grove color sersor lib
+update RGBLCD lib
+
 v3.1.14	20170712
 fix bug: LCD cannot display the content that begins with "T"
 Add save acceleration function

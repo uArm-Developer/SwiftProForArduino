@@ -444,31 +444,6 @@ bool setBtName(char btName[])
 
 }
 
-/*!
-   \brief set lcd display 
-   \return true 
- */
-extern Grovergb_lcd grovergb_lcd;
-
-bool RGB_LCD_displaytext(char row,uint8_t strLength,char lcdtext[])
-{
-	//clear the row text
-	for(int i=0;i<16;i++)
-	{
-       	grovergb_lcd.setCursor(i,row-1);	
-		grovergb_lcd.write(" ");
-    }
-    delay(10);	
-    //display the text
-	for(int i=0;i<strLength;i++)
-	{
-       	grovergb_lcd.setCursor(i,row-1);	
-		grovergb_lcd.write(lcdtext[i]);
-    }
-
-	return true;
-}
-
 
 /*!
    \brief Get current working mode

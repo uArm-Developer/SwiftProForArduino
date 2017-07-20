@@ -37,7 +37,7 @@ TH02_dev grove_TH;
 Grovepirmotion grovepirmotion(8);
 Grovergb_lcd grovergb_lcd;
 
-Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_1X);
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_16X); // TCS34725_GAIN_1X
 
 
 
@@ -157,6 +157,7 @@ void GestureReport()
 
 }
 
+
 void getRawData_noDelay(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c)
 {
   *c = tcs.read16(TCS34725_CDATAL);
@@ -166,15 +167,23 @@ void getRawData_noDelay(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c)
 }
 
 
+
 void GroveColorReport()
 {
 	char result[128];
 	uint16_t red, green, blue, c;
-	
 
 	getRawData_noDelay(&red, &green, &blue, &c);
 
 	tcs.clearInterrupt();
+
+	red /= 255;
+	green /= 255;
+	blue /= 255;
+
+	red = constrain(red,0,255);
+	green = constrain(green,0,255);
+	blue = constrain(blue,0,255);
 
 
 	msprintf(result, "@%d N%d R%d G%d B%d\r\n", REPORT_TYPE_GROVE, GROVE_COLOR_SENSOR, red, green, blue);
@@ -408,7 +417,20 @@ void setGroveLCDModuleString(GroveType type,GrovelcdstringType cmd,char string[]
 		case GROVE_CMD_TYPE_DISPLAYROW1:
 		case GROVE_CMD_TYPE_DISPLAYROW2:
 			debugPrint("lcdtext:%s\r\n",string);
-			RGB_LCD_displaytext(cmd,strlen(string),string);
+			//clear the row text
+			for(int i=0;i<16;i++)
+			{
+		       	grovergb_lcd.setCursor(i,cmd-1);	
+				grovergb_lcd.write(" ");
+		    }
+		    delay(10);	
+		    //display the text
+			for(int i=0;i<strlen(string);i++)
+			{
+		       	grovergb_lcd.setCursor(i,cmd-1);	
+				grovergb_lcd.write(string[i]);
+		    }
+			//RGB_LCD_displaytext(cmd,strlen(string),string);
 			break;													
 
 	default:
