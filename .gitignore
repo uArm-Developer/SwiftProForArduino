@@ -114,3 +114,5 @@ applet/
 # Debug files
 *.dSYM/
 *.su
+.pioenvs
+.piolibdeps
