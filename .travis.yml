@@ -20,3 +20,4 @@ deploy:
 branches:
   only:
   - travis
+  - develop
