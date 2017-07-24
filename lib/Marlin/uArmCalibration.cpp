@@ -13,16 +13,37 @@
 
 uint16_t reference_angle_value[NUM_AXIS] = {95, 1429, 1998, 0};
 
-float reference_angle[NUM_AXIS] = {90.0, 32.4, 90.6, 0.0};
+float reference_angle[NUM_AXIS] = {90.0, 33.154915, 90.231049, 0.0};//{90.0, 32.4, 90.6, 0.0};
+
+float reference_angle_B[NUM_AXIS] = {90.0, 33.138634, 88.795792, 0.0};
+
+#define USE_REFERENCE_ANGLE_B_FLAG	0xBB
+
+float (*reference_angle_p)[NUM_AXIS] = &reference_angle;
 
 
 void init_reference_angle_value()
 {
-	//read value from eeprom
-	reference_angle_value[X_AXIS] = getE2PROMData(EEPROM_ON_CHIP, EEPROM_REFERENCE_VALUE_ADDR, DATA_TYPE_INTEGER);
-	reference_angle_value[Y_AXIS] = getE2PROMData(EEPROM_ON_CHIP, EEPROM_REFERENCE_VALUE_ADDR+2, DATA_TYPE_INTEGER);
-	reference_angle_value[Z_AXIS] = getE2PROMData(EEPROM_ON_CHIP, EEPROM_REFERENCE_VALUE_ADDR+4, DATA_TYPE_INTEGER);	
+	uint8_t reference_angle_flag = getE2PROMData(EEPROM_ON_CHIP, EEPROM_REFERENCE_VALUE_B_FLAG_ADDR, DATA_TYPE_BYTE);	
 
+	if (reference_angle_flag == USE_REFERENCE_ANGLE_B_FLAG)
+	{
+		debugPrint("reference_angle_b flag set\r\n");
+		//read value from eeprom
+		reference_angle_value[X_AXIS] = getE2PROMData(EEPROM_ON_CHIP, EEPROM_REFERENCE_VALUE_B_ADDR, DATA_TYPE_INTEGER);
+		reference_angle_value[Y_AXIS] = getE2PROMData(EEPROM_ON_CHIP, EEPROM_REFERENCE_VALUE_B_ADDR+2, DATA_TYPE_INTEGER);
+		reference_angle_value[Z_AXIS] = getE2PROMData(EEPROM_ON_CHIP, EEPROM_REFERENCE_VALUE_B_ADDR+4, DATA_TYPE_INTEGER);	
+		reference_angle_p = &reference_angle_B;
+	}
+	else
+	{
+		//read value from eeprom
+		reference_angle_value[X_AXIS] = getE2PROMData(EEPROM_ON_CHIP, EEPROM_REFERENCE_VALUE_ADDR, DATA_TYPE_INTEGER);
+		reference_angle_value[Y_AXIS] = getE2PROMData(EEPROM_ON_CHIP, EEPROM_REFERENCE_VALUE_ADDR+2, DATA_TYPE_INTEGER);
+		reference_angle_value[Z_AXIS] = getE2PROMData(EEPROM_ON_CHIP, EEPROM_REFERENCE_VALUE_ADDR+4, DATA_TYPE_INTEGER);	
+		reference_angle_p = &reference_angle;
+	}
+	
 	debugPrint("read ref value: %d, %d, %d\r\n", reference_angle_value[0], reference_angle_value[1], reference_angle_value[2]);
 }
 
@@ -40,6 +61,25 @@ void update_reference_angle_value(uint16_t value[NUM_AXIS])
 
 	debugPrint("set ref value: %d, %d, %d\r\n", reference_angle_value[0], reference_angle_value[1], reference_angle_value[2]);
 }
+
+void update_reference_angle_value_B(uint16_t value[NUM_AXIS])
+{
+
+	reference_angle_value[X_AXIS] = value[X_AXIS];
+	reference_angle_value[Y_AXIS] = value[Y_AXIS];
+	reference_angle_value[Z_AXIS] = value[Z_AXIS];
+
+
+	setE2PROMData(EEPROM_ON_CHIP, EEPROM_REFERENCE_VALUE_B_ADDR, DATA_TYPE_INTEGER, reference_angle_value[X_AXIS]);
+	setE2PROMData(EEPROM_ON_CHIP, EEPROM_REFERENCE_VALUE_B_ADDR+2, DATA_TYPE_INTEGER, reference_angle_value[Y_AXIS]);
+	setE2PROMData(EEPROM_ON_CHIP, EEPROM_REFERENCE_VALUE_B_ADDR+4, DATA_TYPE_INTEGER, reference_angle_value[Z_AXIS]);	
+	setE2PROMData(EEPROM_ON_CHIP, EEPROM_REFERENCE_VALUE_B_FLAG_ADDR, DATA_TYPE_BYTE, USE_REFERENCE_ANGLE_B_FLAG);	
+
+	reference_angle_p = &reference_angle_B;
+
+	debugPrint("set ref value: %d, %d, %d\r\n", reference_angle_value[0], reference_angle_value[1], reference_angle_value[2]);
+}
+
 
 uint16_t get_current_angle_adc(uint8_t index)
 {
@@ -132,16 +172,16 @@ float get_current_angle(uint8_t index)
 	if (cur_value > reference_angle_value[index])
 	{
 		diff = cur_value - reference_angle_value[index];
-		angle = reference_angle[index] + diff * 360.0 / 4096;
+		angle = (*reference_angle_p)[index] + diff * 360.0 / 4096;
 	}
 	else if (cur_value < reference_angle_value[index])
 	{
 		diff = reference_angle_value[index] - cur_value;
-		angle = reference_angle[index] - diff * 360.0 / 4096;
+		angle = (*reference_angle_p)[index] - diff * 360.0 / 4096;
 	}
 	else
 	{
-		angle = reference_angle[index];
+		angle = (*reference_angle_p)[index];
 	}
 
 	//debugPrint("cur_value = %d\r\n", cur_value);

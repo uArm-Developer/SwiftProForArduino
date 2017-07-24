@@ -7397,7 +7397,7 @@ void process_next_command() {
 	uint32_t serialNum = 0;
 
 	uint8_t needReply = 0;
-	char replyBuf[RESULT_BUFFER_SIZE];
+	char replyBuf[RESULT_BUFFER_SIZE] = {0};
 	uint8_t result = 0;
 	char *pch;
 

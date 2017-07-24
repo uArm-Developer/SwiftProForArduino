@@ -1165,6 +1165,27 @@ uint8_t uarm_gcode_M2401(char reply[])
 			return E_FAIL;
 		}
 	}
+	else if (code_seen('B'))
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			value[i] = get_current_angle_adc(i);
+
+			if (value[i] > 4096)
+			{
+				return E_FAIL;
+			} 
+		}
+
+
+		update_reference_angle_value_B(value);
+
+		update_current_pos();
+
+		strcpy(reply, "");
+
+		return E_OK;		
+	}
 	else
 	{
 		return E_FAIL;

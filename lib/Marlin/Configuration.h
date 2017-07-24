@@ -131,7 +131,7 @@
 //#define SWIFT_TEST_MODE
 
 #define HW_VER  	"3.3"
-#define SW_VER_BASE  "3.1.15"
+#define SW_VER_BASE  "3.1.16"
 
 #ifdef SWIFT_TEST_MODE
 #define SW_VER  SW_VER_BASE"_t"
@@ -633,12 +633,12 @@
 // @section machine
 
 // Travel limits after homing (units are in mm)
-#define X_MIN_POS -300
-#define Y_MIN_POS -300
-#define Z_MIN_POS -300
-#define X_MAX_POS 300
-#define Y_MAX_POS 300
-#define Z_MAX_POS 300
+#define X_MIN_POS -350
+#define Y_MIN_POS -350
+#define Z_MIN_POS -350
+#define X_MAX_POS 350
+#define Y_MAX_POS 350
+#define Z_MAX_POS 350
 
 //===========================================================================
 //========================= Filament Runout Sensor ==========================

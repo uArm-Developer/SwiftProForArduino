@@ -22,6 +22,8 @@
 float get_current_angle(uint8_t index);
 void init_reference_angle_value();
 void update_reference_angle_value(uint16_t value[NUM_AXIS]);
+void update_reference_angle_value_B(uint16_t value[NUM_AXIS]);
+
 
 uint16_t get_current_angle_adc(uint8_t index);
 void set_current_pos_as_reference();
