@@ -7603,17 +7603,21 @@ void process_next_command() {
 
 	// 2204 relative move use G90 G91
 	case 2204:
-                bool relative_mode_backup = relative_mode;
-		relative_mode = true;
-		gcode_G0_G1();
-		relative_mode = relative_mode_backup;
+        {
+			bool relative_mode_backup = relative_mode;
+			relative_mode = true;
+			gcode_G0_G1();
+			relative_mode = relative_mode_backup;
+		}
 		break;
 
 	case 2205:
-                bool relative_mode_backup = relative_mode;
-		relative_mode = true;
-		gcode_get_destination_polor();
-		relative_mode = relative_mode_backup;
+        {
+			bool relative_mode_backup = relative_mode;
+			relative_mode = true;
+			gcode_get_destination_polor();
+			relative_mode = relative_mode_backup;
+		}
 		break;
 	
 #endif // UARM_SWIFT
