@@ -1,3 +1,6 @@
+v3.1.17	20170725
+Do no switch to absolute mode in G2204/G2205
+
 v3.1.16	20170724
 Use B point for calibration.(command: "M2401 B")
 
