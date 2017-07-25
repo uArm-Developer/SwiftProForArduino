@@ -1720,7 +1720,7 @@ void get_pos_from_polor(float pos[], float polor[])
 }
 
 
-void gcode_get_destination_polor()
+uint8_t gcode_get_destination_polor()
 {
 	float polor_destination[NUM_AXIS];
 	float current_polor[NUM_AXIS];
@@ -1744,13 +1744,26 @@ void gcode_get_destination_polor()
 	debugPrint("des polor:%f %f %f\r\n", polor_destination[0], polor_destination[1],polor_destination[2]);
 
 
-	get_pos_from_polor(destination, polor_destination);
+	float test_destination[NUM_AXIS] = {0.0};
+	get_pos_from_polor(test_destination, polor_destination);
+
+
+	debugPrint("des: %f, %f, %f\r\n", test_destination[0], test_destination[1], test_destination[2]);
+	
+	  float angle[3];
+	
+	  if (inverse_kinematics(test_destination,	angle) != 0)
+		  return E_OUT_OF_RANGE;
+	
+	debugPrint("angle: %f, %f, %f\r\n", angle[0], angle[1], angle[2]);
 
 
 
 
-	debugPrint("destination:%f %f %f\r\n", destination[0], destination[1], destination[2]);
+	LOOP_XYZE(i)
+		destination[i] = test_destination[i];
 
+	debugPrint("destination:%f %f %f\r\n", destination[0], destination[1], destination[2]);		
 
 	if (code_seen('F') && code_value_linear_units() > 0.0)
 	  feedrate_mm_m = code_value_linear_units();	
@@ -1828,9 +1841,14 @@ unsigned char inverse_kinematics(const float in_cartesian[3], float angle[3]) {
 	
 	zIn = (z - MATH_L1) / MATH_LOWER_ARM;
 
-	if (x < 0.1)
+	float s = sqrt(x*x + y*y);
+
+	if (s - get_front_end_offset() < POLAR_MODULE_LENGTH_MIN)
+		return -1;
+
+	if (x < 0.01)
 	{
-		x = 0.1;
+		x = 0.01;
 	}
 
 	// Calculate value of theta 1: the rotation angle
@@ -2955,15 +2973,32 @@ static void homeaxis(AxisEnum axis) {
  *  - Set to current for missing axis codes
  *  - Set the feedrate, if included
  */
-void gcode_get_destination() {
+uint8_t gcode_get_destination() {
+
+  float test_destination[NUM_AXIS] = { 0.0 };
+
+
   LOOP_XYZE(i) {
     if (code_seen(axis_codes[i]))
     {
-      destination[i] = code_value_axis_units(i) + (axis_relative_modes[i] || relative_mode ? current_position[i] : 0);
+      test_destination[i] = code_value_axis_units(i) + (axis_relative_modes[i] || relative_mode ? current_position[i] : 0);
     }
     else
-      destination[i] = current_position[i];
+      test_destination[i] = current_position[i];
   }
+
+  debugPrint("des: %f, %f, %f\r\n", test_destination[0], test_destination[1], test_destination[2]);
+
+	float angle[3];
+
+	if (inverse_kinematics(test_destination,  angle) != 0)
+		return E_OUT_OF_RANGE;
+
+  debugPrint("angle: %f, %f, %f\r\n", angle[0], angle[1], angle[2]);
+
+
+  LOOP_XYZE(i)
+  	destination[i] = test_destination[i];
 
   if (code_seen('F') && code_value_linear_units() > 0.0)
     feedrate_mm_m = code_value_linear_units();
@@ -2977,6 +3012,8 @@ void gcode_get_destination() {
   #if ENABLED(MIXING_EXTRUDER) && ENABLED(DIRECT_MIXING_IN_G1)
     gcode_get_mix();
   #endif
+
+  return E_OK;
 }
 
 void unknown_command_error() {
@@ -3022,9 +3059,12 @@ void unknown_command_error() {
 /**
  * G0, G1: Coordinated movement of X Y Z E axes
  */
-inline void gcode_G0_G1() {
+inline uint8_t gcode_G0_G1() {
   if (IsRunning()) {
-    gcode_get_destination(); // For X Y Z E F
+    uint8_t result = gcode_get_destination(); // For X Y Z E F
+
+ 	if (result != E_OK)
+		return result;
 
     #if ENABLED(FWRETRACT)
 
@@ -7464,13 +7504,15 @@ void process_next_command() {
 		#ifdef UARM_SWIFT
 			uarm_gcode_G0();
 		#endif
-        gcode_G0_G1();
+		needReply = 1;
+        result = gcode_G0_G1();
         break;
       case 1:
 		#ifdef UARM_SWIFT
 			uarm_gcode_G1();
 		#endif
-        gcode_G0_G1();
+		needReply = 1;
+        result = gcode_G0_G1();
         break;
 
       // G2, G3
@@ -7570,7 +7612,8 @@ void process_next_command() {
 		break;
 
 	case 2201:
-		gcode_get_destination_polor();
+		needReply = 1;
+		result = gcode_get_destination_polor();
 		break;
 
 	// rotate stepper motor
@@ -7606,7 +7649,8 @@ void process_next_command() {
         {
 			bool relative_mode_backup = relative_mode;
 			relative_mode = true;
-			gcode_G0_G1();
+			needReply = 1;
+			result = gcode_G0_G1();
 			relative_mode = relative_mode_backup;
 		}
 		break;
@@ -7615,11 +7659,15 @@ void process_next_command() {
         {
 			bool relative_mode_backup = relative_mode;
 			relative_mode = true;
-			gcode_get_destination_polor();
+			needReply = 1;
+			result = gcode_get_destination_polor();
 			relative_mode = relative_mode_backup;
 		}
 		break;
 	
+	default:
+		code_is_good = false;
+		break;
 #endif // UARM_SWIFT
 		
     }
@@ -8280,6 +8328,10 @@ void process_next_command() {
 	  uarm_gcode_M2500();
 	  break;	  
 
+	default:
+		code_is_good = false;
+		break;
+
 	  
 #endif //UARM_SWIFT
     }
@@ -8387,6 +8439,11 @@ void process_next_command() {
       result = uarm_gcode_P2250(replyBuf);
       break;		
 #endif
+
+	default:
+		code_is_good = false;
+		break;
+
 		}
 	  break;
 

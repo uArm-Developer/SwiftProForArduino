@@ -295,7 +295,7 @@ void uarm_gcode_G0()
 
 
 			
-			debugPrint("laser off");
+			debugPrint("laser off\r\n");
 			
 			// turn off laser
 			analogWrite(FAN_PIN, 0);

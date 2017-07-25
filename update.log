@@ -1,3 +1,6 @@
+v3.1.18	20170725
+Return E22 when position unreachable
+
 v3.1.17	20170725
 Do no switch to absolute mode in G2204/G2205
 
