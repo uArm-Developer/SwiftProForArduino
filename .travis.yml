@@ -17,7 +17,8 @@ deploy:
   file: "/tmp/build/.pioenvs/megaatmega2560/firmware.hex"
   on:
     repo: uArm-Developer/SwiftProForArduino
-    branch: develop
+    branch: master
 branches:
   only:
   - develop
+  - master
