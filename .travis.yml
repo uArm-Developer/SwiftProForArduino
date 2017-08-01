@@ -20,4 +20,5 @@ deploy:
     branch: develop
 branches:
   only:
+  - master
   - develop
