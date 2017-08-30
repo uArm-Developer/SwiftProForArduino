@@ -1,3 +1,9 @@
+v3.1.20 20170829
+compatible to hw1.1
+
+v3.1.19 20170810
+save front and height offset to E2PROM when set
+
 v3.1.18	20170725
 Return E22 when position unreachable
 

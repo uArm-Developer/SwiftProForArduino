@@ -131,7 +131,7 @@
 //#define SWIFT_TEST_MODE
 
 #define HW_VER  	"3.3"
-#define SW_VER_BASE  "3.1.18"
+#define SW_VER_BASE  "3.1.20"
 
 #ifdef SWIFT_TEST_MODE
 #define SW_VER  SW_VER_BASE"_t"
@@ -786,7 +786,7 @@
 
 
 //#define DEFAULT_AXIS_STEPS_PER_UNIT   {80,80,4000,500}  // default steps per unit for Ultimaker
-#define DEFAULT_MAX_FEEDRATE          {500, 500, 500, 25}    // (mm/sec)
+#define DEFAULT_MAX_FEEDRATE          {2000, 2000, 2000, 25}    // (mm/sec)
 #define DEFAULT_MAX_ACCELERATION      {2000,2000,2000,10000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 
 #define DEFAULT_ACCELERATION          25    // X, Y, Z and E acceleration in mm/s^2 for printing moves

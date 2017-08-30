@@ -1843,8 +1843,16 @@ unsigned char inverse_kinematics(const float in_cartesian[3], float angle[3]) {
 
 	float s = sqrt(x*x + y*y);
 
-	if (s - get_front_end_offset() < POLAR_MODULE_LENGTH_MIN)
-		return -1;
+	if (z > BASE_HEIGHT)
+	{
+		if (s - get_front_end_offset() < POLAR_MODULE_LENGTH_MIN_ABOVE_BASE)
+			return -1;		
+	}
+	else
+	{
+		if (s - get_front_end_offset() < POLAR_MODULE_LENGTH_MIN)
+			return -1;
+	}
 
 	if (x < 0.01)
 	{
@@ -7506,6 +7514,12 @@ void process_next_command() {
 		#endif
 		needReply = 1;
         result = gcode_G0_G1();
+		if (result != E_OK)
+		{
+			// need ok even position out of range to skip this point
+			result = E_OK;
+			sprintf(replyBuf, "E22 Position out of range\r\n");
+		}
         break;
       case 1:
 		#ifdef UARM_SWIFT
@@ -7513,6 +7527,12 @@ void process_next_command() {
 		#endif
 		needReply = 1;
         result = gcode_G0_G1();
+		if (result != E_OK)
+		{
+			// need ok even position out of range to skip this point
+			result = E_OK;
+			sprintf(replyBuf, "E22 Position out of range\r\n");
+		}		
         break;
 
       // G2, G3
@@ -7651,6 +7671,12 @@ void process_next_command() {
 			relative_mode = true;
 			needReply = 1;
 			result = gcode_G0_G1();
+			if (result != E_OK)
+			{
+				// need ok even position out of range to skip this point 
+				result = E_OK;
+				sprintf(replyBuf, "E22 Position out of range\r\n");
+			}			
 			relative_mode = relative_mode_backup;
 		}
 		break;
@@ -7661,6 +7687,12 @@ void process_next_command() {
 			relative_mode = true;
 			needReply = 1;
 			result = gcode_get_destination_polor();
+			if (result != E_OK)
+			{
+				// need ok even position out of range to skip this point  
+				result = E_OK;
+				sprintf(replyBuf, "E22 Position out of range\r\n");
+			}			
 			relative_mode = relative_mode_backup;
 		}
 		break;
@@ -8206,6 +8238,9 @@ void process_next_command() {
 
 #ifdef UARM_SWIFT
 	//
+	case 2000:
+		uarm_gcode_M2000();
+		break;
 
 	case 2019:
 		disable_all_steppers();

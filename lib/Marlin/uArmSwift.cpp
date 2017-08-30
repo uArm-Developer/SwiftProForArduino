@@ -113,7 +113,7 @@ void swift_init()
 	enable_e0();
 #else
 	enable_all_steppers();
-	if (getHWSubversion() > 0)
+	if (getHWSubversion() >= SERVO_HW_FIX_VER)
 	{
 		servo[0].attach(SERVO0_PIN);
 	}
@@ -402,7 +402,7 @@ void rotate_frontend_motor()
 	}
 
 
-	if (getHWSubversion() > 0)
+	if (getHWSubversion() >= SERVO_HW_FIX_VER)
 	{	
 		servo[0].write((int)angle);
 	}
@@ -413,7 +413,17 @@ void rotate_frontend_motor()
 	
 }
 
-				
+
+void uarm_gcode_M2000()
+{
+	clear_command_queue();
+	quickstop_stepper();
+	print_job_timer.stop();
+	thermalManager.autotempShutdown();
+	wait_for_heatup = false;
+	update_current_pos();
+}
+
 
 void uarm_gcode_M2120()
 {
@@ -469,7 +479,7 @@ void uarm_gcode_M2201()
 			break;
 
 		case 3:
-			if (getHWSubversion() > 0)
+			if (getHWSubversion() >= SERVO_HW_FIX_VER)
 			{			
 				servo[0].attach(SERVO0_PIN);
 			}
@@ -527,7 +537,7 @@ uint8_t uarm_gcode_M2203(char reply[])
 			break;
 
 		case 3:
-			if (getHWSubversion() > 0)
+			if (getHWSubversion() >= SERVO_HW_FIX_VER)
 			{	
 				attached = servo[0].attached();
 			}

@@ -461,7 +461,7 @@ void uArmService::handleButtonEvent(BUTTON_ID button, unsigned char event)
 
 				
 				disable_all_steppers();
-				if (getHWSubversion() > 0)
+				if (getHWSubversion() >= SERVO_HW_FIX_VER)
 				{
 					servo[0].detach();
 				}
@@ -595,7 +595,7 @@ void uArmService::recorderTick()
 			
 			//controller.attachAllServo();
 			enable_all_steppers();
-			if (getHWSubversion() > 0)
+			if (getHWSubversion() >= SERVO_HW_FIX_VER)
 			{			
 				servo[0].attach(SERVO0_PIN);
 			}
@@ -1232,7 +1232,7 @@ bool uArmService::play()
 			
 			play_data_record.getCurData(curData);
 			
-			if (getHWSubversion() > 0)
+			if (getHWSubversion() >= SERVO_HW_FIX_VER)
 			{
 				servo[0].write(curData.e);
 			}
@@ -1454,7 +1454,7 @@ bool uArmService::play()
 
 	if (angledata[0] != 0xffff)
 	{
-		if (getHWSubversion() > 0)
+		if (getHWSubversion() >= SERVO_HW_FIX_VER)
 		{
 			servo[0].write((double)realdata[3]);
 		}

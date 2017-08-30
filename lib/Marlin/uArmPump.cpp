@@ -9,10 +9,12 @@
 
 #include "uArmPump.h" 
 
+
 #define VALVE_ON_TIMES_MAX	10
 
 pump_state_t pump_state = PUMP_STATE_OFF;
 
+extern unsigned char getHWSubversion();
 
 pump_state_t pump_get_state()
 {	
@@ -45,14 +47,28 @@ void pump_run()
 	case PUMP_STATE_VALVE_ON:
 		valve_on_times++;
 		digitalWrite(VALVE_EN, HIGH);
-		if (valve_on_times >= VALVE_ON_TIMES_MAX)
+
+		if (getHWSubversion() >= PUMP_HW_FIX_VER)
 		{
-			valve_on_times = 0;
-			pump_state = PUMP_STATE_OFF;
+			if (valve_on_times >= VALVE_ON_TIMES_MAX)
+			{
+				valve_on_times = 0;
+				digitalWrite(VALVE_EN, LOW); 
+				pump_state = PUMP_STATE_OFF;
+			}			
 		}
 		else
-		{		
-			pump_state = PUMP_STATE_VALVE_OFF;
+		{
+		
+			if (valve_on_times >= VALVE_ON_TIMES_MAX)
+			{
+				valve_on_times = 0;
+				pump_state = PUMP_STATE_OFF;
+			}
+			else
+			{		
+				pump_state = PUMP_STATE_VALVE_OFF;
+			}
 		}
 		break;		
 		
