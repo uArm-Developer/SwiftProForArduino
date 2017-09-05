@@ -30,9 +30,9 @@
 #include "WProgram.h"
 #endif
 
-Ultrasonic::Ultrasonic(int pin)
+Ultrasonic::Ultrasonic()
 {
-	_pin = pin;
+
 }
 
 void Ultrasonic::setPin(int pin)

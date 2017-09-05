@@ -8332,7 +8332,31 @@ void process_next_command() {
   case 2303:
     uarm_gcode_M2303();
     break;      
-	
+
+	case 2304:
+		needReply = 1;
+		result = uarm_gcode_M2304(replyBuf);		
+		break;	
+
+
+	case 2305:
+		needReply = 1;
+		result = uarm_gcode_M2305(replyBuf);		
+		break;		
+
+	case 2306:
+		needReply = 1;
+		result = uarm_gcode_M2306(replyBuf);		
+		break;	
+
+
+	case 2307:
+		needReply = 1;
+		result = uarm_gcode_M2307(replyBuf);	
+
+		break;	
+
+		
 	case 2240:
 		uarm_gcode_M2240();
 		break;

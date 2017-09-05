@@ -13,6 +13,8 @@
 #include "servo.h"
 #include "uArmServo.h"
 #include "Grovergb_lcd.h"
+#include "uArmGrove2.h"
+
 
 // CAUTION: E_AXIS means FrontEnd Servo not extruder0
 //float current_angle[NUM_AXIS] = { 0.0 };
@@ -80,8 +82,8 @@ void buttons_init()
 	DDRE &= 0X3F;
 
 
-	button_menu.setIsButtonPressedCB(is_menu_button_pressed);
-	button_play.setIsButtonPressedCB(is_play_button_pressed);
+	button_menu.setIsButtonPressedCB(is_menu_button_pressed, NULL);
+	button_play.setIsButtonPressedCB(is_play_button_pressed, NULL);
 }
 
 
@@ -160,6 +162,7 @@ void tickTaskRun()
 
 	servo_tick();
 
+	uArmGroveTick();
 }
 
 void swift_run()
@@ -169,7 +172,7 @@ void swift_run()
 
 	service.run();
 
-	
+	GroveReportRun();
 	
 	if(millis() - tickStartTime >= TICK_INTERVAL)
 	{
@@ -1144,6 +1147,103 @@ void uarm_gcode_M2303()
 
 }
 
+uint8_t uarm_gcode_M2304(char reply[])
+{
+	uint8_t port;
+
+	if (code_seen('P'))
+	{
+		port = code_value_byte();
+	}
+	else
+	{
+		strcpy(reply, "format: M2304 Pn\r\n");
+		return E_FAIL;
+	}	
+
+	deinitGroveModule(port);
+
+	return E_OK;
+}
+
+
+uint8_t uarm_gcode_M2305(char reply[])
+{
+	uint8_t type;
+	uint8_t port;
+
+	if (code_seen('P'))
+	{
+		port = code_value_byte();
+	}
+	else
+	{
+		strcpy(reply, "format: M2305 Pn Nn\r\n");
+		return E_FAIL;
+	}
+
+
+	if (code_seen('N'))
+	{
+		type = code_value_byte();
+	}
+	else
+	{
+		strcpy(reply, "format: M2305 Pn Nn\r\n");
+		return E_FAIL;
+	}
+
+	return initGroveModule2(port, type, reply);
+	
+}
+
+uint8_t uarm_gcode_M2306(char reply[])
+{
+	uint8_t port;
+	uint16_t time;
+
+	if (code_seen('P'))
+	{
+		port = code_value_byte();
+	}
+	else
+	{
+		strcpy(reply, "format: M2306 Pn Vn\r\n");
+		return E_FAIL;
+	}	
+
+	if (code_seen('V'))
+	{
+		time = code_value_ushort();
+	}
+	else
+	{
+		strcpy(reply, "format: M2306 Pn Vn\r\n");
+		return E_FAIL;
+
+	}	
+
+	return setGroveModuleReportInterval2(port, time, reply);
+}
+
+
+uint8_t uarm_gcode_M2307(char reply[])
+{
+	uint8_t port;
+
+	if (code_seen('P'))
+	{
+		port = code_value_byte();
+	}
+	else
+	{
+		strcpy(reply, "format: M2307 Pn\r\n");
+		return E_FAIL;
+	}	
+
+	return controlGroveModule(port, reply);
+}
+
 
 void uarm_gcode_M2400()
 {
@@ -1272,6 +1372,7 @@ void uarm_gcode_M2500()
 
 	debugPrint("M2500\r\n");
 	ok_to_send();
+	Serial2.begin(115200);
 	commSerial.setSerialPort(&Serial2);
 	
 }

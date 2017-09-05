@@ -5,7 +5,7 @@
 class Groveelectromagnet
 {
 	public:
-		Groveelectromagnet(int pin);
+		Groveelectromagnet();
 
 		void setPin(int pin);
 		void on(void);

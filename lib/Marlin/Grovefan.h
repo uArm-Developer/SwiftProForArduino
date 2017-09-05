@@ -5,7 +5,7 @@
 class Grovefan
 {
 	public:
-		Grovefan(int pin);
+		Grovefan();
 
 		void setPin(int pin);
 		void on(void);

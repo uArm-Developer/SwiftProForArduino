@@ -1,3 +1,12 @@
+v3.1.21 20170905
+refactor grove modules 
+M2300, M2301,M2302, M2303 are deprecated.
+use new commands instead:
+M2304 Pn (deinit)
+M2305 Pn Nn ...(init)
+M2306 Pn Vtime (report)
+M2307 Pn ...(control)
+
 v3.1.20 20170829
 compatible to hw1.1
 

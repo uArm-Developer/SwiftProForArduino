@@ -10,9 +10,9 @@
 #include "WProgram.h"
 #endif
 
-Grovefan::Grovefan(int pin)
+Grovefan::Grovefan()
 {
-	_pin = pin;
+
 }
 
 void Grovefan::setPin(int pin)

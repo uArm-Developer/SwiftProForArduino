@@ -78,7 +78,7 @@ void uArmService::disableBT(bool disable)
 	}
 }
 
-void menuButtonClicked()
+void menuButtonClicked(void *param)
 {
 	if (service.buttonServiceDisable())
 	{
@@ -90,7 +90,7 @@ void menuButtonClicked()
 	}
 }
 
-void menuButtonLongPressed()
+void menuButtonLongPressed(void *param)
 {
 	if (service.buttonServiceDisable())
 	{
@@ -102,7 +102,7 @@ void menuButtonLongPressed()
 	}
 }
 
-void playButtonClicked()
+void playButtonClicked(void *param)
 {
 	if (service.buttonServiceDisable())
 	{
@@ -114,7 +114,7 @@ void playButtonClicked()
 	}
 }
 
-void playButtonLongPressed()
+void playButtonLongPressed(void *param)
 {
 	if (service.buttonServiceDisable())
 	{
@@ -166,7 +166,7 @@ uint8_t get_test_result()
 	return test_result;
 }
 
-void all_light_on()
+void all_light_on(void *param)
 {
 	debugPrint("all_light_on\r\n");
 
@@ -189,7 +189,7 @@ void all_light_on()
 
 }
 
-void all_light_off()
+void all_light_off(void *param)
 {
 	debugPrint("all_light_off\r\n");
 
@@ -404,13 +404,13 @@ void uArmService::init()
 #ifdef SWIFT_TEST_MODE
 	::all_pins_init();
 
-	button_menu.setClickedCB(::all_light_on);
-	button_play.setClickedCB(::all_light_off);
+	button_menu.setClickedCB(::all_light_on, NULL);
+	button_play.setClickedCB(::all_light_off, NULL);
 #else
-	button_menu.setClickedCB(menuButtonClicked);
-	button_menu.setLongPressedCB(menuButtonLongPressed);
-	button_play.setClickedCB(playButtonClicked);
-	button_play.setLongPressedCB(playButtonLongPressed);
+	button_menu.setClickedCB(menuButtonClicked, NULL);
+	button_menu.setLongPressedCB(menuButtonLongPressed, NULL);
+	button_play.setClickedCB(playButtonClicked, NULL);
+	button_play.setLongPressedCB(playButtonLongPressed, NULL);
 #endif // SWIFT_TEST_MODE
 }
 
@@ -730,12 +730,14 @@ void uArmService::tipDetect()
 	}	
 }
 
+
+uint8_t tick_count = 0;
 void uArmService::run()
 {
 #ifdef SWIFT_TEST_MODE
 	::test_mode_run();
 
-	if (millis() - mTickRecorderTime >= 50)
+	if (millis() - mTickRecorderTime >= TICK_INTERVAL)
 	{
 		mTickRecorderTime= millis();
 
@@ -746,12 +748,19 @@ void uArmService::run()
 #else
 	systemRun();
 
-	if (millis() - mTickRecorderTime >= 50)
+	if (millis() - mTickRecorderTime >= TICK_INTERVAL)
 	{
 		mTickRecorderTime= millis();
 		recorderTick();
-		powerDetect();
+		
 		tipDetect();
+
+		tick_count++;
+		if (tick_count >= (1000/TICK_INTERVAL))
+		{
+			tick_count = 0;
+			powerDetect();
+		}
 
 	}
 #endif

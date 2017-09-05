@@ -25,7 +25,7 @@
 class Ultrasonic
 {
 	public:
-		Ultrasonic(int pin);
+		Ultrasonic();
 		long RangeInCentimeters;
 		long RangeInInches;
 		long duration;

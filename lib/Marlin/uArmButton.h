@@ -49,13 +49,13 @@ public:
 
 
 public:
-	typedef void (*ButtonEventCB_t)(void);
-	typedef void (*ButtonLongPressedCB_t)(void);
-	typedef bool (*IsButtonPressedCB_t)(void);
+	typedef void (*ButtonEventCB_t)(void*);
+	typedef void (*ButtonLongPressedCB_t)(void*);
+	typedef bool (*IsButtonPressedCB_t)(void*);
 
-	void setClickedCB(ButtonEventCB_t clickedCB);
-	void setLongPressedCB(ButtonLongPressedCB_t longPressedCB);
-	void setIsButtonPressedCB(IsButtonPressedCB_t isButtonPressed);
+	void setClickedCB(ButtonEventCB_t clickedCB, void *param);
+	void setLongPressedCB(ButtonLongPressedCB_t longPressedCB, void *param);
+	void setIsButtonPressedCB(IsButtonPressedCB_t isButtonPressed, void *param);
 private:
 	ButtonEventCB_t pButtonEventCB;
 	ButtonLongPressedCB_t pButtonLongPressedCB;
@@ -69,6 +69,10 @@ private:
 	unsigned char mEvent;
 
 	BUTTON_STATE mState;
+
+	void *_paramIsPressed;
+	void *_paramClick;
+	void *_prarmLongPress;
 };
 
 

@@ -21,22 +21,29 @@ uArmButton::uArmButton()
 	pButtonEventCB = NULL;
 	pButtonLongPressedCB = NULL;
 	pIsButtonPressedCB = NULL;
+
+	_paramIsPressed = NULL;
+	_paramClick = NULL;
+	_prarmLongPress = NULL;	
 }
 
 
-void uArmButton::setClickedCB(ButtonEventCB_t clickedCB)
+void uArmButton::setClickedCB(ButtonEventCB_t clickedCB, void *param)
 {
 	pButtonEventCB = clickedCB;
+	_paramClick = param;
 }
 
-void uArmButton::setLongPressedCB(ButtonLongPressedCB_t longPressedCB)
+void uArmButton::setLongPressedCB(ButtonLongPressedCB_t longPressedCB, void *param)
 {
 	pButtonLongPressedCB = longPressedCB;
+	_prarmLongPress = param;
 }
 
-void uArmButton::setIsButtonPressedCB(IsButtonPressedCB_t isButtonPressed)
+void uArmButton::setIsButtonPressedCB(IsButtonPressedCB_t isButtonPressed, void *param)
 {
 	pIsButtonPressedCB = isButtonPressed;
+	_paramIsPressed = param;
 }
 
 
@@ -57,7 +64,7 @@ bool uArmButton::isPressed()
 	if (pIsButtonPressedCB == NULL)
 		return false;
 
-	if (pIsButtonPressedCB())
+	if (pIsButtonPressedCB(_paramIsPressed))
 		return true;
 
 	return false;
@@ -112,7 +119,7 @@ void uArmButton::tick()
 			
 			if (pButtonLongPressedCB != NULL)
 			{
-				pButtonLongPressedCB();
+				pButtonLongPressedCB(_prarmLongPress);
 			}
 			
 		}
@@ -122,7 +129,7 @@ void uArmButton::tick()
 			
 			if (pButtonEventCB != NULL)
 			{
-				pButtonEventCB();
+				pButtonEventCB(_paramClick);
 			}
 					
 		}

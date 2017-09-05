@@ -125,6 +125,8 @@
 
 #define REPORT_TYPE_POS		3
 #define REPORT_TYPE_GROVE	10
+#define REPORT_TYPE_GROVE2	11
+
 
 #define SERVO_HW_FIX_VER	2
 #define PUMP_HW_FIX_VER		1
