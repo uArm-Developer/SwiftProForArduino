@@ -29,7 +29,7 @@ void pump_set_state(pump_state_t state)
 	pump_state = state;
 }
 
-void pump_run()
+void pump_tick()
 {
 	static uint8_t valve_on_times = 0;
 

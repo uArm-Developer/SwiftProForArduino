@@ -1820,6 +1820,7 @@ void line_to_destination_angle()
 
 }
 
+extern float get_radius_from_height(float z);
 
 unsigned char inverse_kinematics(const float in_cartesian[3], float angle[3]) {
 	
@@ -1843,6 +1844,12 @@ unsigned char inverse_kinematics(const float in_cartesian[3], float angle[3]) {
 
 	float s = sqrt(x*x + y*y);
 
+	float r = get_radius_from_height(z);
+
+	if ((s - get_front_end_offset()) < r)
+		return -1;
+
+	/*
 	if (z > BASE_HEIGHT)
 	{
 		if (s - get_front_end_offset() < POLAR_MODULE_LENGTH_MIN_ABOVE_BASE)
@@ -1853,6 +1860,7 @@ unsigned char inverse_kinematics(const float in_cartesian[3], float angle[3]) {
 		if (s - get_front_end_offset() < POLAR_MODULE_LENGTH_MIN)
 			return -1;
 	}
+	*/
 
 	if (x < 0.01)
 	{
@@ -3064,6 +3072,142 @@ void unknown_command_error() {
 
 #endif //HOST_KEEPALIVE_FEATURE
 
+float get_radius_from_height(float z)
+{
+	float r = 0;
+	float v_distance = 0;
+
+
+	
+	if (z > 111.70)
+	{
+
+	
+		v_distance = fabs(215.87 - z);
+
+		float data = 158.8*158.8 - v_distance*v_distance;
+
+		r = sqrt(data) - 33.26;
+
+	}
+	else
+	{
+
+		v_distance = fabs(z + 20.88);
+		
+		float data = 225.0*225.0 - v_distance*v_distance;
+
+		r = sqrt(data) - 97.45;
+
+	}
+
+	r -= 44.5;
+
+
+	return r;
+}
+
+
+float get_max_radius_from_height(float destination_z)
+{
+	// 111.70mm
+	float current_z = current_position[Z_AXIS] + get_height_offset();
+
+	float r = 0;
+	float temp_r = 0;
+
+	float z[2] = {0};
+
+	z[0] = current_z;
+	z[1] = destination_z;
+
+
+	if (current_z > destination_z)
+	{
+		z[0] = destination_z;
+		z[1] = current_z;
+	}
+
+	if (z[0] <  215.87 && z[1] >= 215.87)
+	{
+		r = (158.8 - 44.5);
+	}
+
+	for (int i = 0; i < 2; i++)
+	{
+		temp_r = get_radius_from_height(z[i]);
+
+		debugPrint("temp_r = %f\r\n", temp_r);
+
+		if (temp_r > r)
+			r = temp_r;
+		
+	}
+
+
+	debugPrint("r = %f\r\n", r);
+	return r;
+}
+
+uint8_t routine_valid()
+{
+	float stx = current_position[X_AXIS], sty = current_position[Y_AXIS];
+	float edx = destination[X_AXIS], edy = destination[Y_AXIS];
+
+	float temp = (sqrt((edy - sty)*(edy - sty) + (stx - edx)*(stx - edx)));
+
+	float d = 1000.0;
+	if (temp != 0)
+		d = fabs(((edx * sty) - (stx * edy)) / temp);	
+
+	float z = destination[Z_AXIS] + get_height_offset();
+	float r = get_max_radius_from_height(z);
+
+
+	debugPrint("d = %f\r\n", d);
+
+	if (d < r)
+	{
+		debugPrint("use angular interpolation\r\n");
+
+		// visit https://thecodeway.com/blog/?p=932 
+		float x1 = stx, y1 = sty, x2 = edx, y2 = edy, x3 = 0, y3 = 0;
+		
+		float A = (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1);
+		float B = 2 * ((x2-x1)*(x1-x3) + (y2-y1)*(y1-y3));
+		float C = x3*x3 + y3*y3 + x1*x1 + y1*y1 - 2*(x3*x1 + y3*y1) - r*r;
+		
+		float delta = B*B - 4*A*C;
+		
+		if (delta > 0)
+		{
+			debugPrint("delta > 0\r\n");
+			float u1 = (-B + sqrt(B*B - 4*A*C))/ (2*A);
+			float u2 = (-B - sqrt(B*B - 4*A*C))/ (2*A);
+			
+			debugPrint("u1 = %f, u2 = %f\r\n", u1, u2);
+			
+			if (u1 < 0 || u1 > 1 || u2 < 0 || u2 > 1)
+			{
+		
+				return true;				
+			}
+			else
+			{
+				return false;
+			}
+			
+
+		}
+		
+		return true;
+	}	
+	else
+	{
+		return true;
+	}
+}
+
 /**
  * G0, G1: Coordinated movement of X Y Z E axes
  */
@@ -3073,6 +3217,9 @@ inline uint8_t gcode_G0_G1() {
 
  	if (result != E_OK)
 		return result;
+
+	if (!routine_valid())
+		return E_ROUTINE_UNAVAILABLE;
 
     #if ENABLED(FWRETRACT)
 
@@ -7517,8 +7664,9 @@ void process_next_command() {
 		if (result != E_OK)
 		{
 			// need ok even position out of range to skip this point
+			sprintf(replyBuf, "E%d unreachable\r\n", result);
 			result = E_OK;
-			sprintf(replyBuf, "E22 Position out of range\r\n");
+			
 		}
         break;
       case 1:
@@ -7530,8 +7678,9 @@ void process_next_command() {
 		if (result != E_OK)
 		{
 			// need ok even position out of range to skip this point
+			sprintf(replyBuf, "E%d unreachable\r\n", result);
 			result = E_OK;
-			sprintf(replyBuf, "E22 Position out of range\r\n");
+			
 		}		
         break;
 
@@ -7674,8 +7823,9 @@ void process_next_command() {
 			if (result != E_OK)
 			{
 				// need ok even position out of range to skip this point 
+				sprintf(replyBuf, "E%d unreachable\r\n", result);
 				result = E_OK;
-				sprintf(replyBuf, "E22 Position out of range\r\n");
+				
 			}			
 			relative_mode = relative_mode_backup;
 		}
@@ -7690,8 +7840,9 @@ void process_next_command() {
 			if (result != E_OK)
 			{
 				// need ok even position out of range to skip this point  
+				sprintf(replyBuf, "E%d unreachable\r\n", result);
 				result = E_OK;
-				sprintf(replyBuf, "E22 Position out of range\r\n");
+
 			}			
 			relative_mode = relative_mode_backup;
 		}
@@ -7714,11 +7865,27 @@ void process_next_command() {
       #endif // ULTIPANEL
 
 	  case 3:
-	  	uarm_gcode_G0();
+	  	if (get_user_mode() == USER_MODE_LASER)
+	  	{
+		  	//uarm_gcode_G0();
+		  	static uint8_t power = 255;
+		  	stepper.synchronize();
+
+			if (code_seen('V'))
+				power = code_value_byte();
+			
+			laser_on(power);
+	  	}
 	  	break;
+	  	
 
 	 case 5:
-	 	uarm_gcode_G1();
+	 	if (get_user_mode() == USER_MODE_LASER)
+	 	{
+		 	//uarm_gcode_G1();
+		 	stepper.synchronize();
+			laser_off();
+	 	}
 	 	break;
 
       case 17:
@@ -8249,6 +8416,10 @@ void process_next_command() {
 	case 2120:
 		uarm_gcode_M2120();
 		break;
+
+	case 2122:
+		uarm_gcode_M2122();
+		break;		
 
 	case 2200:
 		needReply = 1;

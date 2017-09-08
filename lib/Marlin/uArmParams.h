@@ -105,6 +105,7 @@
 #define E_BUFFER_FULL	23
 #define E_NO_POWER		24
 #define E_FAIL			25
+#define E_ROUTINE_UNAVAILABLE	26
 
 
 #define LOWER_ARM_MAX_ANGLE      135.6
@@ -124,6 +125,10 @@
 #define UNLOCK_NUM	22765
 
 #define REPORT_TYPE_POS		3
+
+#define REPORT_MOVING_STOP	9
+
+
 #define REPORT_TYPE_GROVE	10
 #define REPORT_TYPE_GROVE2	11
 

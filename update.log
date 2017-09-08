@@ -1,3 +1,10 @@
+v3.1.22 20170908
+return E26 when routine unavailable.
+return @9 V0 when stop(send M2122 V1 to activate this function)
+support M3(laser_on), M5(laser_off)
+fix BUG: add filter to Power Detect to avoid wrong report(@5 V0/V1)
+
+
 v3.1.21 20170905
 refactor grove modules 
 M2300, M2301,M2302, M2303 are deprecated.

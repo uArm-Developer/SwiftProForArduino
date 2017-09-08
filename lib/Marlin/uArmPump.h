@@ -24,7 +24,7 @@ typedef enum _pump_state_t
 	PUMP_STATE_COUNT
 } pump_state_t;
 
-void pump_run();
+void pump_tick();
 void pump_set_state(pump_state_t state);
 pump_state_t pump_get_state();
 

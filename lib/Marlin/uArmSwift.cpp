@@ -44,8 +44,18 @@ const char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
 extern void get_pos_from_polor(float pos[], float polor[]);
 extern void get_current_pos_polor(float polor[], float pos[]);
 
+static uint8_t moving_stop_report_enable = 0;
+
 void set_block_running(bool running)
 {
+	uint8_t result[128] = {0};
+
+	if (moving_stop_report_enable && !running && block_running != running)
+	{
+		msprintf(result, "@%d V%d\r\n", REPORT_MOVING_STOP, running);		
+		reportString(result);
+	}
+	
 	block_running = running;
 }
 
@@ -158,7 +168,7 @@ void tickTaskRun()
 	led_G.tick();
 	led_B.tick();
 
-	pump_run();
+	pump_tick();
 
 	servo_tick();
 
@@ -285,6 +295,18 @@ void set_fan_function(bool enable)
 	fan_enable = enable;
 }
 
+void laser_on(uint8_t power)
+{
+	// turn on laser
+	analogWrite(FAN_PIN, power);	
+}
+
+void laser_off()
+{
+	// turn off laser
+	analogWrite(FAN_PIN, 0);	
+}
+
 void uarm_gcode_G0()
 {
 	if (get_user_mode() == USER_MODE_LASER || get_user_mode() == USER_MODE_PEN) 
@@ -300,8 +322,7 @@ void uarm_gcode_G0()
 			
 			debugPrint("laser off\r\n");
 			
-			// turn off laser
-			analogWrite(FAN_PIN, 0);
+			laser_off();
 		}
 	}
 }
@@ -327,9 +348,8 @@ void uarm_gcode_G1()
 			}
 
 			debugPrint("laser on p=%d\r\n", power);
-			
-			// turn on laser
-			analogWrite(FAN_PIN, power);
+			laser_on(power);
+
 		}
 	}	
 }
@@ -447,6 +467,20 @@ void uarm_gcode_M2120()
 		}
 	}
 }
+
+void uarm_gcode_M2122()
+{
+	uint8_t value = 0;
+	
+	if (code_seen('V')) 
+	{
+		value = code_value_byte();
+
+		moving_stop_report_enable = value ? 1 : 0;
+
+	}
+}
+
 
 uint8_t uarm_gcode_M2200(char reply[])
 {
