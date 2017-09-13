@@ -51,6 +51,17 @@ void groveButtonLongPressed(void* port)
 }
 
 
+bool groveButtonDown(void* port)
+{
+	uint8_t result[128] = {0};
+
+	uint8_t portNum = (uint8_t)port;
+	
+	debugPrint("groveButtonDown\r\n");
+	
+	msprintf(result, "@%d P%d N%d V%d\r\n", REPORT_TYPE_GROVE2, portNum, GROVE_BUTTON, EVENT_DOWN);
+	reportString(result);	
+}
 
 bool IsGroveButtonPressed(void* pin)
 {
@@ -89,6 +100,7 @@ bool uArmGroveButton::init(uint8_t portNum, uint8_t clk_pin, uint8_t dat_pin)
 	_button.setIsButtonPressedCB(IsGroveButtonPressed, (void*)_buttonPin);
 	_button.setClickedCB(groveButtonClicked, (void*)_portNum);
 	_button.setLongPressedCB(groveButtonLongPressed, (void*)_portNum);
+	_button.setButtonDownCB(groveButtonDown, (void*)_portNum);
 
 
 }
