@@ -756,7 +756,7 @@ void uarm_gcode_M2213()
 	}	
 }
 
-extern unsigned char inverse_kinematics(const float in_cartesian[3], float angle[3]);
+extern char inverse_kinematics(const float in_cartesian[3], float angle[3]);
 uint8_t uarm_gcode_M2220(char reply[])
 {
 	float value[3];

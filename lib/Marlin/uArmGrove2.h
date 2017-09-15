@@ -15,6 +15,28 @@
 #include "uArmGrove.h"
 #include "uArmGroveBase.h"
 
+#include "uArmGroveChainableLED.h"
+#include "uArmGroveSlidingPotentiometer.h"
+#include "uArmGroveButton.h"
+#include "uArmGroveUltrasonic.h"
+#include "uArmGroveLCD1602.h"
+#include "uArmGroveelectromagnet.h"
+#include "uArmGroveTH.h"
+#include "uArmGrovePIRMotion.h"
+#include "uArmGroveFan.h"
+#include "uArmGroveColorSensor.h"
+#include "uArmGroveGestureSensor.h"
+#include "uArmGroveVibrationMotor.h"
+#include "uArmGroveLightSensor.h"
+#include "uArmGroveAngleSensor.h"
+#include "uArmGroveAirQualitySensor.h"
+#include "uArmGroveSoundSensor.h"
+#include "uArmGrove6AxisSensor.h"
+#include "uArmGroveLineFinder.h"
+#include "uArmGroveSpeaker.h"
+#include "uArmGroveEMGDetector.h"
+#include "uArmGroveOLED12864.h"
+
 
 uint8_t initGroveModule2(uint8_t portNum, GroveType type, unsigned char replybuf[]);
 void deinitGroveModule(uint8_t portNum);

@@ -176,7 +176,7 @@ void clearMacFlag()
 void swift_api_init()
 {
 	Serial1.begin(115200);
-	//Serial2.begin(115200);
+	Serial2.begin(115200);
 
 	getMacAddr();
 	getHWVersions();

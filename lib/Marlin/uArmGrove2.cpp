@@ -8,17 +8,6 @@
   */
 
 #include "uArmGrove2.h" 
-#include "uArmGroveChainableLED.h"
-#include "uArmGroveSlidingPotentiometer.h"
-#include "uArmGroveButton.h"
-#include "uArmGroveUltrasonic.h"
-#include "uArmGroveLCD1602.h"
-#include "uArmGroveelectromagnet.h"
-#include "uArmGroveTH.h"
-#include "uArmGrovePIRMotion.h"
-#include "uArmGroveFan.h"
-#include "uArmGroveColorSensor.h"
-#include "uArmGroveGestureSensor.h"
 
 
 #define PORT_NUM_MAX	14
@@ -27,40 +16,40 @@ uArmGroveBase* pModule[PORT_NUM_MAX] = {NULL};
 
 uint16_t PortMask[GROVE_TYPE_COUNT] = {
 	0,
-	0x28,	//GROVE_CHAINABLE_LED = 1
-	0x38,	//GROVE_BUTTON = 2
-	0x6,	//GROVE_SLIDING_POTENTIOMETER = 3
-	0,
-	
-	0,
-	0,
-	0,
-	0,
-	0,
-
-	0x1,	//GROVE_COLOR_SENSOR = 10
-	0x1,	//GROVE_GESTURE_SERSOR = 11
-	0x328,	//GROVE_ULTRASONIC = 12
-	0x310,	//GROVE_FAN = 13
-	0x328,	//GROVE_ELECTROMAGNET = 14
-
-	0x1,	//GROVE_TEMPERATURE_HUMIDITY_SENSOR = 15
-	0X328,	//GROVE_PIR_MOTION_SENSOR = 16
-	1	//GROVE_RGBLCD = 17
-
+	0x28,	//GROVE_CHAINABLE_LED
+	0x38,	//GROVE_BUTTON
+	6,		//GROVE_SLIDING_POTENTIOMETER
+	0x328,	//GROVE_VIBRATION_MOTOR
+	0x2006,	//GROVE_LIGHT_SENSOR
+	0x2006,	//GROVE_ANGLE_SENSOR
+	0x2006,	//GROVE_AIR_QUALITY_SENSOR
+	0x2006,	//GROVE_SOUND_SENSOR
+	1,		//GROVE_6AXIS_SENSOR
+	1,		//GROVE_COLOR_SENSOR
+	1,		//GROVE_GESTURE_SERSOR
+	0x328,	//GROVE_ULTRASONIC
+	0x310,	//GROVE_FAN
+	0x328,	//GROVE_ELECTROMAGNET
+	1,		//GROVE_TEMPERATURE_HUMIDITY_SENSOR
+	0x328,	//GROVE_PIR_MOTION_SENSOR
+	1,		//GROVE_RGBLCD
+	0x328,	//GROVE_LINE_FINDER
+	0x10,	//GROVE_SPEAKER
+	0x2006,	//GROVE_EMG_DETECTOR
+	1		//GROVE_OLED12864
 };
 
 #define GROVE_CLK_PIN 	0
 #define GROVE_DAT_PIN	1
 
 uint8_t port_pin_map[PORT_NUM_MAX][2] = {
-	{0,    0},	//port0 I2C
-	{14,   41},	//port1 A
-	{15,   47},	//port2 A
-	{17,   16},	//port3 D/UART
+	{0,    0},		//port0 I2C
+	{14,   41},		//port1 A
+	{15,   47},		//port2 A
+	{17,   16},		//port3 D/UART
 
-	{10,   51},	//port4 D/PWM
-	{43,   45},	//port5 D
+	{10,   51},		//port4 D/PWM
+	{43,   45},		//port5 D
 	{0xff, 0xff},	//
 	{0xff, 0xff},	//
 
@@ -167,6 +156,46 @@ uint8_t initGroveModule2(uint8_t portNum, GroveType type, unsigned char replybuf
 
 	case GROVE_GESTURE_SERSOR:
 		pModule[portNum] = new uArmGroveGestureSensor();
+		break;
+
+	case GROVE_VIBRATION_MOTOR:
+		pModule[portNum] = new uArmGroveVibrationMotor();
+		break;
+
+	case GROVE_LIGHT_SENSOR:
+		pModule[portNum] = new uArmGroveLightSensor();
+		break;
+
+	case GROVE_ANGLE_SENSOR:
+		pModule[portNum] = new uArmGroveAngleSensor();
+		break;
+
+	case GROVE_AIR_QUALITY_SENSOR:
+		pModule[portNum] = new uArmGroveAirQualitySensor();
+		break;
+
+	case GROVE_SOUND_SENSOR:
+		pModule[portNum] = new uArmGroveSoundSensor();
+		break;
+
+	case GROVE_6AXIS_SENSOR:
+		pModule[portNum] = new uArmGrove6AxisSensor();
+		break;
+
+	case GROVE_LINE_FINDER:
+		pModule[portNum] = new uArmGroveLineFinder();
+		break;
+
+	case GROVE_SPEAKER:
+		pModule[portNum] = new uArmGroveSpeaker();
+		break;
+
+	case GROVE_EMG_DETECTOR:
+		pModule[portNum] = new uArmGroveEMGDetector();
+		break;
+
+	case GROVE_OLED12864:
+		pModule[portNum] = new uArmGroveOLED12864();
 		break;
 
 	}

@@ -1687,7 +1687,7 @@ inline void line_to_axis_pos(AxisEnum axis, float where, float fr_mm_m = 0.0) {
 float delta_angle[3];
 extern float angle_destination[NUM_AXIS];
 //extern float current_angle[NUM_AXIS];
-unsigned char inverse_kinematics(const float in_cartesian[3], float angle[3]);
+char inverse_kinematics(const float in_cartesian[3], float angle[3]);
 inline void set_current_to_destination();
 inline void line_to_destination();
 
@@ -1822,7 +1822,7 @@ void line_to_destination_angle()
 
 extern float get_radius_from_height(float z);
 
-unsigned char inverse_kinematics(const float in_cartesian[3], float angle[3]) {
+char inverse_kinematics(const float in_cartesian[3], float angle[3]) {
 	
 	float xIn = 0.0;
 	float zIn = 0.0;
