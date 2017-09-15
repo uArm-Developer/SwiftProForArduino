@@ -14,7 +14,7 @@
 
 
 
-SeeedOLED 	_OLED12864;
+
 
 
 uArmGroveOLED12864::uArmGroveOLED12864()
@@ -28,12 +28,8 @@ bool uArmGroveOLED12864::init(uint8_t portNum, uint8_t clk_pin, uint8_t dat_pin)
 	_OLED12864.clearDisplay();
 
 
-	_x 		= 0;
-	_y 		= 0;
-	_width 	= 0;
-
-	_OLED12864.clearDisplay();
 	_OLED12864.setInverseDisplay();	   //Set display to normal mode (i.e non-inverse mode)
+	_OLED12864.setHorizontalMode(); 	   //Set addressing mode to Page Mode
 
 
 
@@ -60,74 +56,89 @@ void uArmGroveOLED12864::control()
 	uint8_t row = 0xFF;
 	uint8_t temp2[16][8] = {0};
 	*/
-	
-	_OLED12864.clearDisplay();
-	_OLED12864.setInverseDisplay();	   //Set display to normal mode (i.e non-inverse mode)
-	_OLED12864.setPageMode();		   //Set addressing mode to Page Mode
-	_OLED12864.setTextXY(0,0);		   //Set the cursor to Xth Page, Yth Column  
-	_OLED12864.putString("Hello World222!"); //Print the String
-	return;
+	uint8_t data[128] = {0};
+	uint8_t originData[32] = {0};
+	uint8_t row = 0;
+	uint8_t col = 0;
+	uint8_t src[4] = {0};
 
-/*
+
+
+
 	if (code_seen('V'))
 	{
 		row = code_value_byte();
-		_OLED12864.setTextXY(8 * row,0);
-	}
+		if (row >= 8)
+			return;
 
-	if (code_seen('S'))
-	{
-		code_value_string(string, 64);
-	    for (uint8_t i = 0; i < 32; i++)
-	    {
-	        char high = toupper(string[2 * i]) - 0x30;
-	        if (high > 9)
-	        	high -= 7;
-
-	        char low = toupper(string[2 * i + 1]) - 0x30;
-	        if (low > 9)
-	        	low -= 7;
-
-	        source[i] = high * 16 + low;
-
-	        debugPrint("source[%d]=%x\r\n", i, source[i]);
-	    }
 	}
 	else
 	{
-		MYSERIAL.println("Error.");
-		return false;
+		_OLED12864.clearDisplay();
+		return;
 	}
 
-	for (uint8_t i = 0; i < 4; i++)
-	{
-		for (uint8_t j = 0; j < 8; j++)
-		{
-			uint8_t temp1[8][4] = {0};
+	_OLED12864.setTextXY(row, 0);		   //Set the cursor to Xth Page, Yth Column  
+	
 
-			temp1[j][i] = source[8*i + j];
-			temp2[2*j][2*i] = temp1[j][i];
-			temp2[2*j + 1][2*i + 1] = temp1[j][i];
+	if (code_seen('S'))
+	{
+		code_value_string(data, 64);
+	    for (uint8_t i = 0; i < strlen(data)/2; i++)
+	    {
+	        char high = toupper(data[2 * i]) - 0x30;
+	        if (high > 9)
+	        	high -= 7;
+
+			if (high > 15) high = 15;
+
+	        char low = toupper(data[2 * i + 1]) - 0x30;
+	        if (low > 9)
+	        	low -= 7;
+			if (low > 15) low = 15;
+
+	        originData[i] = high * 16 + low;
+
+	        debugPrint("originData[%d]=%d\r\n", i, originData[i]);
+	    }
+	}	
+	else
+	{
+		return;
+	}
+
+
+	for (int i = 0; i < 128; i++)
+		data[i] = 0;
+
+	// map originData to screen 1px -> 4px
+	for (int i = 0; i < 8; i++)
+	{
+		src[0] = originData[0 + i];
+		src[1] = originData[8 + i];
+		src[2] = originData[16 + i];
+		src[3] = originData[24 + i];
+
+		for (int j = 0; j < 8; j++)
+		{
+			uint8_t index = 16*i+2*j;
+			uint8_t bit = (7 - j);
+
+			for (int k = 0; k < 4; k++)
+			{
+				if (src[k] & (1 << bit))
+				{
+					data[index] |= (3 << (k*2));
+					data[index+1] |= (3 << (k*2));
+				}
+			}
 		}
 	}
+	
+	
+	_OLED12864.drawData(data, 128);
 
-	for (uint8_t i = 0; i < 8; i++)
-	{
-		for (uint8_t j = 0; j < 16; j++)
-		{
-			display[16*i + j] = temp2[j][i];
-
-	        debugPrint("display[%d]=%x\r\n", i, display[16*i + j]);
-		}
-	}
-
-	_OLED12864.drawBitmap(display, sizeof(display));
-
-	msprintf(result, "@%d P%d N%d V%d OK\r\n", REPORT_TYPE_GROVE2, _portNum, GROVE_ULTRASONIC);
-	reportString(result);
-
-	debugPrint("OLED12864 ctrl OK\r\n");
-*/
+	
 }
 
 void uArmGroveOLED12864::tick()

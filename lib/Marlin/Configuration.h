@@ -127,7 +127,7 @@
 
 #define UARM_SWIFT
 
-#define DEBUG
+//#define DEBUG
 //#define SWIFT_TEST_MODE
 
 #define HW_VER  	"3.3"

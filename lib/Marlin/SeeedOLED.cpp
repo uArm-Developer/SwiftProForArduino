@@ -187,7 +187,7 @@ void SeeedOLED::setTextXY(unsigned char Row, unsigned char Column)
 void SeeedOLED::clearDisplay()
 {
   unsigned char i,j;
-  sendCommand(SeeedOLED_Display_Off_Cmd);   //display off
+  //sendCommand(SeeedOLED_Display_Off_Cmd);   //display off
   for(j=0;j<8;j++)
   {
     setTextXY(j,0);
@@ -346,6 +346,21 @@ unsigned char SeeedOLED::putFloat(float floatNumber)
   f +=decimal;
   return f;
 }
+
+
+void SeeedOLED::drawData(unsigned char bitmaparray[],int bytes)
+{
+
+
+  for(int i=0;i<bytes;i++)
+  {
+      sendData(bitmaparray[i]);
+  }
+
+
+  
+}
+
 
 void SeeedOLED::drawBitmap(unsigned char *bitmaparray,int bytes)
 {

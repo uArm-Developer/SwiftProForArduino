@@ -38,6 +38,7 @@
 #include "uArmGroveOLED12864.h"
 
 
+
 uint8_t initGroveModule2(uint8_t portNum, GroveType type, unsigned char replybuf[]);
 void deinitGroveModule(uint8_t portNum);
 uint8_t controlGroveModule(uint8_t portNum, unsigned char replybuf[]);

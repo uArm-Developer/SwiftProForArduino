@@ -92,6 +92,8 @@ unsigned char putNumber(long n);
 unsigned char putFloat(float floatNumber,unsigned char decimal);
 unsigned char putFloat(float floatNumber);
 void drawBitmap(unsigned char *bitmaparray,int bytes);
+void drawData(unsigned char bitmaparray[],int bytes);
+
 
 void setHorizontalScrollProperties(unsigned char direction, unsigned char startPage, unsigned char endPage, unsigned char scrollSpeed);
 void activateScroll();

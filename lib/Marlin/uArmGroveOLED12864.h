@@ -31,13 +31,7 @@ public:
 	void tick();
 
 private:
-	
-	uint8_t 	_value;
-	uint8_t 	_type;
-	uint8_t 	_x;
-	uint8_t 	_y;
-	uint8_t 	_width;
-	uint8_t 	_pixel_value;
+	SeeedOLED 	_OLED12864;
 };
 
 #endif // _UARM_GROVE_OLED12864_H_
