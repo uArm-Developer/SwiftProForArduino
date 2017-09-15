@@ -1,3 +1,6 @@
+v3.1.23 20170915
+add grove modules(oled, angle sensor etc.)
+
 v3.1.22 20170908
 return E26 when routine unavailable.
 return @9 V0 when stop(send M2122 V1 to activate this function)
