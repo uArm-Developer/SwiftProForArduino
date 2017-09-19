@@ -50,6 +50,7 @@ enum GroveType
 	GROVE_SPEAKER	 					= 19,
 	GROVE_EMG_DETECTOR					= 20,
 	GROVE_OLED12864						= 21,
+	GROVE_SERVO							= 22,
 
 	GROVE_TYPE_COUNT
 };

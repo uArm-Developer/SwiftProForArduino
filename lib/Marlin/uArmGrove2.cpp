@@ -36,7 +36,8 @@ uint16_t PortMask[GROVE_TYPE_COUNT] = {
 	0x328,	//GROVE_LINE_FINDER
 	0x10,	//GROVE_SPEAKER
 	0x2006,	//GROVE_EMG_DETECTOR
-	1		//GROVE_OLED12864
+	1,		//GROVE_OLED12864
+	0x6		//GROVE_SERVO
 };
 
 #define GROVE_CLK_PIN 	0
@@ -196,6 +197,10 @@ uint8_t initGroveModule2(uint8_t portNum, GroveType type, unsigned char replybuf
 
 	case GROVE_OLED12864:
 		pModule[portNum] = new uArmGroveOLED12864();
+		break;
+
+	case GROVE_SERVO:
+		pModule[portNum] = new uArmGroveServo();
 		break;
 
 	}

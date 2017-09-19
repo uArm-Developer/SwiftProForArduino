@@ -74,7 +74,14 @@ void uArmGroveOLED12864::control()
 	}
 	else
 	{
-		_OLED12864.clearDisplay();
+		for (int i = 0; i < 128; i++)
+			data[i] = 0;
+
+		for (int i = 0; i < 8; i++)
+		{
+			_OLED12864.setTextXY(i, 0);
+			_OLED12864.drawData(data, 128);
+		}
 		return;
 	}
 
@@ -86,13 +93,13 @@ void uArmGroveOLED12864::control()
 		code_value_string(data, 64);
 	    for (uint8_t i = 0; i < strlen(data)/2; i++)
 	    {
-	        char high = toupper(data[2 * i]) - 0x30;
+	        uint8_t high = toupper(data[2 * i]) - 0x30;
 	        if (high > 9)
 	        	high -= 7;
 
 			if (high > 15) high = 15;
 
-	        char low = toupper(data[2 * i + 1]) - 0x30;
+	        uint8_t low = toupper(data[2 * i + 1]) - 0x30;
 	        if (low > 9)
 	        	low -= 7;
 			if (low > 15) low = 15;
