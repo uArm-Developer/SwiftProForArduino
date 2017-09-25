@@ -154,7 +154,7 @@ void uArmGroveGestureSensor::report()
 
 	if (gesture != 255)
 	{
-		msprintf(result, "@%d P%d N%d V%d\r\n", REPORT_TYPE_GROVE, _portNum, GROVE_GESTURE_SERSOR, gesture);
+		msprintf(result, "@%d P%d N%d V%d\r\n", REPORT_TYPE_GROVE2, _portNum, GROVE_GESTURE_SERSOR, gesture);
 		reportString(result);
 	}
 }

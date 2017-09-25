@@ -14,7 +14,7 @@ GroveColorSensor::GroveColorSensor()
 }
 
 
-GroveColorSensor::init()
+void GroveColorSensor::init()
 {
 	GroveColorSensor::setTimingReg(); 
 	GroveColorSensor::setInterruptSourceReg();  

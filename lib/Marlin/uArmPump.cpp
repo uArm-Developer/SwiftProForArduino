@@ -50,7 +50,7 @@ void pump_tick()
 
 		if (getHWSubversion() >= PUMP_HW_FIX_VER)
 		{
-			if (valve_on_times >= VALVE_ON_TIMES_MAX)
+			if (valve_on_times >= VALVE_ON_TIMES_MAX*10)
 			{
 				valve_on_times = 0;
 				digitalWrite(VALVE_EN, LOW); 

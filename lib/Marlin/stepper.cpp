@@ -289,9 +289,28 @@ void Stepper::set_directions() {
       count_direction[AXIS ##_AXIS] = 1; \
     }
 
-  SET_STEP_DIR(X); // A
-  SET_STEP_DIR(Y); // B
-  SET_STEP_DIR(Z); // C
+  #define SET_STEP_DIR2(AXIS) \
+    if (motor_direction(AXIS ##_AXIS)) { \
+      AXIS ##_APPLY_DIR(!INVERT_## AXIS ##_DIR, false); \
+      count_direction[AXIS ##_AXIS] = -1; \
+    } \
+    else { \
+      AXIS ##_APPLY_DIR(INVERT_## AXIS ##_DIR, false); \
+      count_direction[AXIS ##_AXIS] = 1; \
+    }	
+
+	if (getHWSubversion() == 1)
+	{
+		SET_STEP_DIR2(X); // A
+		SET_STEP_DIR2(Y); // B
+		SET_STEP_DIR2(Z); // C		
+	}
+	else
+	{
+		SET_STEP_DIR(X); // A
+		SET_STEP_DIR(Y); // B
+		SET_STEP_DIR(Z); // C
+	}
 
   #if DISABLED(ADVANCE)
     if (motor_direction(E_AXIS)) {
@@ -1047,7 +1066,7 @@ void Stepper::report_positions() {
         delayMicroseconds(2); \
         _APPLY_STEP(AXIS)(_INVERT_STEP_PIN(AXIS), true); \
         _APPLY_DIR(AXIS, old_pin); \
-      }
+      }	
 
     switch (axis) {
 
@@ -1076,9 +1095,19 @@ void Stepper::report_positions() {
                   old_y_dir_pin = Y_DIR_READ,
                   old_z_dir_pin = Z_DIR_READ;
           //setup new step
-          X_DIR_WRITE(INVERT_X_DIR ^ z_direction);
-          Y_DIR_WRITE(INVERT_Y_DIR ^ z_direction);
-          Z_DIR_WRITE(INVERT_Z_DIR ^ z_direction);
+          if (getHWSubversion() == 1)
+          {
+          	X_DIR_WRITE((!INVERT_X_DIR) ^ z_direction);
+          	Y_DIR_WRITE((!INVERT_Y_DIR) ^ z_direction);
+          	Z_DIR_WRITE((!INVERT_Z_DIR) ^ z_direction);
+          }
+		  else
+          {
+		 	X_DIR_WRITE(INVERT_X_DIR ^ z_direction);
+          	Y_DIR_WRITE(INVERT_Y_DIR ^ z_direction);
+          	Z_DIR_WRITE(INVERT_Z_DIR ^ z_direction);
+          }
+		  
           //perform step
           X_STEP_WRITE(!INVERT_X_STEP_PIN);
           Y_STEP_WRITE(!INVERT_Y_STEP_PIN);

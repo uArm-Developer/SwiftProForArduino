@@ -34,9 +34,10 @@ uArmGroveChainableLED::uArmGroveChainableLED()
 
 bool uArmGroveChainableLED::init(uint8_t portNum, uint8_t clk_pin, uint8_t dat_pin)
 {
+	uint8_t num = 0;
 	if (code_seen('V'))
 	{
-		uint8_t num = code_value_byte();
+		num = code_value_byte();
 		_chLed.setNumber(num );
 		debugPrint("chainaleLed %d\r\n", num);
 	}
@@ -53,6 +54,7 @@ bool uArmGroveChainableLED::init(uint8_t portNum, uint8_t clk_pin, uint8_t dat_p
 
 	debugPrint("chainaleLed setPins %d, %d\r\n", clk_pin, dat_pin);
 	_chLed.setPin(clk_pin, dat_pin);
+
 
 	return true;
 }

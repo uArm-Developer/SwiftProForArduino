@@ -41,7 +41,7 @@ void uArmGroveTH::report()
 {
 	char result[128];
 
-	msprintf(result, "@%d P%d N%d T%f H%f\r\n", REPORT_TYPE_GROVE, _portNum, GROVE_TEMPERATURE_HUMIDITY_SENSOR, grove_TH.ReadTemperature(), grove_TH.ReadHumidity());
+	msprintf(result, "@%d P%d N%d T%f H%f\r\n", REPORT_TYPE_GROVE2, _portNum, GROVE_TEMPERATURE_HUMIDITY_SENSOR, grove_TH.ReadTemperature(), grove_TH.ReadHumidity());
 	reportString(result);
 }
 

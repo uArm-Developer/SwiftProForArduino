@@ -136,6 +136,9 @@ class Temperature {
 
   private:
 
+		static uint16_t temp0AdcMin[2];
+		static uint16_t temp0AdcMax[2];
+
     #if ENABLED(TEMP_SENSOR_1_AS_REDUNDANT)
       static int redundant_temperature_raw;
       static float redundant_temperature;
@@ -420,6 +423,7 @@ class Temperature {
 
   private:
 
+	static void temp0AdcFilter(uint16_t temp0Adc);
     static void set_current_temp_raw();
 
     static void updateTemperaturesFromRawValues();

@@ -61,6 +61,7 @@ bool uArmGroveColorSensor::init(uint8_t portNum, uint8_t clk_pin, uint8_t dat_pi
 	} else {
 		MYSERIAL.println("No TCS34725 found ... check your connections");
 		MYSERIAL.println("use P0(I2C)");
+		return false;
 	}
 
 	_portNum = portNum;
@@ -88,7 +89,7 @@ void uArmGroveColorSensor::report()
 	blue = constrain(blue,0,255);
 
 
-	msprintf(result, "@%d P%d N%d R%d G%d B%d\r\n", REPORT_TYPE_GROVE, _portNum, GROVE_COLOR_SENSOR, red, green, blue);
+	msprintf(result, "@%d P%d N%d R%d G%d B%d\r\n", REPORT_TYPE_GROVE2, _portNum, GROVE_COLOR_SENSOR, red, green, blue);
 	reportString(result);
 }
 
