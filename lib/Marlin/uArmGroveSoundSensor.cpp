@@ -30,12 +30,8 @@ void uArmGroveSoundSensor::report()
 	char result[128];
 	uint16_t value = 0;
 
-	for( int i = 0; i < 32; i++)
-	{
-		value += analogRead(_clk_pin);
-	}
 
-	value >>= 5;
+	value = getAnalogPinValue(_clk_pin);
 
 	msprintf(result, "@%d P%d N%d V%d\r\n", REPORT_TYPE_GROVE2, _portNum, GROVE_SOUND_SENSOR, value);
 	reportString(result);

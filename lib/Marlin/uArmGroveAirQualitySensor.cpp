@@ -30,7 +30,7 @@ void uArmGroveAirQualitySensor::report()
 {
 	char result[128];
 
-	uint16_t value = analogRead(_clk_pin);
+	uint16_t value = getAnalogPinValue(_clk_pin);
 	//debugPrint("value=%d\r\n", value);
 
 	msprintf(result, "@%d P%d N%d V%d\r\n", REPORT_TYPE_GROVE2, _portNum, GROVE_AIR_QUALITY_SENSOR, value);

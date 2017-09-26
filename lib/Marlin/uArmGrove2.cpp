@@ -47,19 +47,19 @@ uint8_t port_pin_map[PORT_NUM_MAX][2] = {
 	{0,    0},		//port0 I2C
 	{14,   41},		//port1 A
 	{15,   47},		//port2 A
-	{17,   16},		//port3 D/UART
+	{17,   16},		//port3 D
 
 	{10,   51},		//port4 D/PWM
 	{43,   45},		//port5 D
-	{0xff, 0xff},	//
-	{0xff, 0xff},	//
+	{0xff, 0xff},	//not used
+	{0xff, 0xff},	//not used
 
 	{8,    0xff},	//port8 D
 	{9,    0xff},	//port9 D
-	{0xff, 0xff},	//
-	{0xff, 0xff},	//
+	{0xff, 0xff},	//not used
+	{0xff, 0xff},	//not used
 
-	{0xff, 0xff},	//
+	{0xff, 0xff},	//not used
 	{13,   0xff},	//port13 A
 };
 
