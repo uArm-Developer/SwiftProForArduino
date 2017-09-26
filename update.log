@@ -1,3 +1,6 @@
+v3.1.17 20170926
+add adc filter to temperature
+
 v3.1.16	20170724
 Use B point for calibration.(command: "M2401 B")
 

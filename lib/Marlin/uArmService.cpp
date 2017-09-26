@@ -730,6 +730,8 @@ void uArmService::tipDetect()
 	}	
 }
 
+
+uint8_t tick_count = 0;
 void uArmService::run()
 {
 #ifdef SWIFT_TEST_MODE
@@ -750,8 +752,15 @@ void uArmService::run()
 	{
 		mTickRecorderTime= millis();
 		recorderTick();
-		powerDetect();
+		
 		tipDetect();
+
+		tick_count++;
+		if (tick_count >= (1000/TICK_INTERVAL))
+		{
+			tick_count = 0;
+			powerDetect();
+		}
 
 	}
 #endif

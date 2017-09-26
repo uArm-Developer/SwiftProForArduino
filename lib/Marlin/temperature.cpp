@@ -66,6 +66,10 @@ int   Temperature::current_temperature_raw[HOTENDS] = { 0 },
 
 unsigned char Temperature::soft_pwm_bed;
 
+   uint16_t Temperature::temp0AdcMin[2] = {0xffff, 0xffff};
+   uint16_t Temperature::temp0AdcMax[2] = {0, 0};
+
+
 #if ENABLED(FAN_SOFT_PWM)
   unsigned char Temperature::fanSpeedSoftPwm[FAN_COUNT];
 #endif
@@ -1383,6 +1387,34 @@ void Temperature::set_current_temp_raw() {
   temp_meas_ready = true;
 }
 
+
+void Temperature::temp0AdcFilter(uint16_t temp0Adc)
+{
+	// min[0] < min[1] < max[0] < max[1]
+	if (temp0Adc < temp0AdcMin[0])
+	{
+		temp0AdcMin[1] = temp0AdcMin[0];
+		temp0AdcMin[0] = temp0Adc;
+	}
+	else if (temp0Adc < temp0AdcMin[1])
+	{
+		temp0AdcMin[1] = temp0Adc;
+	}
+
+	if (temp0Adc > temp0AdcMax[1])
+	{
+		temp0AdcMax[0] = temp0AdcMax[1];
+		temp0AdcMax[1] = temp0Adc;
+	}
+	else if (temp0Adc > temp0AdcMax[0])
+	{
+		temp0AdcMax[0] = temp0Adc;
+	}
+
+	
+}
+
+
 /**
  * Timer 0 is shared with millies
  *  - Manage PWM to all the heaters and fan
@@ -1668,6 +1700,7 @@ void Temperature::isr() {
       break;
     case MeasureTemp_0:
       #if HAS_TEMP_0
+	  	temp0AdcFilter(ADC);
         raw_temp_value[0] += ADC;
       #endif
       temp_state = PrepareTemp_BED;
@@ -1759,6 +1792,8 @@ void Temperature::isr() {
   } // switch(temp_state)
 
   if (temp_count >= OVERSAMPLENR) { // 10 * 16 * 1/(16000000/64/256)  = 164ms.
+  	raw_temp_value[0] -= (temp0AdcMin[0] + temp0AdcMin[1] + temp0AdcMax[0] + temp0AdcMax[1]); 
+	raw_temp_value[0] = raw_temp_value[0] * 4 / 3;
     // Update the raw values if they've been read. Else we could be updating them during reading.
     if (!temp_meas_ready) set_current_temp_raw();
 
@@ -1770,6 +1805,11 @@ void Temperature::isr() {
     temp_count = 0;
     for (int i = 0; i < 4; i++) raw_temp_value[i] = 0;
     raw_temp_bed_value = 0;
+
+	temp0AdcMin[0] = 0xffff;
+	temp0AdcMin[1] = 0xffff;	
+	temp0AdcMax[0] = 0;
+	temp0AdcMax[1] = 0;
 
     #if HAS_TEMP_0 && DISABLED(HEATER_0_USES_MAX6675)
       #if HEATER_0_RAW_LO_TEMP > HEATER_0_RAW_HI_TEMP

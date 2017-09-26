@@ -670,8 +670,11 @@ unsigned char getXYZFromAngle(float& x, float& y, float& z, float rot, float lef
 bool isPowerPlugIn()
 {
 	//debugPrint("power analog:%d\r\n", analogRead(POWER_DETECT));
+	uint16_t power_adc_value = 0;
 
-	if (analogRead(POWER_DETECT) > 100)
+	power_adc_value = getAnalogPinValue(POWER_DETECT);
+
+	if (power_adc_value > 100)
 		return true;
 	else
 		return false;
