@@ -245,8 +245,8 @@ void all_pins_init()
 	bt_test_state = BT_TEST_INIT;
 
 	test_result |= eeprom_write_test(EEPROM_EXTERN_USER) ? (1 << TEST_ITEM_EEPROM) : 0;
-	
-	all_light_off();
+
+	all_light_off(NULL);
 	service.ledAllOff();	
 }
 
