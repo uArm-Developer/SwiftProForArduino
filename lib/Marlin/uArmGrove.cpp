@@ -238,7 +238,7 @@ void initGroveModule(GroveType type, GrovePortType portType, unsigned char pin)
   			tcs.write8(TCS34725_PERS, TCS34725_PERS_NONE); 
   			tcs.setInterrupt(true);		    
 		} else {
-		    Serial.println("No TCS34725 found ... check your connections");
+		    MYSERIAL.println("No TCS34725 found ... check your connections");
 		}		
 		break;
 	

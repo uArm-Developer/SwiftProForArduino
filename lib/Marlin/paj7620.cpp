@@ -273,7 +273,7 @@ uint8_t paj7620WriteReg(uint8_t addr, uint8_t cmd)
     i = Wire.endTransmission();  		    // end transmission
 	if(0 != i)
     {
-		Serial.print("Transmission error!!!\n");
+		//MYSERIAL.print("Transmission error!!!\n");
 	}
 	return i;
 }
@@ -295,7 +295,7 @@ uint8_t paj7620ReadReg(uint8_t addr, uint8_t qty, uint8_t data[])
 
 	if(0 != error)
     {
-		Serial.print("Transmission error!!!\n");
+		//Serial.print("Transmission error!!!\n");
 		return error; //return error code
 	}
 	

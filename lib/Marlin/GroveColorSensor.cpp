@@ -105,14 +105,15 @@ void GroveColorSensor::readRGB()
 		for(i = 0; i < 8; ++i)
 		{
 			readingdata_[i] = Wire.read();
-			Serial.println(readingdata_[i], BIN);
+			//Serial.println(readingdata_[i], BIN);
 		}
 	}
 	green_	= readingdata_[1] * 256 + readingdata_[0];
 	red_ 	= readingdata_[3] * 256 + readingdata_[2];
 	blue_	= readingdata_[5] * 256 + readingdata_[4];
 	clear_	= readingdata_[7] * 256 + readingdata_[6];
-	
+
+/*
 	Serial.print("The RGB value are: RGB( ");
 	Serial.print(red_,DEC);
 	Serial.print(", ");
@@ -122,6 +123,7 @@ void GroveColorSensor::readRGB()
 	Serial.println(" )");
 	Serial.print("The Clear channel value are: ");
 	Serial.println(clear_,DEC);
+*/
 }
 
 void GroveColorSensor::readRGB(int *red, int *green, int *blue)
