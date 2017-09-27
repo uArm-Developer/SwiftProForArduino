@@ -354,7 +354,7 @@ uint8_t paj7620Init(void)
 	
 	Wire.begin();
 	
-	Serial.println("INIT SENSOR...");
+	//Serial.println("INIT SENSOR...");
 
 	paj7620SelectBank(BANK0);
 	paj7620SelectBank(BANK0);
@@ -369,10 +369,10 @@ uint8_t paj7620Init(void)
 	{
 		return error;
 	}
-	Serial.print("Addr0 =");
-	Serial.print(data0 , HEX);
-	Serial.print(",  Addr1 =");
-	Serial.println(data1 , HEX);
+	//Serial.print("Addr0 =");
+	//Serial.print(data0 , HEX);
+	//Serial.print(",  Addr1 =");
+	//Serial.println(data1 , HEX);
 
 	if ( (data0 != 0x20 ) || (data1 != 0x76) )
 	{
@@ -380,7 +380,7 @@ uint8_t paj7620Init(void)
 	}
 	if ( data0 == 0x20 )
 	{
-		Serial.println("wake-up finish.");
+		//Serial.println("wake-up finish.");
 	}
 	
 	for (i = 0; i < INIT_REG_ARRAY_SIZE; i++) 
@@ -390,7 +390,7 @@ uint8_t paj7620Init(void)
 	
 	paj7620SelectBank(BANK0);  //gesture flage reg in Bank0
 	
-	Serial.println("Paj7620 initialize register finished.");
+	//Serial.println("Paj7620 initialize register finished.");
 	return 0;
 }
 

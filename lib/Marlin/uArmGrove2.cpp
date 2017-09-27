@@ -34,7 +34,7 @@ uint16_t PortMask[GROVE_TYPE_COUNT] = {
 	0x338,	//GROVE_PIR_MOTION_SENSOR
 	1,		//GROVE_RGBLCD
 	0x338,	//GROVE_LINE_FINDER
-	0x10,	//GROVE_SPEAKER
+	0x338,	//GROVE_IR_DISTANCE
 	0x2006,	//GROVE_EMG_DETECTOR
 	1,		//GROVE_OLED12864
 	0x6		//GROVE_SERVO
@@ -187,8 +187,8 @@ uint8_t initGroveModule2(uint8_t portNum, GroveType type, unsigned char replybuf
 		pModule[portNum] = new uArmGroveLineFinder();
 		break;
 
-	case GROVE_SPEAKER:
-		pModule[portNum] = new uArmGroveSpeaker();
+	case GROVE_IR_DISTANCE:
+		pModule[portNum] = new uArmGroveIRDistance();
 		break;
 
 	case GROVE_EMG_DETECTOR:

@@ -33,7 +33,7 @@
 #include "uArmGroveSoundSensor.h"
 #include "uArmGrove6AxisSensor.h"
 #include "uArmGroveLineFinder.h"
-#include "uArmGroveSpeaker.h"
+#include "uArmGroveIRDistance.h"
 #include "uArmGroveEMGDetector.h"
 #include "uArmGroveOLED12864.h"
 #include "uArmGroveServo.h"

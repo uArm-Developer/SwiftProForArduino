@@ -74,8 +74,8 @@ void uArmGroveOLED12864::control()
 	}
 	else
 	{
-		for (int i = 0; i < 128; i++)
-			data[i] = 0;
+		// clear screen
+		memset(data, 0, 128);
 
 		for (int i = 0; i < 8; i++)
 		{
@@ -115,6 +115,9 @@ void uArmGroveOLED12864::control()
 	}
 
 
+
+
+/*
 	for (int i = 0; i < 128; i++)
 		data[i] = 0;
 
@@ -141,9 +144,34 @@ void uArmGroveOLED12864::control()
 			}
 		}
 	}
-	
-	
+
 	_OLED12864.drawData(data, 128);
+*/
+
+	// map originData to screen 1px -> 64px 
+
+	
+	for (int i = 0; i < 8; i++)
+	{
+		memset(data, 0, 128);
+		_OLED12864.setTextXY(i, 0);
+
+		for (int j = 0; j < 128; j++)
+		{
+			uint8_t bit = 7 - (j % 64 / 8);
+			if (originData[2*i+j/64] & (1 << bit))
+			{
+				data[j] = 0xff;
+			}
+			else
+			{
+				data[j] = 0;
+			}
+		}
+	
+		
+		_OLED12864.drawData(data, 128);
+	}
 
 	
 }

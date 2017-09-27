@@ -47,7 +47,7 @@ enum GroveType
 	GROVE_PIR_MOTION_SENSOR 			= 16,
 	GROVE_RGBLCD 						= 17,
 	GROVE_LINE_FINDER 					= 18,
-	GROVE_SPEAKER	 					= 19,
+	GROVE_IR_DISTANCE	 				= 19,
 	GROVE_EMG_DETECTOR					= 20,
 	GROVE_OLED12864						= 21,
 	GROVE_SERVO							= 22,
@@ -67,8 +67,6 @@ enum GrovelcdcmdType
 
 enum GrovelcdstringType
 {
-	GROVE_CMD_TYPE_NONE = 0,
-
 	GROVE_CMD_TYPE_DISPLAYROW1 ,
 	GROVE_CMD_TYPE_DISPLAYROW2 ,
 	GROVE_CMD_TYPE_COLOR ,

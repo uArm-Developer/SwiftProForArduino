@@ -57,7 +57,7 @@ void uArmGrove6AxisSensor::report()
 	//debugPrint("realAccel %f %f %f\r\n", _realAccel[0], _realAccel[1], _realAccel[2]);
 	//debugPrint("heading %f titleHeading %f\r\n", _heading, _titleHeading);
 
-	msprintf(result, "@%d P%d N%d  X%f  Y%f  Z%f  H%f  T%f\r\n",
+	msprintf(result, "@%d P%d N%d X%f Y%f Z%f H%f T%f\r\n",
 			REPORT_TYPE_GROVE2, _portNum, GROVE_6AXIS_SENSOR,
 			_realAccel[0], _realAccel[1], _realAccel[2],
 			_heading, _titleHeading);
