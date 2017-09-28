@@ -22,7 +22,7 @@ public:
 	void tick();
 
 private:
-	Grovefan _grovefan;
+	//Grovefan _grovefan;
 
 };
 

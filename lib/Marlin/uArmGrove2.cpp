@@ -16,7 +16,7 @@ uArmGroveBase* pModule[PORT_NUM_MAX] = {NULL};
 
 uint16_t PortMask[GROVE_TYPE_COUNT] = {
 	0,
-	0x28,	//GROVE_CHAINABLE_LED
+	0x38,	//GROVE_CHAINABLE_LED
 	0x38,	//GROVE_BUTTON
 	6,		//GROVE_SLIDING_POTENTIOMETER
 	0x338,	//GROVE_VIBRATION_MOTOR
@@ -36,8 +36,7 @@ uint16_t PortMask[GROVE_TYPE_COUNT] = {
 	0x338,	//GROVE_LINE_FINDER
 	0x338,	//GROVE_IR_DISTANCE
 	0x2006,	//GROVE_EMG_DETECTOR
-	1,		//GROVE_OLED12864
-	0x6		//GROVE_SERVO
+	1		//GROVE_OLED12864
 };
 
 #define GROVE_CLK_PIN 	0
@@ -47,7 +46,7 @@ uint8_t port_pin_map[PORT_NUM_MAX][2] = {
 	{0,    0},		//port0 I2C
 	{14,   41},		//port1 A
 	{15,   47},		//port2 A
-	{17,   16},		//port3 D
+	{39,   29},		//port3 D
 
 	{10,   51},		//port4 D/PWM
 	{43,   45},		//port5 D
@@ -199,9 +198,11 @@ uint8_t initGroveModule2(uint8_t portNum, GroveType type, unsigned char replybuf
 		pModule[portNum] = new uArmGroveOLED12864();
 		break;
 
+/*
 	case GROVE_SERVO:
 		pModule[portNum] = new uArmGroveServo();
 		break;
+*/
 
 	}
 

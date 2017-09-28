@@ -32,7 +32,9 @@ bool uArmGroveFan::init(uint8_t portNum, uint8_t clk_pin, uint8_t dat_pin)
 	_clk_pin = clk_pin;
 	_dat_pin = dat_pin;	
 
-	_grovefan.setPin(_clk_pin);
+	debugPrint("uArmGroveFan pin is %d\r\n", _clk_pin);
+	pinMode(_clk_pin, OUTPUT);
+
 
 	return true;	
 }
@@ -49,7 +51,9 @@ void uArmGroveFan::control()
 	if (code_seen('V'))
 	{
 		value = code_value_byte();	
-		_grovefan.speed(value);
+		
+		analogWrite(_clk_pin, value);
+
 		debugPrint("uArmGroveFan speed is %d\r\n", value);
 	}	
 }

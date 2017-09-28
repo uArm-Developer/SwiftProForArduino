@@ -50,7 +50,7 @@ enum GroveType
 	GROVE_IR_DISTANCE	 				= 19,
 	GROVE_EMG_DETECTOR					= 20,
 	GROVE_OLED12864						= 21,
-	GROVE_SERVO							= 22,
+	//GROVE_SERVO							= 22,
 
 	GROVE_TYPE_COUNT
 };
