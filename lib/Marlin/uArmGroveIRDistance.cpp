@@ -31,6 +31,7 @@ bool uArmGroveIRDistance::init(uint8_t portNum, uint8_t clk_pin, uint8_t dat_pin
 	_clk_pin = clk_pin;
 	_dat_pin = dat_pin;
 
+	pinMode(_clk_pin, INPUT);
 
 
 	return true;

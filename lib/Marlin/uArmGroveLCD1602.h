@@ -22,8 +22,6 @@ public:
 	void control();
 	void tick();
 
-protected:
-	Grovergb_lcd _grovergb_lcd;
 };
 
 

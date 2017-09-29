@@ -19,6 +19,7 @@
 
 uArmGroveOLED12864::uArmGroveOLED12864()
 {
+	_mode = MODE_16_8;
 }
 
 bool uArmGroveOLED12864::init(uint8_t portNum, uint8_t clk_pin, uint8_t dat_pin)
@@ -63,6 +64,18 @@ void uArmGroveOLED12864::control()
 	uint8_t src[4] = {0};
 
 
+	if (code_seen('M'))
+	{
+		uint8_t mode = code_value_byte();
+
+		if (mode < MODE_COUNT)
+		{
+			if (_mode != mode)
+			{
+				_mode = mode;
+			}
+		}
+	}
 
 
 	if (code_seen('V'))
@@ -75,17 +88,11 @@ void uArmGroveOLED12864::control()
 	else
 	{
 		// clear screen
-		memset(data, 0, 128);
-
-		for (int i = 0; i < 8; i++)
-		{
-			_OLED12864.setTextXY(i, 0);
-			_OLED12864.drawData(data, 128);
-		}
+		_OLED12864.clearDisplay();
 		return;
 	}
 
-	_OLED12864.setTextXY(row, 0);		   //Set the cursor to Xth Page, Yth Column  
+
 	
 
 	if (code_seen('S'))
@@ -116,63 +123,114 @@ void uArmGroveOLED12864::control()
 
 
 
-
-/*
-	for (int i = 0; i < 128; i++)
-		data[i] = 0;
-
-	// map originData to screen 1px -> 4px
-	for (int i = 0; i < 8; i++)
+	switch (_mode)
 	{
-		src[0] = originData[0 + i];
-		src[1] = originData[8 + i];
-		src[2] = originData[16 + i];
-		src[3] = originData[24 + i];
-
-		for (int j = 0; j < 8; j++)
+	case MODE_16_8:
+	{
+		// map originData to screen 1px -> 64px 
+		for (int i = 0; i < 8; i++)
 		{
-			uint8_t index = 16*i+2*j;
-			uint8_t bit = (7 - j);
+			memset(data, 0, 128);
+			_OLED12864.setTextXY(i, 0);
 
-			for (int k = 0; k < 4; k++)
+			for (int j = 0; j < 128; j++)
 			{
-				if (src[k] & (1 << bit))
+				uint8_t bit = 7 - (j % 64 / 8);
+				if (originData[2*i+j/64] & (1 << bit))
 				{
-					data[index] |= (3 << (k*2));
-					data[index+1] |= (3 << (k*2));
+					data[j] = 0xff;
+				}
+				else
+				{
+					data[j] = 0;
+				}
+			}
+		
+			
+			_OLED12864.drawData(data, 128);
+		}
+		break;
+	}
+
+	case MODE_32_16:
+	{
+		if (row >= 2) return;
+
+		uint8_t startRow = row * 4;
+
+		for (int i = 0; i < 4; i++)
+		{
+			memset(data, 0, 128);
+			_OLED12864.setTextXY(startRow+i, 0);
+			
+			for (int j = 0; j < 4; j++)
+			{
+				src[0] = originData[i*8 + j];
+				src[1] = originData[i*8 + 4 + j]; 
+
+				uint8_t start_index = 32 * j;
+				
+				for (int k = 0; k < 8; k++)
+				{
+					uint8_t bit = 7 - k;
+					uint8_t high_data = (src[1] & ( 1 << bit)) ? 0xf : 0;
+					uint8_t low_data = (src[0] & ( 1 << bit)) ? 0xf : 0;
+					
+					data[start_index+4*k] = (high_data << 4) | low_data;
+					data[start_index+4*k+1] = data[start_index+4*k];
+					data[start_index+4*k+2] = data[start_index+4*k];
+					data[start_index+4*k+3] = data[start_index+4*k];
+					
+				}
+			}
+
+
+			_OLED12864.drawData(data, 128);
+		}
+		break;
+	}
+
+	case MODE_64_32:
+	{
+		_OLED12864.setTextXY(row, 0);		   //Set the cursor to Xth Page, Yth Column  
+
+
+		memset(data, 0, 128);
+
+
+		// map originData to screen 1px -> 4px
+		for (int i = 0; i < 8; i++)
+		{
+			src[0] = originData[0 + i];
+			src[1] = originData[8 + i];
+			src[2] = originData[16 + i];
+			src[3] = originData[24 + i];
+
+			for (int j = 0; j < 8; j++)
+			{
+				uint8_t index = 16*i+2*j;
+				uint8_t bit = (7 - j);
+
+				for (int k = 0; k < 4; k++)
+				{
+					if (src[k] & (1 << bit))
+					{
+						data[index] |= (3 << (k*2));
+						data[index+1] |= (3 << (k*2));
+					}
 				}
 			}
 		}
-	}
 
-	_OLED12864.drawData(data, 128);
-*/
-
-	// map originData to screen 1px -> 64px 
-
-	
-	for (int i = 0; i < 8; i++)
-	{
-		memset(data, 0, 128);
-		_OLED12864.setTextXY(i, 0);
-
-		for (int j = 0; j < 128; j++)
-		{
-			uint8_t bit = 7 - (j % 64 / 8);
-			if (originData[2*i+j/64] & (1 << bit))
-			{
-				data[j] = 0xff;
-			}
-			else
-			{
-				data[j] = 0;
-			}
-		}
-	
-		
 		_OLED12864.drawData(data, 128);
+		break;
 	}
 
+	default:
+		break;
+
+
+	}
 	
 }
 

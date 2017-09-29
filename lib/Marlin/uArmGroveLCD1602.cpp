@@ -20,6 +20,8 @@
 #include "uArmGroveLCD1602.h"
 
 
+extern Grovergb_lcd grovergb_lcd;
+
 uArmGroveLCD1602::uArmGroveLCD1602()
 {
 
@@ -32,7 +34,9 @@ bool uArmGroveLCD1602::init(uint8_t portNum, uint8_t clk_pin, uint8_t dat_pin)
 	_clk_pin = clk_pin;
 	_dat_pin = dat_pin;	
 
-	_grovergb_lcd.begin(16,2);
+
+	grovergb_lcd.begin(16, 2);
+
 
 	return true;
 }
@@ -44,70 +48,55 @@ void uArmGroveLCD1602::report()
 
 void uArmGroveLCD1602::control()
 {
-	uint8_t type = 0;
-	uint8_t cmdtype = 0;
-	long redvalue = 0;
-	long greenvalue = 0;
-	long bluevalue = 0;
-
-	long value = 0;	
-
-	char stringDisplay[17] = {0};	
-
 
 	if(code_seen('V'))
 	{
-		cmdtype = code_value_byte();
+		uint8_t row = code_value_byte();
+		char stringDisplay[17] = {0};	
 
 		if (code_seen('S'))
 		{
 			code_value_string(stringDisplay, LCD_TEXT_LEN);
 		}	
 		
-		switch (cmdtype) {
-				
-			case GROVE_CMD_TYPE_DISPLAYROW1:
-			case GROVE_CMD_TYPE_DISPLAYROW2:
-				debugPrint("lcdtext:%s\r\n",stringDisplay);
-				//clear the row text
-				for(int i=0;i<16;i++)
-				{
-			       	_grovergb_lcd.setCursor(i,cmdtype);	
-					_grovergb_lcd.write(" ");
-			    }
-				
-			    delay(10);	
-				
-			    //display the text
-				for(int i=0;i<strlen(stringDisplay);i++)
-				{
-			       	_grovergb_lcd.setCursor(i,cmdtype);	
-					_grovergb_lcd.write(stringDisplay[i]);
-			    }
-				
-				break;													
 
-		default:
-			break;
+		if (row < 2)
+		{
+			debugPrint("lcdtext:%s\r\n",stringDisplay);
+			//clear the row text
+			grovergb_lcd.setCursor(0, row);	
+			for(int i=0;i<16;i++)
+			{
+		       	
+				grovergb_lcd.write(" ");
+		    }
 			
+		    delay(10);	
+			
+		    //display the text
+		    grovergb_lcd.setCursor(0, row);
+			for(int i=0;i<strlen(stringDisplay);i++)
+			{
+				grovergb_lcd.write(stringDisplay[i]);
+		    }
 		}	
 	}
 	else if(code_seen('T'))
 	{
-		cmdtype = code_value_byte();
+		uint8_t cmdtype = code_value_byte();
 		
 
 		
 		switch (cmdtype) {			
 										
 			case GROVE_LCD_TYPE_NODISPLAY:
-				_grovergb_lcd.noDisplay();
+				grovergb_lcd.noDisplay();
 				break;	
 			case GROVE_LCD_TYPE_DISPLAY:
-				_grovergb_lcd.display();
+				grovergb_lcd.display();
 				break;				
 			case GROVE_LCD_TYPE_CLEAR:
-				_grovergb_lcd.clear();
+				grovergb_lcd.clear();
 				break;								
 		
 		default:
@@ -118,6 +107,11 @@ void uArmGroveLCD1602::control()
 	}
 	else if(code_seen('R') || code_seen('G') || code_seen('B'))
 	{
+		long redvalue = 0;
+		long greenvalue = 0;
+		long bluevalue = 0;
+
+	
 		if(code_seen('R'))
 		{
 			redvalue = code_value_byte();
@@ -132,7 +126,7 @@ void uArmGroveLCD1602::control()
 		}
 		
 		
-		_grovergb_lcd.setRGB(redvalue, greenvalue, bluevalue);		
+		grovergb_lcd.setRGB(redvalue, greenvalue, bluevalue);		
 	}
 	else
 	{
