@@ -1,5 +1,5 @@
-v3.1.25 20170919
-add grove servo
+v3.1.29 20170929
+add temperature filter
 
 v3.1.23 20170915
 add grove modules(oled, angle sensor etc.)
