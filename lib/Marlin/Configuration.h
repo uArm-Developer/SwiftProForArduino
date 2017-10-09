@@ -143,7 +143,7 @@
 
 #define DEVICE_NAME "SwiftPro"
 
-#define SEGMENTS_PER_SECOND	160 
+#define SEGMENTS_PER_SECOND	100 
 
 
 // Optional custom name for your RepStrap or other custom machine
