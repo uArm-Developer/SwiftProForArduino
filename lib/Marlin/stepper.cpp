@@ -383,10 +383,6 @@ void Stepper::isr() {
 
   if (current_block) {
 
-//#ifdef UARM_SWIFT
-//	set_block_running(true);
-//#endif // UARM_SWIFT
-
     // Update endstops state, if enabled
     if (endstops.enabled
       #if HAS_BED_PROBE
