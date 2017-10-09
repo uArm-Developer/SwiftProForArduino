@@ -158,6 +158,8 @@ void uArmGroveOLED12864::control()
 
 		uint8_t startRow = row * 4;
 
+		// map originData to screen 1px -> 16px
+
 		for (int i = 0; i < 4; i++)
 		{
 			memset(data, 0, 128);

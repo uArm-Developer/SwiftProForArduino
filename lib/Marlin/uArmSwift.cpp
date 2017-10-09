@@ -990,6 +990,40 @@ void uarm_gcode_M2240()
 	}
 }
 
+void uarm_gcode_M2241()
+{
+	uint8_t value = 0;
+	uint8_t pin = 0;
+
+	if (code_seen('N'))
+	{
+		pin = code_value_byte();
+	}
+	else
+	{
+		return;
+	}	
+
+	if (code_seen('V'))
+	{
+		value = code_value_byte();
+	}
+	else
+	{
+		return;
+	}	
+
+	if (value)
+	{
+		pinMode(pin, OUTPUT);
+	}	
+	else
+	{
+		pinMode(pin, INPUT);
+	}
+}
+
+
 extern void code_value_string(char* buf, uint16_t buf_len);
 
 uint8_t uarm_gcode_M2245(char reply[])

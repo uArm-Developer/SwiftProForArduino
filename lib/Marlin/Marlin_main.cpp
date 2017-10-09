@@ -8488,6 +8488,20 @@ void process_next_command() {
 		uarm_gcode_M2234();
 		break;				
 
+	case 2240:
+		uarm_gcode_M2240();
+		break;
+
+	case 2241:
+		uarm_gcode_M2241();
+		break;		
+	
+	case 2245:
+		needReply = 1;
+		result = uarm_gcode_M2245(replyBuf);
+		break;	
+
+
 	case 2300:
 		uarm_gcode_M2300();
 		break;			
@@ -8528,14 +8542,7 @@ void process_next_command() {
 		break;	
 
 		
-	case 2240:
-		uarm_gcode_M2240();
-		break;
 	
-	case 2245:
-		needReply = 1;
-		result = uarm_gcode_M2245(replyBuf);
-		break;		
 
 	  case 2400:
 	  	uarm_gcode_M2400();

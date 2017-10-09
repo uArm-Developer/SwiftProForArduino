@@ -84,6 +84,8 @@ void uarm_gcode_M2234();
 
 
 void uarm_gcode_M2240();
+void uarm_gcode_M2241();
+
 uint8_t uarm_gcode_M2245(char reply[]);
 
 
