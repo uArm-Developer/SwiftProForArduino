@@ -1,3 +1,7 @@
+v3.1.30 20171009
+add M2241 (set pin as input)
+reduce system load so it can report position while moving.
+
 v3.1.29 20170929
 add temperature filter
 
