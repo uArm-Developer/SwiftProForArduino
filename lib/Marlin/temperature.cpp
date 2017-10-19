@@ -1817,6 +1817,8 @@ void Temperature::isr() {
       #else
         #define GE0 >=
       #endif
+	  if (get_user_mode() == USER_MODE_3D_PRINT)
+	  {
       if (current_temperature_raw[0] GE0 maxttemp_raw[0]) max_temp_error(0);
       if (minttemp_raw[0] GE0 current_temperature_raw[0] && !is_preheating(0) && target_temperature[0] > 0.0f) {
         #ifdef MAX_CONSECUTIVE_LOW_TEMPERATURE_ERROR_ALLOWED
@@ -1828,6 +1830,7 @@ void Temperature::isr() {
         else
           consecutive_low_temperature_error[0] = 0;
       #endif
+	  }
     #endif
 
     #if HAS_TEMP_1 && HOTENDS > 1
