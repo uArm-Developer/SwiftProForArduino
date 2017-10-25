@@ -20,7 +20,7 @@
 #include "uArmGroveButton.h"
 #include "uArmGroveUltrasonic.h"
 #include "uArmGroveLCD1602.h"
-#include "uArmGroveelectromagnet.h"
+#include "uArmGroveElectromagnet.h"
 #include "uArmGroveTH.h"
 #include "uArmGrovePIRMotion.h"
 #include "uArmGroveFan.h"
