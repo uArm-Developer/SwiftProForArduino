@@ -105,6 +105,7 @@
 #define E_BUFFER_FULL	23
 #define E_NO_POWER		24
 #define E_FAIL			25
+#define E_ROUTINE_UNAVAILABLE	26
 
 
 #define LOWER_ARM_MAX_ANGLE      135.6
@@ -114,13 +115,26 @@
 #define LOWER_UPPER_MAX_ANGLE    151
 #define LOWER_UPPER_MIN_ANGLE    10
 
+#define BASE_HEIGHT		71
+#define POLAR_MODULE_LENGTH_MIN_ABOVE_BASE	48
+#define POLAR_MODULE_LENGTH_MIN				72
+
 
 #define BT_NAME_MAX_LEN		11
 
 #define UNLOCK_NUM	22765
 
 #define REPORT_TYPE_POS		3
+
+#define REPORT_MOVING_STOP	9
+
+
 #define REPORT_TYPE_GROVE	10
+#define REPORT_TYPE_GROVE2	11
+
+
+#define SERVO_HW_FIX_VER	2
+#define PUMP_HW_FIX_VER		1
 
 
 #endif // _UARMPARAMS_H_

@@ -1687,7 +1687,7 @@ inline void line_to_axis_pos(AxisEnum axis, float where, float fr_mm_m = 0.0) {
 float delta_angle[3];
 extern float angle_destination[NUM_AXIS];
 //extern float current_angle[NUM_AXIS];
-unsigned char inverse_kinematics(const float in_cartesian[3], float angle[3]);
+char inverse_kinematics(const float in_cartesian[3], float angle[3]);
 inline void set_current_to_destination();
 inline void line_to_destination();
 
@@ -1720,7 +1720,7 @@ void get_pos_from_polor(float pos[], float polor[])
 }
 
 
-void gcode_get_destination_polor()
+uint8_t gcode_get_destination_polor()
 {
 	float polor_destination[NUM_AXIS];
 	float current_polor[NUM_AXIS];
@@ -1744,13 +1744,26 @@ void gcode_get_destination_polor()
 	debugPrint("des polor:%f %f %f\r\n", polor_destination[0], polor_destination[1],polor_destination[2]);
 
 
-	get_pos_from_polor(destination, polor_destination);
+	float test_destination[NUM_AXIS] = {0.0};
+	get_pos_from_polor(test_destination, polor_destination);
+
+
+	debugPrint("des: %f, %f, %f\r\n", test_destination[0], test_destination[1], test_destination[2]);
+	
+	  float angle[3];
+	
+	  if (inverse_kinematics(test_destination,	angle) != 0)
+		  return E_OUT_OF_RANGE;
+	
+	debugPrint("angle: %f, %f, %f\r\n", angle[0], angle[1], angle[2]);
 
 
 
 
-	debugPrint("destination:%f %f %f\r\n", destination[0], destination[1], destination[2]);
+	LOOP_XYZE(i)
+		destination[i] = test_destination[i];
 
+	debugPrint("destination:%f %f %f\r\n", destination[0], destination[1], destination[2]);		
 
 	if (code_seen('F') && code_value_linear_units() > 0.0)
 	  feedrate_mm_m = code_value_linear_units();	
@@ -1807,8 +1820,9 @@ void line_to_destination_angle()
 
 }
 
+extern float get_radius_from_height(float z);
 
-unsigned char inverse_kinematics(const float in_cartesian[3], float angle[3]) {
+char inverse_kinematics(const float in_cartesian[3], float angle[3]) {
 	
 	float xIn = 0.0;
 	float zIn = 0.0;
@@ -1828,9 +1842,29 @@ unsigned char inverse_kinematics(const float in_cartesian[3], float angle[3]) {
 	
 	zIn = (z - MATH_L1) / MATH_LOWER_ARM;
 
-	if (x < 0.1)
+	float s = sqrt(x*x + y*y);
+
+	float r = get_radius_from_height(z);
+
+	if ((s - get_front_end_offset()) < r)
+		return -1;
+
+	/*
+	if (z > BASE_HEIGHT)
 	{
-		x = 0.1;
+		if (s - get_front_end_offset() < POLAR_MODULE_LENGTH_MIN_ABOVE_BASE)
+			return -1;		
+	}
+	else
+	{
+		if (s - get_front_end_offset() < POLAR_MODULE_LENGTH_MIN)
+			return -1;
+	}
+	*/
+
+	if (x < 0.01)
+	{
+		x = 0.01;
 	}
 
 	// Calculate value of theta 1: the rotation angle
@@ -2955,15 +2989,32 @@ static void homeaxis(AxisEnum axis) {
  *  - Set to current for missing axis codes
  *  - Set the feedrate, if included
  */
-void gcode_get_destination() {
+uint8_t gcode_get_destination() {
+
+  float test_destination[NUM_AXIS] = { 0.0 };
+
+
   LOOP_XYZE(i) {
     if (code_seen(axis_codes[i]))
     {
-      destination[i] = code_value_axis_units(i) + (axis_relative_modes[i] || relative_mode ? current_position[i] : 0);
+      test_destination[i] = code_value_axis_units(i) + (axis_relative_modes[i] || relative_mode ? current_position[i] : 0);
     }
     else
-      destination[i] = current_position[i];
+      test_destination[i] = current_position[i];
   }
+
+  debugPrint("des: %f, %f, %f\r\n", test_destination[0], test_destination[1], test_destination[2]);
+
+	float angle[3];
+
+	if (inverse_kinematics(test_destination,  angle) != 0)
+		return E_OUT_OF_RANGE;
+
+  debugPrint("angle: %f, %f, %f\r\n", angle[0], angle[1], angle[2]);
+
+
+  LOOP_XYZE(i)
+  	destination[i] = test_destination[i];
 
   if (code_seen('F') && code_value_linear_units() > 0.0)
     feedrate_mm_m = code_value_linear_units();
@@ -2977,6 +3028,8 @@ void gcode_get_destination() {
   #if ENABLED(MIXING_EXTRUDER) && ENABLED(DIRECT_MIXING_IN_G1)
     gcode_get_mix();
   #endif
+
+  return E_OK;
 }
 
 void unknown_command_error() {
@@ -3019,12 +3072,154 @@ void unknown_command_error() {
 
 #endif //HOST_KEEPALIVE_FEATURE
 
+float get_radius_from_height(float z)
+{
+	float r = 0;
+	float v_distance = 0;
+
+
+	
+	if (z > 111.70)
+	{
+
+	
+		v_distance = fabs(215.87 - z);
+
+		float data = 158.8*158.8 - v_distance*v_distance;
+
+		r = sqrt(data) - 33.26;
+
+	}
+	else
+	{
+
+		v_distance = fabs(z + 20.88);
+		
+		float data = 225.0*225.0 - v_distance*v_distance;
+
+		r = sqrt(data) - 97.45;
+
+	}
+
+	r -= 44.5;
+
+
+	return r;
+}
+
+
+float get_max_radius_from_height(float destination_z)
+{
+	// 111.70mm
+	float current_z = current_position[Z_AXIS] + get_height_offset();
+
+	float r = 0;
+	float temp_r = 0;
+
+	float z[2] = {0};
+
+	z[0] = current_z;
+	z[1] = destination_z;
+
+
+	if (current_z > destination_z)
+	{
+		z[0] = destination_z;
+		z[1] = current_z;
+	}
+
+	if (z[0] <  215.87 && z[1] >= 215.87)
+	{
+		r = (158.8 - 44.5);
+	}
+
+	for (int i = 0; i < 2; i++)
+	{
+		temp_r = get_radius_from_height(z[i]);
+
+		debugPrint("temp_r = %f\r\n", temp_r);
+
+		if (temp_r > r)
+			r = temp_r;
+		
+	}
+
+
+	debugPrint("r = %f\r\n", r);
+	return r;
+}
+
+uint8_t routine_valid()
+{
+	float stx = current_position[X_AXIS], sty = current_position[Y_AXIS];
+	float edx = destination[X_AXIS], edy = destination[Y_AXIS];
+
+	float temp = (sqrt((edy - sty)*(edy - sty) + (stx - edx)*(stx - edx)));
+
+	float d = 1000.0;
+	if (temp != 0)
+		d = fabs(((edx * sty) - (stx * edy)) / temp);	
+
+	float z = destination[Z_AXIS] + get_height_offset();
+	float r = get_max_radius_from_height(z);
+
+
+	debugPrint("d = %f\r\n", d);
+
+	if (d < r)
+	{
+		debugPrint("use angular interpolation\r\n");
+
+		// visit https://thecodeway.com/blog/?p=932 
+		float x1 = stx, y1 = sty, x2 = edx, y2 = edy, x3 = 0, y3 = 0;
+		
+		float A = (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1);
+		float B = 2 * ((x2-x1)*(x1-x3) + (y2-y1)*(y1-y3));
+		float C = x3*x3 + y3*y3 + x1*x1 + y1*y1 - 2*(x3*x1 + y3*y1) - r*r;
+		
+		float delta = B*B - 4*A*C;
+		
+		if (delta > 0)
+		{
+			debugPrint("delta > 0\r\n");
+			float u1 = (-B + sqrt(B*B - 4*A*C))/ (2*A);
+			float u2 = (-B - sqrt(B*B - 4*A*C))/ (2*A);
+			
+			debugPrint("u1 = %f, u2 = %f\r\n", u1, u2);
+			
+			if (u1 < 0 || u1 > 1 || u2 < 0 || u2 > 1)
+			{
+		
+				return true;				
+			}
+			else
+			{
+				return false;
+			}
+			
+
+		}
+		
+		return true;
+	}	
+	else
+	{
+		return true;
+	}
+}
+
 /**
  * G0, G1: Coordinated movement of X Y Z E axes
  */
-inline void gcode_G0_G1() {
+inline uint8_t gcode_G0_G1() {
   if (IsRunning()) {
-    gcode_get_destination(); // For X Y Z E F
+    uint8_t result = gcode_get_destination(); // For X Y Z E F
+
+ 	if (result != E_OK)
+		return result;
+
+	if (!routine_valid())
+		return E_ROUTINE_UNAVAILABLE;
 
     #if ENABLED(FWRETRACT)
 
@@ -7464,13 +7659,29 @@ void process_next_command() {
 		#ifdef UARM_SWIFT
 			uarm_gcode_G0();
 		#endif
-        gcode_G0_G1();
+		needReply = 1;
+        result = gcode_G0_G1();
+		if (result != E_OK)
+		{
+			// need ok even position out of range to skip this point
+			sprintf(replyBuf, "E%d unreachable\r\n", result);
+			result = E_OK;
+			
+		}
         break;
       case 1:
 		#ifdef UARM_SWIFT
 			uarm_gcode_G1();
 		#endif
-        gcode_G0_G1();
+		needReply = 1;
+        result = gcode_G0_G1();
+		if (result != E_OK)
+		{
+			// need ok even position out of range to skip this point
+			sprintf(replyBuf, "E%d unreachable\r\n", result);
+			result = E_OK;
+			
+		}		
         break;
 
       // G2, G3
@@ -7570,7 +7781,8 @@ void process_next_command() {
 		break;
 
 	case 2201:
-		gcode_get_destination_polor();
+		needReply = 1;
+		result = gcode_get_destination_polor();
 		break;
 
 	// rotate stepper motor
@@ -7603,17 +7815,42 @@ void process_next_command() {
 
 	// 2204 relative move use G90 G91
 	case 2204:
-		relative_mode = true;
-		gcode_G0_G1();
-		relative_mode = false;
+        {
+			bool relative_mode_backup = relative_mode;
+			relative_mode = true;
+			needReply = 1;
+			result = gcode_G0_G1();
+			if (result != E_OK)
+			{
+				// need ok even position out of range to skip this point 
+				sprintf(replyBuf, "E%d unreachable\r\n", result);
+				result = E_OK;
+				
+			}			
+			relative_mode = relative_mode_backup;
+		}
 		break;
 
 	case 2205:
-		relative_mode = true;
-		gcode_get_destination_polor();
-		relative_mode = false;
+        {
+			bool relative_mode_backup = relative_mode;
+			relative_mode = true;
+			needReply = 1;
+			result = gcode_get_destination_polor();
+			if (result != E_OK)
+			{
+				// need ok even position out of range to skip this point  
+				sprintf(replyBuf, "E%d unreachable\r\n", result);
+				result = E_OK;
+
+			}			
+			relative_mode = relative_mode_backup;
+		}
 		break;
 	
+	default:
+		code_is_good = false;
+		break;
 #endif // UARM_SWIFT
 		
     }
@@ -7628,11 +7865,27 @@ void process_next_command() {
       #endif // ULTIPANEL
 
 	  case 3:
-	  	uarm_gcode_G0();
+	  	if (get_user_mode() == USER_MODE_LASER)
+	  	{
+		  	//uarm_gcode_G0();
+		  	static uint8_t power = 255;
+		  	stepper.synchronize();
+
+			if (code_seen('V'))
+				power = code_value_byte();
+			
+			laser_on(power);
+	  	}
 	  	break;
+	  	
 
 	 case 5:
-	 	uarm_gcode_G1();
+	 	if (get_user_mode() == USER_MODE_LASER)
+	 	{
+		 	//uarm_gcode_G1();
+		 	stepper.synchronize();
+			laser_off();
+	 	}
 	 	break;
 
       case 17:
@@ -8152,6 +8405,9 @@ void process_next_command() {
 
 #ifdef UARM_SWIFT
 	//
+	case 2000:
+		uarm_gcode_M2000();
+		break;
 
 	case 2019:
 		disable_all_steppers();
@@ -8160,6 +8416,10 @@ void process_next_command() {
 	case 2120:
 		uarm_gcode_M2120();
 		break;
+
+	case 2122:
+		uarm_gcode_M2122();
+		break;		
 
 	case 2200:
 		needReply = 1;
@@ -8228,6 +8488,20 @@ void process_next_command() {
 		uarm_gcode_M2234();
 		break;				
 
+	case 2240:
+		uarm_gcode_M2240();
+		break;
+
+	case 2241:
+		uarm_gcode_M2241();
+		break;		
+	
+	case 2245:
+		needReply = 1;
+		result = uarm_gcode_M2245(replyBuf);
+		break;	
+
+
 	case 2300:
 		uarm_gcode_M2300();
 		break;			
@@ -8243,15 +8517,32 @@ void process_next_command() {
   case 2303:
     uarm_gcode_M2303();
     break;      
-	
-	case 2240:
-		uarm_gcode_M2240();
-		break;
-	
-	case 2245:
+
+	case 2304:
 		needReply = 1;
-		result = uarm_gcode_M2245(replyBuf);
+		result = uarm_gcode_M2304(replyBuf);		
+		break;	
+
+
+	case 2305:
+		needReply = 1;
+		result = uarm_gcode_M2305(replyBuf);		
 		break;		
+
+	case 2306:
+		needReply = 1;
+		result = uarm_gcode_M2306(replyBuf);		
+		break;	
+
+
+	case 2307:
+		needReply = 1;
+		result = uarm_gcode_M2307(replyBuf);	
+
+		break;	
+
+		
+	
 
 	  case 2400:
 	  	uarm_gcode_M2400();
@@ -8273,6 +8564,10 @@ void process_next_command() {
 	case 2500:
 	  uarm_gcode_M2500();
 	  break;	  
+
+	default:
+		code_is_good = false;
+		break;
 
 	  
 #endif //UARM_SWIFT
@@ -8381,6 +8676,11 @@ void process_next_command() {
       result = uarm_gcode_P2250(replyBuf);
       break;		
 #endif
+
+	default:
+		code_is_good = false;
+		break;
+
 		}
 	  break;
 

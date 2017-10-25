@@ -176,7 +176,7 @@ void clearMacFlag()
 void swift_api_init()
 {
 	Serial1.begin(115200);
-	Serial2.begin(115200);
+	//Serial2.begin(115200);
 
 	getMacAddr();
 	getHWVersions();
@@ -461,6 +461,7 @@ UserMode_t get_user_mode()
 void set_front_end_offset(float offset)
 {
 	front_end_offset = offset;
+	save_front_offset(offset);
 }
 
 /*!
@@ -477,6 +478,7 @@ float get_front_end_offset()
 void set_height_offset(float offset)
 {
 	height_offset = offset;
+	save_height_offset(offset);
 }
 
 /*!

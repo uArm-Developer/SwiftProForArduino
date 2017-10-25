@@ -13,6 +13,8 @@
 #include "servo.h"
 #include "uArmServo.h"
 #include "Grovergb_lcd.h"
+#include "uArmGrove2.h"
+
 
 // CAUTION: E_AXIS means FrontEnd Servo not extruder0
 //float current_angle[NUM_AXIS] = { 0.0 };
@@ -42,8 +44,18 @@ const char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
 extern void get_pos_from_polor(float pos[], float polor[]);
 extern void get_current_pos_polor(float polor[], float pos[]);
 
+static uint8_t moving_stop_report_enable = 0;
+
 void set_block_running(bool running)
 {
+	uint8_t result[128] = {0};
+
+	if (moving_stop_report_enable && !running && block_running != running)
+	{
+		msprintf(result, "@%d V%d\r\n", REPORT_MOVING_STOP, running);		
+		reportString(result);
+	}
+	
 	block_running = running;
 }
 
@@ -80,8 +92,8 @@ void buttons_init()
 	DDRE &= 0X3F;
 
 
-	button_menu.setIsButtonPressedCB(is_menu_button_pressed);
-	button_play.setIsButtonPressedCB(is_play_button_pressed);
+	button_menu.setIsButtonPressedCB(is_menu_button_pressed, NULL);
+	button_play.setIsButtonPressedCB(is_play_button_pressed, NULL);
 }
 
 
@@ -113,7 +125,7 @@ void swift_init()
 	enable_e0();
 #else
 	enable_all_steppers();
-	if (getHWSubversion() > 0)
+	if (getHWSubversion() >= SERVO_HW_FIX_VER)
 	{
 		servo[0].attach(SERVO0_PIN);
 	}
@@ -156,10 +168,11 @@ void tickTaskRun()
 	led_G.tick();
 	led_B.tick();
 
-	pump_run();
+	pump_tick();
 
 	servo_tick();
 
+	uArmGroveTick();
 }
 
 void swift_run()
@@ -169,7 +182,7 @@ void swift_run()
 
 	service.run();
 
-	
+	GroveReportRun();
 	
 	if(millis() - tickStartTime >= TICK_INTERVAL)
 	{
@@ -282,6 +295,18 @@ void set_fan_function(bool enable)
 	fan_enable = enable;
 }
 
+void laser_on(uint8_t power)
+{
+	// turn on laser
+	analogWrite(FAN_PIN, power);	
+}
+
+void laser_off()
+{
+	// turn off laser
+	analogWrite(FAN_PIN, 0);	
+}
+
 void uarm_gcode_G0()
 {
 	if (get_user_mode() == USER_MODE_LASER || get_user_mode() == USER_MODE_PEN) 
@@ -295,10 +320,9 @@ void uarm_gcode_G0()
 
 
 			
-			debugPrint("laser off");
+			debugPrint("laser off\r\n");
 			
-			// turn off laser
-			analogWrite(FAN_PIN, 0);
+			laser_off();
 		}
 	}
 }
@@ -324,9 +348,8 @@ void uarm_gcode_G1()
 			}
 
 			debugPrint("laser on p=%d\r\n", power);
-			
-			// turn on laser
-			analogWrite(FAN_PIN, power);
+			laser_on(power);
+
 		}
 	}	
 }
@@ -402,7 +425,7 @@ void rotate_frontend_motor()
 	}
 
 
-	if (getHWSubversion() > 0)
+	if (getHWSubversion() >= SERVO_HW_FIX_VER)
 	{	
 		servo[0].write((int)angle);
 	}
@@ -413,7 +436,17 @@ void rotate_frontend_motor()
 	
 }
 
-				
+
+void uarm_gcode_M2000()
+{
+	clear_command_queue();
+	quickstop_stepper();
+	print_job_timer.stop();
+	thermalManager.autotempShutdown();
+	wait_for_heatup = false;
+	update_current_pos();
+}
+
 
 void uarm_gcode_M2120()
 {
@@ -434,6 +467,20 @@ void uarm_gcode_M2120()
 		}
 	}
 }
+
+void uarm_gcode_M2122()
+{
+	uint8_t value = 0;
+	
+	if (code_seen('V')) 
+	{
+		value = code_value_byte();
+
+		moving_stop_report_enable = value ? 1 : 0;
+
+	}
+}
+
 
 uint8_t uarm_gcode_M2200(char reply[])
 {
@@ -469,7 +516,7 @@ void uarm_gcode_M2201()
 			break;
 
 		case 3:
-			if (getHWSubversion() > 0)
+			if (getHWSubversion() >= SERVO_HW_FIX_VER)
 			{			
 				servo[0].attach(SERVO0_PIN);
 			}
@@ -527,7 +574,7 @@ uint8_t uarm_gcode_M2203(char reply[])
 			break;
 
 		case 3:
-			if (getHWSubversion() > 0)
+			if (getHWSubversion() >= SERVO_HW_FIX_VER)
 			{	
 				attached = servo[0].attached();
 			}
@@ -709,7 +756,7 @@ void uarm_gcode_M2213()
 	}	
 }
 
-extern unsigned char inverse_kinematics(const float in_cartesian[3], float angle[3]);
+extern char inverse_kinematics(const float in_cartesian[3], float angle[3]);
 uint8_t uarm_gcode_M2220(char reply[])
 {
 	float value[3];
@@ -943,6 +990,40 @@ void uarm_gcode_M2240()
 	}
 }
 
+void uarm_gcode_M2241()
+{
+	uint8_t value = 0;
+	uint8_t pin = 0;
+
+	if (code_seen('N'))
+	{
+		pin = code_value_byte();
+	}
+	else
+	{
+		return;
+	}	
+
+	if (code_seen('V'))
+	{
+		value = code_value_byte();
+	}
+	else
+	{
+		return;
+	}	
+
+	if (value)
+	{
+		pinMode(pin, OUTPUT);
+	}	
+	else
+	{
+		pinMode(pin, INPUT);
+	}
+}
+
+
 extern void code_value_string(char* buf, uint16_t buf_len);
 
 uint8_t uarm_gcode_M2245(char reply[])
@@ -1134,6 +1215,103 @@ void uarm_gcode_M2303()
 
 }
 
+uint8_t uarm_gcode_M2304(char reply[])
+{
+	uint8_t port;
+
+	if (code_seen('P'))
+	{
+		port = code_value_byte();
+	}
+	else
+	{
+		strcpy(reply, "format: M2304 Pn\r\n");
+		return E_FAIL;
+	}	
+
+	deinitGroveModule(port);
+
+	return E_OK;
+}
+
+
+uint8_t uarm_gcode_M2305(char reply[])
+{
+	uint8_t type;
+	uint8_t port;
+
+	if (code_seen('P'))
+	{
+		port = code_value_byte();
+	}
+	else
+	{
+		strcpy(reply, "format: M2305 Pn Nn\r\n");
+		return E_FAIL;
+	}
+
+
+	if (code_seen('N'))
+	{
+		type = code_value_byte();
+	}
+	else
+	{
+		strcpy(reply, "format: M2305 Pn Nn\r\n");
+		return E_FAIL;
+	}
+
+	return initGroveModule2(port, type, reply);
+	
+}
+
+uint8_t uarm_gcode_M2306(char reply[])
+{
+	uint8_t port;
+	uint16_t time;
+
+	if (code_seen('P'))
+	{
+		port = code_value_byte();
+	}
+	else
+	{
+		strcpy(reply, "format: M2306 Pn Vn\r\n");
+		return E_FAIL;
+	}	
+
+	if (code_seen('V'))
+	{
+		time = code_value_ushort();
+	}
+	else
+	{
+		strcpy(reply, "format: M2306 Pn Vn\r\n");
+		return E_FAIL;
+
+	}	
+
+	return setGroveModuleReportInterval2(port, time, reply);
+}
+
+
+uint8_t uarm_gcode_M2307(char reply[])
+{
+	uint8_t port;
+
+	if (code_seen('P'))
+	{
+		port = code_value_byte();
+	}
+	else
+	{
+		strcpy(reply, "format: M2307 Pn\r\n");
+		return E_FAIL;
+	}	
+
+	return controlGroveModule(port, reply);
+}
+
 
 void uarm_gcode_M2400()
 {
@@ -1262,6 +1440,7 @@ void uarm_gcode_M2500()
 
 	debugPrint("M2500\r\n");
 	ok_to_send();
+	Serial2.begin(115200);
 	commSerial.setSerialPort(&Serial2);
 	
 }

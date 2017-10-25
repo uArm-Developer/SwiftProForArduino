@@ -23,7 +23,7 @@ public:
 	// Default constructor
 	GroveColorSensor();
 
-	init();
+	void init();
 	// Constructor with parameters
 	GroveColorSensor(
 		  const int& triggerMode

@@ -1,5 +1,43 @@
-v3.1.17 20170926
-add adc filter to temperature
+v3.2.0 20171025
+new stable version release.
+
+v3.1.30 20171009
+add M2241 (set pin as input)
+reduce system load so it can report position while moving.
+
+v3.1.29 20170929
+add temperature filter
+
+v3.1.23 20170915
+add grove modules(oled, angle sensor etc.)
+
+v3.1.22 20170908
+return E26 when routine unavailable.
+return @9 V0 when stop(send M2122 V1 to activate this function)
+support M3(laser_on), M5(laser_off)
+fix BUG: add filter to Power Detect to avoid wrong report(@5 V0/V1)
+
+
+v3.1.21 20170905
+refactor grove modules 
+M2300, M2301,M2302, M2303 are deprecated.
+use new commands instead:
+M2304 Pn (deinit)
+M2305 Pn Nn ...(init)
+M2306 Pn Vtime (report)
+M2307 Pn ...(control)
+
+v3.1.20 20170829
+compatible to hw1.1
+
+v3.1.19 20170810
+save front and height offset to E2PROM when set
+
+v3.1.18	20170725
+Return E22 when position unreachable
+
+v3.1.17	20170725
+Do no switch to absolute mode in G2204/G2205
 
 v3.1.16	20170724
 Use B point for calibration.(command: "M2401 B")

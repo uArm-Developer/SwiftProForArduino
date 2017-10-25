@@ -15,41 +15,61 @@ uArmButton::uArmButton()
 {
 	mPin = 0xff;
 	mState = IDLE;
-	mEvent = EVENT_NONE;
+//	mEvent = EVENT_NONE;
 
 
 	pButtonEventCB = NULL;
 	pButtonLongPressedCB = NULL;
 	pIsButtonPressedCB = NULL;
+	pButtonDownCB = NULL;
+
+	_paramIsPressed = NULL;
+	_paramClick = NULL;
+	_prarmLongPress = NULL;	
+	_paramDown = NULL;
 }
 
 
-void uArmButton::setClickedCB(ButtonEventCB_t clickedCB)
+void uArmButton::setClickedCB(ButtonEventCB_t clickedCB, void *param)
 {
 	pButtonEventCB = clickedCB;
+	_paramClick = param;
 }
 
-void uArmButton::setLongPressedCB(ButtonLongPressedCB_t longPressedCB)
+void uArmButton::setLongPressedCB(ButtonLongPressedCB_t longPressedCB, void *param)
 {
 	pButtonLongPressedCB = longPressedCB;
+	_prarmLongPress = param;
 }
 
-void uArmButton::setIsButtonPressedCB(IsButtonPressedCB_t isButtonPressed)
+void uArmButton::setIsButtonPressedCB(IsButtonPressedCB_t isButtonPressed, void *param)
 {
 	pIsButtonPressedCB = isButtonPressed;
+	_paramIsPressed = param;
 }
 
 
-
+/*
 bool uArmButton::clicked()
 {
 	return (mEvent == EVENT_CLICK);
 }
 
+
 bool uArmButton::longPressed()
 {
 	return (mEvent == EVENT_LONG_PRESS);
 }
+
+
+
+
+void uArmButton::clearEvent()
+{
+	mEvent = EVENT_NONE;
+}
+*/
+
 
 bool uArmButton::isPressed()
 {
@@ -57,15 +77,16 @@ bool uArmButton::isPressed()
 	if (pIsButtonPressedCB == NULL)
 		return false;
 
-	if (pIsButtonPressedCB())
+	if (pIsButtonPressedCB(_paramIsPressed))
 		return true;
 
 	return false;
 }
 
-void uArmButton::clearEvent()
+void uArmButton::setButtonDownCB(ButtonEventCB_t downCB, void *param)
 {
-	mEvent = EVENT_NONE;
+	_paramDown = param;
+	pButtonDownCB = downCB;
 }
 
 void uArmButton::tick()
@@ -84,6 +105,12 @@ void uArmButton::tick()
 		if (isPressed())
 		{
 			swift_buzzer.tone(100, 4000);
+			
+			if (pButtonDownCB != NULL)
+			{
+				pButtonDownCB(_paramDown);
+			}
+
 			mState = PRESSED;
 		}
 		else
@@ -108,21 +135,21 @@ void uArmButton::tick()
 
 		if (mTicks >= (1000/TICK_INTERVAL))
 		{
-			mEvent = EVENT_LONG_PRESS;
+			//mEvent = EVENT_LONG_PRESS;
 			
 			if (pButtonLongPressedCB != NULL)
 			{
-				pButtonLongPressedCB();
+				pButtonLongPressedCB(_prarmLongPress);
 			}
 			
 		}
 		else
 		{
-			mEvent = EVENT_CLICK;
+			//mEvent = EVENT_CLICK;
 			
 			if (pButtonEventCB != NULL)
 			{
-				pButtonEventCB();
+				pButtonEventCB(_paramClick);
 			}
 					
 		}

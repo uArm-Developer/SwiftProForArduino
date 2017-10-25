@@ -5,7 +5,7 @@
 class Grovepirmotion
 {
 	public:
-		Grovepirmotion(int pin);
+		Grovepirmotion();
 
 		void setPin(int pin);
 		uint8_t getstatus(void);

@@ -100,21 +100,21 @@
 #define   POWER_DETECT  A5
 
 // Use the RAMPS 1.4 Analog input 5 on the AUX2 connector
-#define FILWIDTH_PIN        47	//5 // ANALOG NUMBERING
+#define FILWIDTH_PIN        -1 // 47	//5 // ANALOG NUMBERING
 
 // define digital pin 4 for the filament runout sensor. Use the RAMPS 1.4 digital input 4 on the servos connector
 #define FIL_RUNOUT_PIN      49	// 4
 
 //#define PS_ON_PIN          12	// PS POWER 
 #define TEMP_0_PIN         13   // ANALOG NUMBERING
-#define TEMP_1_PIN         14   // ANALOG NUMBERING
-#define TEMP_BED_PIN       15   // ANALOG NUMBERING
+#define TEMP_1_PIN         -1	// 14   // ANALOG NUMBERING
+#define TEMP_BED_PIN       -1 	//15   // ANALOG NUMBERING
 
 #define HEATER_0_PIN     9
 
 
 #define FAN_PIN        	8
-#define HEATER_BED_PIN 	10
+#define HEATER_BED_PIN 	-1
 
 #define VALVE_EN		4
 //#define PUMP_EN	//PG4

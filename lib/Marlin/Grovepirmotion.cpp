@@ -10,9 +10,9 @@
 #include "WProgram.h"
 #endif
 
-Grovepirmotion::Grovepirmotion(int pin)
+Grovepirmotion::Grovepirmotion()
 {
-	_pin = pin;
+
 }
 
 void Grovepirmotion::setPin(int pin)

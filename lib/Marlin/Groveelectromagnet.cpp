@@ -10,9 +10,8 @@
 #include "WProgram.h"
 #endif
 
-Groveelectromagnet::Groveelectromagnet(int pin)
+Groveelectromagnet::Groveelectromagnet()
 {
-	_pin = pin;
 }
 
 void Groveelectromagnet::setPin(int pin)

@@ -32,6 +32,9 @@ void swift_run();
 
 bool is_fan_enable();
 void set_fan_function(bool disable);
+void laser_on(uint8_t power);
+
+void laser_off();
 
 
 bool is_heater_enable();
@@ -52,7 +55,11 @@ void uarm_gcode_G0();
 
 void uarm_gcode_G1();
 
+void uarm_gcode_M2000();
+
 void uarm_gcode_M2120();
+void uarm_gcode_M2122();
+
 uint8_t uarm_gcode_M2200(char reply[]);
 
 void uarm_gcode_M2201();
@@ -77,6 +84,8 @@ void uarm_gcode_M2234();
 
 
 void uarm_gcode_M2240();
+void uarm_gcode_M2241();
+
 uint8_t uarm_gcode_M2245(char reply[]);
 
 
@@ -84,6 +93,11 @@ void uarm_gcode_M2300();
 void uarm_gcode_M2301();
 void uarm_gcode_M2302();
 void uarm_gcode_M2303();
+uint8_t uarm_gcode_M2304(char reply[]);
+uint8_t uarm_gcode_M2305(char reply[]);
+uint8_t uarm_gcode_M2306(char reply[]);
+uint8_t uarm_gcode_M2307(char reply[]);
+
 
 
 void uarm_gcode_M2400();

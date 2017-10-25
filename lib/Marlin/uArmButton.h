@@ -15,7 +15,7 @@
 #include "Marlin.h"
 
 
-#define EVENT_NONE			0
+#define EVENT_DOWN			0
 #define EVENT_CLICK			1
 #define EVENT_LONG_PRESS	2
 
@@ -41,7 +41,7 @@ public:
 	bool clicked();
 	bool longPressed();
 
-	void clearEvent();
+	//void clearEvent();
 	void tick();
 
 	bool isPressed();
@@ -49,15 +49,18 @@ public:
 
 
 public:
-	typedef void (*ButtonEventCB_t)(void);
-	typedef void (*ButtonLongPressedCB_t)(void);
-	typedef bool (*IsButtonPressedCB_t)(void);
+	typedef void (*ButtonEventCB_t)(void*);
+	typedef void (*ButtonLongPressedCB_t)(void*);
+	typedef bool (*IsButtonPressedCB_t)(void*);
 
-	void setClickedCB(ButtonEventCB_t clickedCB);
-	void setLongPressedCB(ButtonLongPressedCB_t longPressedCB);
-	void setIsButtonPressedCB(IsButtonPressedCB_t isButtonPressed);
+
+	void setButtonDownCB(ButtonEventCB_t downCB, void *param);
+	void setClickedCB(ButtonEventCB_t clickedCB, void *param);
+	void setLongPressedCB(ButtonLongPressedCB_t longPressedCB, void *param);
+	void setIsButtonPressedCB(IsButtonPressedCB_t isButtonPressed, void *param);
 private:
 	ButtonEventCB_t pButtonEventCB;
+	ButtonEventCB_t pButtonDownCB;
 	ButtonLongPressedCB_t pButtonLongPressedCB;
 	IsButtonPressedCB_t pIsButtonPressedCB;
 
@@ -66,9 +69,14 @@ private:
 	unsigned char mPin;
 	unsigned int mTicks;
 
-	unsigned char mEvent;
+	//unsigned char mEvent;
 
 	BUTTON_STATE mState;
+
+	void *_paramIsPressed;
+	void *_paramClick;
+	void *_paramDown;
+	void *_prarmLongPress;
 };
 
 

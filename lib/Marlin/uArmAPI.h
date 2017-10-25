@@ -32,7 +32,7 @@
 #define DEFAULT_3DPRINT_FRONT	56.5
 
 #define DEFAULT_PEN_HEIGHT	74.43
-#define DEFAULT_PEN_FRONT	92.8
+#define DEFAULT_PEN_FRONT	69.5 	//92.8	
 
 
 typedef enum {

@@ -30,11 +30,11 @@
 
 
 
-Ultrasonic ultrasonic(8);
-Grovefan grovefan(8);
-Groveelectromagnet groveelectromagnet(8);
+Ultrasonic ultrasonic;
+Grovefan grovefan;
+Groveelectromagnet groveelectromagnet;
 TH02_dev grove_TH;	
-Grovepirmotion grovepirmotion(8);
+Grovepirmotion grovepirmotion;
 Grovergb_lcd grovergb_lcd;
 
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_16X); // TCS34725_GAIN_1X
@@ -238,7 +238,7 @@ void initGroveModule(GroveType type, GrovePortType portType, unsigned char pin)
   			tcs.write8(TCS34725_PERS, TCS34725_PERS_NONE); 
   			tcs.setInterrupt(true);		    
 		} else {
-		    Serial.println("No TCS34725 found ... check your connections");
+		    MYSERIAL.println("No TCS34725 found ... check your connections");
 		}		
 		break;
 	
@@ -420,14 +420,14 @@ void setGroveLCDModuleString(GroveType type,GrovelcdstringType cmd,char string[]
 			//clear the row text
 			for(int i=0;i<16;i++)
 			{
-		       	grovergb_lcd.setCursor(i,cmd-1);	
+		       		grovergb_lcd.setCursor(i,cmd-1);	
 				grovergb_lcd.write(" ");
 		    }
 		    delay(10);	
 		    //display the text
 			for(int i=0;i<strlen(string);i++)
 			{
-		       	grovergb_lcd.setCursor(i,cmd-1);	
+		       		grovergb_lcd.setCursor(i,cmd-1);	
 				grovergb_lcd.write(string[i]);
 		    }
 			//RGB_LCD_displaytext(cmd,strlen(string),string);
@@ -443,3 +443,4 @@ void setGroveLCDModuleRGB(GroveType type,GrovelcdcmdType cmd,long value)
 {
 	grovergb_lcd.setRGB(((value & 0xff0000) >> 16),((value & 0xff00) >> 8),(value & 0xff));				
 }
+
