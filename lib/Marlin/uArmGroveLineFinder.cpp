@@ -30,7 +30,7 @@ void uArmGroveLineFinder::report()
 {
 	char result[128];
 
-	_value = digitalRead(_clk_pin);
+	_value = digitalRead(_clk_pin) ? 0 : 1;
 
 	msprintf(result, "@%d P%d N%d V%d\r\n", REPORT_TYPE_GROVE2, _portNum, GROVE_LINE_FINDER, _value);
 	reportString(result);

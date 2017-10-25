@@ -1,3 +1,6 @@
+v3.2.0 20171025
+new stable version release.
+
 v3.1.30 20171009
 add M2241 (set pin as input)
 reduce system load so it can report position while moving.
