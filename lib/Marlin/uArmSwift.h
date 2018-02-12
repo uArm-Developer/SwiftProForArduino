@@ -58,6 +58,7 @@ void uarm_gcode_G1();
 void uarm_gcode_M2000();
 
 void uarm_gcode_M2120();
+void uarm_gcode_M2121();
 void uarm_gcode_M2122();
 
 uint8_t uarm_gcode_M2200(char reply[]);
