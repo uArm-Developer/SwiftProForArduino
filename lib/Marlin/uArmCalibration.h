@@ -20,6 +20,7 @@
 #include "Z_IIC.h"
 
 float get_current_angle(uint8_t index);
+float get_current_angle2(uint8_t index);
 void init_reference_angle_value();
 void update_reference_angle_value(uint16_t value[NUM_AXIS]);
 void update_reference_angle_value_B(uint16_t value[NUM_AXIS]);

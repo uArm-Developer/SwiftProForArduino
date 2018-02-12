@@ -415,7 +415,7 @@ void reportPos2() // report servo angles
 
 	for (int i = 0; i < NUM_AXIS; i++)
 	{
-		angle[i] = get_current_angle(i);
+		angle[i] = get_current_angle2(i);
 	}
 	
 	msprintf(result,"@3 Ax%f, Ay%f, Az%f, Ae%f\r\n", angle[X_AXIS], angle[Y_AXIS], angle[Z_AXIS], angle[E_AXIS]);
