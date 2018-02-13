@@ -399,6 +399,38 @@ void reportPos()
 	reportString(result);	
 }
 
+void reportPos2() // report servo angles
+{
+	char result[128];
+	//@3 X154.714 Y194.915 Z10.217\n
+	//msprintf(result, "@3 X%f Y%f Z%f\r\n", );
+	float angle[NUM_AXIS];
+	float pos[NUM_AXIS];
+
+	if (!isPowerPlugIn())
+	{
+		MYSERIAL.println("No Power Connected!");
+		return ;
+	}
+
+	for (int i = 0; i < NUM_AXIS; i++)
+	{
+		angle[i] = get_current_angle2(i);
+	}
+	
+	msprintf(result,"@3 Ax%f, Ay%f, Az%f, Ae%f\r\n", angle[X_AXIS], angle[Y_AXIS], angle[Z_AXIS], angle[E_AXIS]);
+
+	// get current pos
+	// getXYZFromAngle(pos[X_AXIS], pos[Y_AXIS], pos[Z_AXIS], angle[X_AXIS], angle[Y_AXIS], angle[Z_AXIS]);
+
+	// debugPrint("cur_pos: %f, %f, %f\r\n", pos[X_AXIS], pos[Y_AXIS], pos[Z_AXIS]);
+
+	// msprintf(result, "@3 X%f Y%f Z%f R%f\r\n", pos[X_AXIS], pos[Y_AXIS], pos[Z_AXIS], angle[3]);
+
+	reportString(result);	
+}
+
+
 void rotate_frontend_motor()
 {
 	float angle = 0;
@@ -467,6 +499,27 @@ void uarm_gcode_M2120()
 		}
 	}
 }
+
+void uarm_gcode_M2121()
+{
+	float interval = 0;
+	if (code_seen('V')) 
+	{
+		interval = code_value_float();
+
+		interval *= 1000;
+
+		if (interval == 0)
+		{
+			removeReportService(3);
+		}
+		else
+		{
+			addReportService(3, interval, reportPos2);
+		}
+	}
+}
+
 
 void uarm_gcode_M2122()
 {

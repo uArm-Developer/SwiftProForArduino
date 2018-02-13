@@ -8416,6 +8416,10 @@ void process_next_command() {
 	case 2120:
 		uarm_gcode_M2120();
 		break;
+	
+	case 2121:
+		uarm_gcode_M2121();
+		break;
 
 	case 2122:
 		uarm_gcode_M2122();
