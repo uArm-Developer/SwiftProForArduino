@@ -9,6 +9,8 @@
 
 #include "uArmCalibration.h" 
 #include "macros.h"
+#include <FixedPoints.h>
+#include <FixedPointsCommon.h>
 
 
 uint16_t reference_angle_value[NUM_AXIS] = {95, 1429, 1998, 0};
@@ -20,6 +22,8 @@ float reference_angle_B[NUM_AXIS] = {90.0, 33.138634, 88.795792, 0.0};
 #define USE_REFERENCE_ANGLE_B_FLAG	0xBB
 
 float (*reference_angle_p)[NUM_AXIS] = &reference_angle;
+
+SQ15x16 angleConv = 0.087890625;
 
 
 void init_reference_angle_value()
@@ -119,137 +123,142 @@ uint16_t get_current_angle_adc(uint8_t index)
 
 float get_current_angle(uint8_t index)
 {
-	if (index > E_AXIS)
-		return 0;
-
-	if (index == E_AXIS)
-		return get_current_angle_adc(index);
-
-	float angle = 0.0;
-
-	
-	uint16_t value[5] = {0.0};
-	uint16_t max_value = 0;
-	uint16_t min_value = 0xffff;
-	uint32_t sum_value = 0;
-	bool invalid = false;
-
-	do 
-	{
-		invalid = false;
-		sum_value = 0;
-		max_value = 0;
-		min_value = 0xffff;
-		
-		for (int i = 0 ; i < 5; i++)
-		{
-			value[i] =  get_current_angle_adc(index);
-			//debugPrint("value[%d] = %d\r\n", i, value[i]);
-
-			if (max_value < value[i])
-				max_value = value[i];
-
-			if (min_value > value[i])
-				min_value = value[i];
-
-			sum_value += value[i];
-
-			
-		}
-
-		if (max_value - min_value > 20)
-			invalid = true;
-	}while(invalid);
-	
-	uint16_t cur_value = (sum_value - max_value - min_value) / 3;//get_current_angle_adc(index);
-	
-	//debugPrint("cur_value = %d\r\n", cur_value);
-	
-
-	//uint16_t cur_value = get_current_angle_adc(index);
-	uint16_t diff = 0;
-
-	if (cur_value > reference_angle_value[index])
-	{
-		diff = cur_value - reference_angle_value[index];
-		angle = (*reference_angle_p)[index] + diff * 360.0 / 4096;
-	}
-	else if (cur_value < reference_angle_value[index])
-	{
-		diff = reference_angle_value[index] - cur_value;
-		angle = (*reference_angle_p)[index] - diff * 360.0 / 4096;
-	}
-	else
-	{
-		angle = (*reference_angle_p)[index];
-	}
-
-	//debugPrint("cur_value = %d\r\n", cur_value);
-	//debugPrint("reference_value = %d\r\n", reference_angle_value[index]);
-
-	//debugPrint("angle = %f\r\n", angle);
-
-	float origin_angle = angle;
-	float min = 0, max = 0;
-	
-	if (angle > 360)
-	{
-		angle -= 360;
-	}
-
-	if (angle < 0)
-	{
-		angle += 360;
-	}	
-	//debugPrint("angle2 = %f\r\n", angle);
-
-	switch (index)
-	{
-	case X_AXIS:
-		min = 0;
-		max = 180;
-		break;
-		
-	case Y_AXIS:
-		min = LOWER_ARM_MIN_ANGLE;
-		max = LOWER_ARM_MAX_ANGLE;
-		break;
-		
-	case Z_AXIS:
-		min = UPPER_ARM_MIN_ANGLE;
-		max = UPPER_ARM_MAX_ANGLE;
-		break;
-	
-	}
-
-	if (angle >= min && angle <= max)
-	{
-		return angle;
-	}
-	else if (diff > 2048)
-	{
-		if (origin_angle < 0)
-		{
-			return max;
-		}
-		else
-		{
-			return min;
-		}
-	}
-	else
-	{
-		if (origin_angle < 0)
-		{
-			return min;
-		}
-		else
-		{
-			return max;
-		}
-	}
-
-	//return angle;
+    if (index > E_AXIS)
+        return 0;
+    
+    if (index == E_AXIS)
+        return get_current_angle_adc(index);
+    
+    //float angle = 0.0;
+    SQ15x16 angle = 0.0;
+    
+    uint16_t value[5] = {0.0};
+    uint16_t max_value = 0;
+    uint16_t min_value = 0xffff;
+    uint32_t sum_value = 0;
+    bool invalid = false;
+    
+    do
+    {
+        invalid = false;
+        sum_value = 0;
+        max_value = 0;
+        min_value = 0xffff;
+        
+        for (int i = 0 ; i < 5; i++)
+        {
+            value[i] =  get_current_angle_adc(index);
+            //debugPrint("value[%d] = %d\r\n", i, value[i]);
+            
+            if (max_value < value[i])
+                max_value = value[i];
+            
+            if (min_value > value[i])
+                min_value = value[i];
+            
+            sum_value += value[i];
+            
+        }
+        
+        if (max_value - min_value > 20)
+            invalid = true;
+    }while(invalid);
+    
+    uint16_t cur_value = (sum_value - max_value - min_value) / 3;//get_current_angle_adc(index);
+    
+    //debugPrint("cur_value = %d\r\n", cur_value);
+    
+    
+    //uint16_t cur_value = get_current_angle_adc(index);
+    uint16_t diff = 0;
+    
+    if (cur_value > reference_angle_value[index])
+    {
+        diff = cur_value - reference_angle_value[index];
+        
+        SQ15x16 fpDiff = diff;
+        SQ15x16 angleDiff = fpDiff * angleConv;
+        SQ15x16 refAngle = (*reference_angle_p)[index];
+        angle = static_cast<float>(refAngle + angleDiff);
+    }
+    else if (cur_value < reference_angle_value[index])
+    {
+        diff = reference_angle_value[index] - cur_value;
+        SQ15x16 fpDiff = diff;
+        SQ15x16 angleDiff = fpDiff * angleConv;
+        SQ15x16 refAngle = (*reference_angle_p)[index];
+        angle = static_cast<float>(refAngle - angleDiff);
+    }
+    else
+    {
+        angle = (*reference_angle_p)[index];
+    }
+    
+    //debugPrint("cur_value = %d\r\n", cur_value);
+    //debugPrint("reference_value = %d\r\n", reference_angle_value[index]);
+    
+    //debugPrint("angle = %f\r\n", angle);
+    
+    float origin_angle = static_cast<float>(angle);
+    float min = 0, max = 0;
+    
+    if (angle > 360)
+    {
+        angle -= 360;
+    }
+    
+    if (angle < 0)
+    {
+        angle += 360;
+    }
+    //debugPrint("angle2 = %f\r\n", angle);
+    
+    switch (index)
+    {
+            
+        case X_AXIS:
+            min = 0;
+            max = 180;
+            break;
+            
+        case Y_AXIS:
+            min = LOWER_ARM_MIN_ANGLE;
+            max = LOWER_ARM_MAX_ANGLE;
+            break;
+            
+        case Z_AXIS:
+            min = UPPER_ARM_MIN_ANGLE;
+            max = UPPER_ARM_MAX_ANGLE;
+            break;
+            
+    }
+    
+    if (angle >= min && angle <= max)
+    {
+        return static_cast<float>(angle);
+    }
+    else if (diff > 2048)
+    {
+        if (origin_angle < 0)
+        {
+            return max;
+        }
+        else
+        {
+            return min;
+        }
+    }
+    else
+    {
+        if (origin_angle < 0)
+        {
+            return min;
+        }
+        else
+        {
+            return max;
+        }
+    }
 }
 
 float get_current_angle2(uint8_t index)

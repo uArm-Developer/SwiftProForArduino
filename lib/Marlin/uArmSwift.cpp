@@ -15,6 +15,9 @@
 #include "Grovergb_lcd.h"
 #include "uArmGrove2.h"
 
+#include <FixedPoints.h>
+#include <FixedPointsCommon.h>
+
 
 // CAUTION: E_AXIS means FrontEnd Servo not extruder0
 //float current_angle[NUM_AXIS] = { 0.0 };
@@ -193,18 +196,44 @@ void swift_run()
 
 unsigned char getXYZFromAngleOrigin(float& x, float& y, float& z, float rot, float left, float right)
 {
-	// 閿熸枻鎷稾Y骞抽敓鏂ゆ嫹閿熼叺闃熷府鎷烽敓鏂ゆ嫹�?	
-	
-	
-	double stretch = MATH_LOWER_ARM * cos(left / MATH_TRANS) + MATH_UPPER_ARM * cos(right / MATH_TRANS) + MATH_L2;
-
-	// 閿熸枻鎷穁閿熸枻鎷烽敓閰甸槦甯嫹閿熸枻鎷烽�?
-	double height = MATH_LOWER_ARM * sin(left / MATH_TRANS) - MATH_UPPER_ARM * sin(right / MATH_TRANS) + MATH_L1;
-	x = stretch * cos(rot / MATH_TRANS);
-	y = stretch * sin(rot / MATH_TRANS);
-	z = height;
-
-	return 0;    
+    
+    SQ15x16 lowerArm = MATH_LOWER_ARM;
+    SQ15x16 trans = 1/MATH_TRANS;
+    SQ15x16 upperArm = MATH_UPPER_ARM;
+    SQ15x16 l1 = MATH_L1;
+    SQ15x16 l2 = MATH_L2;
+    
+    SQ15x16 leftfp = left;
+    SQ15x16 rightfp = right;
+    SQ15x16 rotfp  = rot;
+    
+    
+    SQ15x16 lowerCos = cos(static_cast<float>(leftfp * trans));
+    SQ15x16 lowerArmCalc = lowerArm * lowerCos;
+    
+    SQ15x16 upperCos = cos(static_cast<float>(rightfp * trans));
+    SQ15x16 upperArmCalc = upperArm * upperCos;
+    SQ15x16 stretchfp = lowerArmCalc + upperArmCalc;
+    stretchfp = stretchfp + l2;
+    
+    
+    SQ15x16 lowerSin = sin(static_cast<float>(leftfp * trans));
+    lowerArmCalc = lowerArm * lowerSin;
+    SQ15x16 upperSin = sin(static_cast<float>(rightfp * trans));
+    upperArmCalc = upperArm * upperSin;
+    
+    SQ15x16 heightfp = lowerArmCalc - upperArmCalc;
+    heightfp = heightfp + l1;
+    
+    
+    SQ15x16 cosRot = cos(static_cast<float>(rotfp * trans));
+    SQ15x16 sinRot = cos(static_cast<float>(rotfp * trans));
+    
+    x = static_cast<float>(stretchfp * cosRot);
+    y = static_cast<float>(stretchfp * sinRot);
+    z = static_cast<float>(heightfp);
+    
+    return 0;
 }
 
 float get_current_height()
