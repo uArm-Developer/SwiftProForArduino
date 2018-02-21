@@ -11,6 +11,7 @@
 #include "Grovergb_lcd.h"
 #include <FixedPoints.h>
 #include <FixedPointsCommon.h>
+#include "cos_fix.h"
 
 static float front_end_offset = 0.0;
 static float height_offset = 0.0;
@@ -664,24 +665,24 @@ unsigned char getXYZFromAngle(float& x, float& y, float& z, float rot, float lef
     SQ15x16 rightfp = right;
     SQ15x16 rotfp  = rot;
     
-    SQ15x16 lowerCos = cos(static_cast<float>(leftfp * sqTrans));
+    SQ15x16 lowerCos = cos_fix(static_cast<float>(leftfp * sqTrans));
     SQ15x16 lowerArmCalc = sqLowerArm * lowerCos;
     
-    SQ15x16 upperCos = cos(static_cast<float>(rightfp * sqTrans));
+    SQ15x16 upperCos = cos_fix(static_cast<float>(rightfp * sqTrans));
     SQ15x16 upperArmCalc = sqUpperArm * upperCos;
     SQ15x16 stretchfp = lowerArmCalc + upperArmCalc;
     stretchfp = stretchfp + sqL2 + front_end_offset;
     
-    SQ15x16 lowerSin = sin(static_cast<float>(leftfp * sqTrans));
+    SQ15x16 lowerSin = sin_fix(static_cast<float>(leftfp * sqTrans));
     lowerArmCalc = sqLowerArm * lowerSin;
-    SQ15x16 upperSin = sin(static_cast<float>(rightfp * sqTrans));
+    SQ15x16 upperSin = sin_fix(static_cast<float>(rightfp * sqTrans));
     upperArmCalc = sqUpperArm * upperSin;
     
     SQ15x16 heightfp = lowerArmCalc - upperArmCalc;
     heightfp = heightfp + sqL1;
     
-    SQ15x16 cosRot = cos(static_cast<float>(rotfp * sqTrans));
-    SQ15x16 sinRot = cos(static_cast<float>(rotfp * sqTrans));
+    SQ15x16 cosRot = cos_fix(static_cast<float>(rotfp * sqTrans));
+    SQ15x16 sinRot = sin_fix(static_cast<float>(rotfp * sqTrans));
     
     x = static_cast<float>(stretchfp * sinRot);
     y = static_cast<float>(-stretchfp * cosRot);

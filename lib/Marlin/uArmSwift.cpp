@@ -17,6 +17,7 @@
 
 #include <FixedPoints.h>
 #include <FixedPointsCommon.h>
+#include "cos_fix.h"
 
 
 // CAUTION: E_AXIS means FrontEnd Servo not extruder0
@@ -204,24 +205,24 @@ unsigned char getXYZFromAngleOrigin(float& x, float& y, float& z, float rot, flo
     SQ15x16 rightfp = right;
     SQ15x16 rotfp  = rot;
     
-    SQ15x16 lowerCos = cos(static_cast<float>(leftfp * sqTrans));
+    SQ15x16 lowerCos = cos_fix(static_cast<float>(leftfp * sqTrans));
     SQ15x16 lowerArmCalc = sqLowerArm * lowerCos;
     
-    SQ15x16 upperCos = cos(static_cast<float>(rightfp * sqTrans));
+    SQ15x16 upperCos = cos_fix(static_cast<float>(rightfp * sqTrans));
     SQ15x16 upperArmCalc = sqUpperArm * upperCos;
     SQ15x16 stretchfp = lowerArmCalc + upperArmCalc;
     stretchfp = stretchfp + sqL2;
     
-    SQ15x16 lowerSin = sin(static_cast<float>(leftfp * sqTrans));
+    SQ15x16 lowerSin = sin_fix(static_cast<float>(leftfp * sqTrans));
     lowerArmCalc = sqLowerArm * lowerSin;
-    SQ15x16 upperSin = sin(static_cast<float>(rightfp * sqTrans));
+    SQ15x16 upperSin = sin_fix(static_cast<float>(rightfp * sqTrans));
     upperArmCalc = sqUpperArm * upperSin;
     
     SQ15x16 heightfp = lowerArmCalc - upperArmCalc;
     heightfp = heightfp + sqL1;
     
-    SQ15x16 cosRot = cos(static_cast<float>(rotfp * sqTrans));
-    SQ15x16 sinRot = cos(static_cast<float>(rotfp * sqTrans));
+    SQ15x16 cosRot = cos_fix(static_cast<float>(rotfp * sqTrans));
+    SQ15x16 sinRot = sin_fix(static_cast<float>(rotfp * sqTrans));
     
     x = static_cast<float>(stretchfp * cosRot);
     y = static_cast<float>(stretchfp * sinRot);
