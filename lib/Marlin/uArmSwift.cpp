@@ -31,8 +31,6 @@ bool block_running = false;
 
 unsigned long tickStartTime = millis(); // get timestamp;
 
-
-
 uArmButton button_menu;
 uArmButton button_play;
 
@@ -196,38 +194,34 @@ void swift_run()
 
 unsigned char getXYZFromAngleOrigin(float& x, float& y, float& z, float rot, float left, float right)
 {
-    
-    SQ15x16 lowerArm = MATH_LOWER_ARM;
-    SQ15x16 trans = 1/MATH_TRANS;
-    SQ15x16 upperArm = MATH_UPPER_ARM;
-    SQ15x16 l1 = MATH_L1;
-    SQ15x16 l2 = MATH_L2;
+    SQ15x16 sqLowerArm = MATH_LOWER_ARM;
+    SQ15x16 sqTrans = 0.017453286279274;
+    SQ15x16 sqUpperArm = MATH_UPPER_ARM;
+    SQ15x16 sqL1 = MATH_L1;
+    SQ15x16 sqL2 = MATH_L2;
     
     SQ15x16 leftfp = left;
     SQ15x16 rightfp = right;
     SQ15x16 rotfp  = rot;
     
+    SQ15x16 lowerCos = cos(static_cast<float>(leftfp * sqTrans));
+    SQ15x16 lowerArmCalc = sqLowerArm * lowerCos;
     
-    SQ15x16 lowerCos = cos(static_cast<float>(leftfp * trans));
-    SQ15x16 lowerArmCalc = lowerArm * lowerCos;
-    
-    SQ15x16 upperCos = cos(static_cast<float>(rightfp * trans));
-    SQ15x16 upperArmCalc = upperArm * upperCos;
+    SQ15x16 upperCos = cos(static_cast<float>(rightfp * sqTrans));
+    SQ15x16 upperArmCalc = sqUpperArm * upperCos;
     SQ15x16 stretchfp = lowerArmCalc + upperArmCalc;
-    stretchfp = stretchfp + l2;
+    stretchfp = stretchfp + sqL2;
     
-    
-    SQ15x16 lowerSin = sin(static_cast<float>(leftfp * trans));
-    lowerArmCalc = lowerArm * lowerSin;
-    SQ15x16 upperSin = sin(static_cast<float>(rightfp * trans));
-    upperArmCalc = upperArm * upperSin;
+    SQ15x16 lowerSin = sin(static_cast<float>(leftfp * sqTrans));
+    lowerArmCalc = sqLowerArm * lowerSin;
+    SQ15x16 upperSin = sin(static_cast<float>(rightfp * sqTrans));
+    upperArmCalc = sqUpperArm * upperSin;
     
     SQ15x16 heightfp = lowerArmCalc - upperArmCalc;
-    heightfp = heightfp + l1;
+    heightfp = heightfp + sqL1;
     
-    
-    SQ15x16 cosRot = cos(static_cast<float>(rotfp * trans));
-    SQ15x16 sinRot = cos(static_cast<float>(rotfp * trans));
+    SQ15x16 cosRot = cos(static_cast<float>(rotfp * sqTrans));
+    SQ15x16 sinRot = cos(static_cast<float>(rotfp * sqTrans));
     
     x = static_cast<float>(stretchfp * cosRot);
     y = static_cast<float>(stretchfp * sinRot);
@@ -346,8 +340,6 @@ void uarm_gcode_G0()
 
 		if (get_user_mode() == USER_MODE_LASER)
 		{
-
-
 			
 			debugPrint("laser off\r\n");
 			
