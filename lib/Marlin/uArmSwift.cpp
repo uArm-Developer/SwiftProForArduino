@@ -15,6 +15,10 @@
 #include "Grovergb_lcd.h"
 #include "uArmGrove2.h"
 
+#include <FixedPoints.h>
+#include <FixedPointsCommon.h>
+#include "cos_fix.h"
+
 
 // CAUTION: E_AXIS means FrontEnd Servo not extruder0
 //float current_angle[NUM_AXIS] = { 0.0 };
@@ -27,8 +31,6 @@ extern float destination[NUM_AXIS];
 bool block_running = false;
 
 unsigned long tickStartTime = millis(); // get timestamp;
-
-
 
 uArmButton button_menu;
 uArmButton button_play;
@@ -193,18 +195,40 @@ void swift_run()
 
 unsigned char getXYZFromAngleOrigin(float& x, float& y, float& z, float rot, float left, float right)
 {
-	// 閿熸枻鎷稾Y骞抽敓鏂ゆ嫹閿熼叺闃熷府鎷烽敓鏂ゆ嫹�?	
-	
-	
-	double stretch = MATH_LOWER_ARM * cos(left / MATH_TRANS) + MATH_UPPER_ARM * cos(right / MATH_TRANS) + MATH_L2;
-
-	// 閿熸枻鎷穁閿熸枻鎷烽敓閰甸槦甯嫹閿熸枻鎷烽�?
-	double height = MATH_LOWER_ARM * sin(left / MATH_TRANS) - MATH_UPPER_ARM * sin(right / MATH_TRANS) + MATH_L1;
-	x = stretch * cos(rot / MATH_TRANS);
-	y = stretch * sin(rot / MATH_TRANS);
-	z = height;
-
-	return 0;    
+    SQ15x16 sqLowerArm = MATH_LOWER_ARM;
+    SQ15x16 sqTrans = 0.017453286279274;
+    SQ15x16 sqUpperArm = MATH_UPPER_ARM;
+    SQ15x16 sqL1 = MATH_L1;
+    SQ15x16 sqL2 = MATH_L2;
+    
+    SQ15x16 leftfp = left;
+    SQ15x16 rightfp = right;
+    SQ15x16 rotfp  = rot;
+    
+    SQ15x16 lowerCos = cos_fix(static_cast<float>(leftfp * sqTrans));
+    SQ15x16 lowerArmCalc = sqLowerArm * lowerCos;
+    
+    SQ15x16 upperCos = cos_fix(static_cast<float>(rightfp * sqTrans));
+    SQ15x16 upperArmCalc = sqUpperArm * upperCos;
+    SQ15x16 stretchfp = lowerArmCalc + upperArmCalc;
+    stretchfp = stretchfp + sqL2;
+    
+    SQ15x16 lowerSin = sin_fix(static_cast<float>(leftfp * sqTrans));
+    lowerArmCalc = sqLowerArm * lowerSin;
+    SQ15x16 upperSin = sin_fix(static_cast<float>(rightfp * sqTrans));
+    upperArmCalc = sqUpperArm * upperSin;
+    
+    SQ15x16 heightfp = lowerArmCalc - upperArmCalc;
+    heightfp = heightfp + sqL1;
+    
+    SQ15x16 cosRot = cos_fix(static_cast<float>(rotfp * sqTrans));
+    SQ15x16 sinRot = sin_fix(static_cast<float>(rotfp * sqTrans));
+    
+    x = static_cast<float>(stretchfp * cosRot);
+    y = static_cast<float>(stretchfp * sinRot);
+    z = static_cast<float>(heightfp);
+    
+    return 0;
 }
 
 float get_current_height()
@@ -317,8 +341,6 @@ void uarm_gcode_G0()
 
 		if (get_user_mode() == USER_MODE_LASER)
 		{
-
-
 			
 			debugPrint("laser off\r\n");
 			
@@ -399,6 +421,38 @@ void reportPos()
 	reportString(result);	
 }
 
+void reportPos2() // report servo angles
+{
+	char result[128];
+	//@3 X154.714 Y194.915 Z10.217\n
+	//msprintf(result, "@3 X%f Y%f Z%f\r\n", );
+	float angle[NUM_AXIS];
+	float pos[NUM_AXIS];
+
+	if (!isPowerPlugIn())
+	{
+		MYSERIAL.println("No Power Connected!");
+		return ;
+	}
+
+	for (int i = 0; i < NUM_AXIS; i++)
+	{
+		angle[i] = get_current_angle2(i);
+	}
+	
+	msprintf(result,"@3 Ax%f, Ay%f, Az%f, Ae%f\r\n", angle[X_AXIS], angle[Y_AXIS], angle[Z_AXIS], angle[E_AXIS]);
+
+	// get current pos
+	// getXYZFromAngle(pos[X_AXIS], pos[Y_AXIS], pos[Z_AXIS], angle[X_AXIS], angle[Y_AXIS], angle[Z_AXIS]);
+
+	// debugPrint("cur_pos: %f, %f, %f\r\n", pos[X_AXIS], pos[Y_AXIS], pos[Z_AXIS]);
+
+	// msprintf(result, "@3 X%f Y%f Z%f R%f\r\n", pos[X_AXIS], pos[Y_AXIS], pos[Z_AXIS], angle[3]);
+
+	reportString(result);	
+}
+
+
 void rotate_frontend_motor()
 {
 	float angle = 0;
@@ -467,6 +521,27 @@ void uarm_gcode_M2120()
 		}
 	}
 }
+
+void uarm_gcode_M2121()
+{
+	float interval = 0;
+	if (code_seen('V')) 
+	{
+		interval = code_value_float();
+
+		interval *= 1000;
+
+		if (interval == 0)
+		{
+			removeReportService(3);
+		}
+		else
+		{
+			addReportService(3, interval, reportPos2);
+		}
+	}
+}
+
 
 void uarm_gcode_M2122()
 {

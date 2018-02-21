@@ -9,6 +9,9 @@
 
 #include "uArmAPI.h" 
 #include "Grovergb_lcd.h"
+#include <FixedPoints.h>
+#include <FixedPointsCommon.h>
+#include "cos_fix.h"
 
 static float front_end_offset = 0.0;
 static float height_offset = 0.0;
@@ -652,16 +655,38 @@ void clear_acceleration_flag()
 
 unsigned char getXYZFromAngle(float& x, float& y, float& z, float rot, float left, float right)
 {
-	// 閿熸枻鎷稾Y骞抽敓鏂ゆ嫹閿熼叺闃熷府鎷烽敓鏂ゆ嫹�?	
-	
-	
-	double stretch = MATH_LOWER_ARM * cos(left / MATH_TRANS) + MATH_UPPER_ARM * cos(right / MATH_TRANS) + MATH_L2 + front_end_offset;
-
-	// 閿熸枻鎷穁閿熸枻鎷烽敓閰甸槦甯嫹閿熸枻鎷烽�?
-	double height = MATH_LOWER_ARM * sin(left / MATH_TRANS) - MATH_UPPER_ARM * sin(right / MATH_TRANS) + MATH_L1;
-	y = -stretch * cos(rot / MATH_TRANS);
-	x = stretch * sin(rot / MATH_TRANS);
-	z = height - height_offset;
+    SQ15x16 sqLowerArm = MATH_LOWER_ARM;
+    SQ15x16 sqTrans = 0.017453286279274;
+    SQ15x16 sqUpperArm = MATH_UPPER_ARM;
+    SQ15x16 sqL1 = MATH_L1;
+    SQ15x16 sqL2 = MATH_L2;
+    
+    SQ15x16 leftfp = left;
+    SQ15x16 rightfp = right;
+    SQ15x16 rotfp  = rot;
+    
+    SQ15x16 lowerCos = cos_fix(static_cast<float>(leftfp * sqTrans));
+    SQ15x16 lowerArmCalc = sqLowerArm * lowerCos;
+    
+    SQ15x16 upperCos = cos_fix(static_cast<float>(rightfp * sqTrans));
+    SQ15x16 upperArmCalc = sqUpperArm * upperCos;
+    SQ15x16 stretchfp = lowerArmCalc + upperArmCalc;
+    stretchfp = stretchfp + sqL2 + front_end_offset;
+    
+    SQ15x16 lowerSin = sin_fix(static_cast<float>(leftfp * sqTrans));
+    lowerArmCalc = sqLowerArm * lowerSin;
+    SQ15x16 upperSin = sin_fix(static_cast<float>(rightfp * sqTrans));
+    upperArmCalc = sqUpperArm * upperSin;
+    
+    SQ15x16 heightfp = lowerArmCalc - upperArmCalc;
+    heightfp = heightfp + sqL1;
+    
+    SQ15x16 cosRot = cos_fix(static_cast<float>(rotfp * sqTrans));
+    SQ15x16 sinRot = sin_fix(static_cast<float>(rotfp * sqTrans));
+    
+    x = static_cast<float>(stretchfp * sinRot);
+    y = static_cast<float>(-stretchfp * cosRot);
+    z = static_cast<float>(heightfp - height_offset);
 
 	return 0;    
 }

@@ -1,3 +1,13 @@
+v3.2.0 20180213 M2121 command added which provides reduced averaging and accuracy but improves speed and keeps the arm movement undisturbed.
+also the new command reports angular positions only
+
+v3.2.0 20180205
+Heated bed support - thermistor input into A15, digital heater bed switch on D39
+Support for G20/G21 code for Slic3r
+UArm grove lcd module support
+Ensure that you remove the Base LCD Library and replace with this: 
+https://bitbucket.org/fmalpartida/new-liquidcrystal/downloads/Newliquidcrystal_1.3.5.zip
+
 v3.2.0 20171025
 new stable version release.
 

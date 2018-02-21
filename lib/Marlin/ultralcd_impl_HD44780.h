@@ -166,6 +166,11 @@ extern volatile uint8_t buttons;  //an extended version of the last checked butt
   #include <LiquidCrystal_I2C.h>
   #define LCD_CLASS LiquidCrystal_I2C
   LCD_CLASS lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+#elif ENABLED(LCD_GROVE_RGB)
+    #define  LCD_CLASS Grovergb_lcd
+    #include <LCD.h>
+    #include "Grovergb_lcd.h"
+    LCD_CLASS lcd;
 #else
   // Standard directly connected LCD implementations
   #include <LiquidCrystal.h>
