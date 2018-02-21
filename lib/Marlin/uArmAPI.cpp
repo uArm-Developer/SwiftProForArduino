@@ -670,7 +670,7 @@ unsigned char getXYZFromAngle(float& x, float& y, float& z, float rot, float lef
     SQ15x16 upperCos = cos(static_cast<float>(rightfp * sqTrans));
     SQ15x16 upperArmCalc = sqUpperArm * upperCos;
     SQ15x16 stretchfp = lowerArmCalc + upperArmCalc;
-    stretchfp = stretchfp + sqL2;
+    stretchfp = stretchfp + sqL2 + front_end_offset;
     
     SQ15x16 lowerSin = sin(static_cast<float>(leftfp * sqTrans));
     lowerArmCalc = sqLowerArm * lowerSin;
@@ -683,9 +683,9 @@ unsigned char getXYZFromAngle(float& x, float& y, float& z, float rot, float lef
     SQ15x16 cosRot = cos(static_cast<float>(rotfp * sqTrans));
     SQ15x16 sinRot = cos(static_cast<float>(rotfp * sqTrans));
     
-    x = static_cast<float>(stretchfp * cosRot);
-    y = static_cast<float>(stretchfp * sinRot);
-    z = static_cast<float>(heightfp);
+    x = static_cast<float>(stretchfp * sinRot);
+    y = static_cast<float>(-stretchfp * cosRot);
+    z = static_cast<float>(heightfp - height_offset);
 
 	return 0;    
 }
