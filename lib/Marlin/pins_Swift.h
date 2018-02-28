@@ -131,15 +131,17 @@
   #define SLED_PIN           -1
 #endif
 
+#define MOSFET_D_PIN  -1
 
+#define SD_DETECT_PIN -1
 
-
-  #define MOSFET_D_PIN  -1
-
-
-
-
-
+#ifdef SSD1306_OLED_I2C_CONTROLLER
+#define LCD_SDSS -1
+#define BTN_EN1 35  // A1 - rotary encoder A
+#define BTN_EN2 33  // A2 - rotary encoder B
+#define BTN_ENC 32  // A3 - rotary encoder push switch
+//     #define BEEPER_PIN  31  // RX1 - piezo beeper
+#endif
 
 #ifndef FAN_PIN
   #define FAN_PIN 4      // IO pin. Buffer needed

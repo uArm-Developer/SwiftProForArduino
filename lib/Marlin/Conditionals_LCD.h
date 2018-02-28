@@ -131,6 +131,14 @@
    * I2C PANELS
    */
 
+#if defined (SSD1306_OLED_I2C_CONTROLLER)
+#define DOGLCD
+#define U8GLIB_SSD1306
+#define ULTIPANEL
+#define NEWPANEL
+#endif
+
+
   #if ENABLED(LCD_I2C_SAINSMART_YWROBOT)
     // This uses the LiquidCrystal_I2C library ( https://bitbucket.org/fmalpartida/new-liquidcrystal/wiki/Home )
     // Make sure it is placed in the Arduino libraries directory.
