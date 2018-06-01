@@ -4,9 +4,9 @@
 
 ## Update Summary for v4.1.0
 * Transplant Grbl framework.
-* Optimize stepper motor performance,improve motor speed.
+* Optimize stepper motor performance,improve motor speed,fix motor shake.
 * Fix servo shake in end-effector.
-* 
+* Optimize code efficiency and improve readability.
 
 ## Caution
 #### The current firmware is not perfect and will be updated periodically
@@ -55,7 +55,7 @@ The upload process generally takes about 10 seconds to finish. Once completed, a
 ### 2、Control your uArm
 you have three ways to control your uArm:
 
-* using the serial terminal
+* using the serial terminal [example](example)
 * using the Python library
 * using the uArmStudio
 
