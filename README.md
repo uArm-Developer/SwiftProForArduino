@@ -4,13 +4,22 @@
 
 ## Update Summary for v4.1.0
 * Transplant Grbl framework.
-* Optimize stepper motor performance.
+* Optimize stepper motor performance,improve motor speed.
 * Fix servo shake in end-effector.
+* 
 
-## Features
-* **not support study mode temporarily**.
-* **not support app control temporarily**.
-### For serial terminal control
+## Caution
+#### The current firmware is not perfect and will be updated periodically
+#### Not support learning mode 
+#### Not support app control 
+#### For uArmStudio control
+
+- BLOCKLY is not support **input** and **Grove** module.
+- Draw/Laser is not support.
+- 3D Printing is not support.
+
+## Communication protocol
+#### For serial terminal control
 
 First, connect to uArm using the serial terminal of your choice.Set the baud rate to 115200 as 8-N-1 (8-bits, no parity, and 1-stop bit.) .Cmd list reference to [protocol documents](doc/).
 
@@ -21,14 +30,8 @@ not support temporarily **M2211,M2212,M2213,M2234,M2240,M2241,M2245**.
 **P2200,P2201,P2202,P2203,P2204,P2205,P2206,P2220,P2221,P2231,P2231,P2232,P2233,P2234,P2242,P2400**.                                                                  
 not support temporarily **P2240,P2241**.
 
-### For uArmStudio control
-
-- BLOCKLY is not support **input** and **Grove** module temporarily.
-- Draw/Laser is not support temporarily.
-- 3D Printing is not support temporarily.
-
- 
 ----------
+## How to upgrade uArm
 
 ### 1、Flashing Firmware to uArm
 #### To Determine your uArm's COM port:
@@ -36,7 +39,7 @@ not support temporarily **P2240,P2241**.
 * Windows XP: Right click on "My Computer", select "Properties", select "Device Manager".
 * Windows 7: Click "Start" -> Right click "Computer" -> Select "Manage" -> Select "Device Manager" from left pane.
 * In the tree, expand "Ports (COM & LPT)".
-* Your uArm will be the **Arduino Mega 2560 (COMX)**, where the “X” represents the COM number, for example COM6.
+* Your uArm will be the **Arduino Mega 2560 (COMX)**, the “X” represents the COM number, for example COM6.
 * If there are multiple USB serial ports, right click each one and check the manufacturer, the Arduino will be "FTDI".
 #### To flash  hex to Swift Pro:
 
@@ -55,7 +58,6 @@ you have three ways to control your uArm:
 * using the serial terminal
 * using the Python library
 * using the uArmStudio
-
 
 
 ## License
