@@ -5,7 +5,7 @@
 ## Update Summary for v4.1.0
 * Transplant Grbl framework.
 * Optimize stepper motor performance.
-* Fix servo jitter in end-effector.
+* Fix servo shake in end-effector.
 
 ## Features
 * **not support study mode temporarily**.
