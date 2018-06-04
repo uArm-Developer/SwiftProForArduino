@@ -25,10 +25,10 @@ First, connect to uArm using the serial terminal of your choice.Set the baud rat
 
 * move cmd support **G0,G1,G2004,G2201,G2202,G2204,G2205**.
 * setting cmd support **M17,M204,M2019,M2120,M2121,M2122,M2201,M2202,M2203,M2210,M2215,M2220,M2221,M2222,M2231,M2232,M2233,M2400,M2401,M2410,M2411**.                                                                                                                                                                           
-not support temporarily **M2211,M2212,M2213,M2234,M2240,M2241,M2245**.
+not support currently **M2211,M2212,M2213,M2234,M2240,M2241,M2245**.
 * query cmd support 
 **P2200,P2201,P2202,P2203,P2204,P2205,P2206,P2220,P2221,P2231,P2231,P2232,P2233,P2234,P2242,P2400**.                                                                  
-not support temporarily **P2240,P2241**.
+not support currently **P2240,P2241**.
 
 ----------
 ## How to upgrade uArm
