@@ -113,7 +113,7 @@
 			break;
 	}
 	
-	DB_PRINT_STR( "divide num : %d\r\n", divide_numbers );
+//	DB_PRINT_STR( "divide num : %d\r\n", divide_numbers );
 	float delta_coord[3];
   delta_coord[X_AXIS] = (x - current_coord[X_AXIS]) / divide_numbers; 					// calculate delta coord
   delta_coord[Y_AXIS] = (y - current_coord[Y_AXIS]) / divide_numbers; 
