@@ -39,7 +39,6 @@ uint8_t get_laser_status(void);
 uint8_t get_limit_switch_status(void);
 uint8_t get_power_status(void);
 
-
 void check_motor_positon(void);
 
 

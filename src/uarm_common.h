@@ -38,8 +38,6 @@ enum uarm_work_mode_e {
 #define DEFAULT_PEN_HEIGHT			43
 #define DEFAULT_PEN_FRONT				69.5 	
 
-#define DEFAULT_GRIPPER_HEIGHT	51.5
-#define DEFAULT_GRIPPER_FRONT		105 	
 
 struct key_param_t {
 	enum uarm_work_mode_e work_mode;
@@ -65,6 +63,8 @@ struct uarm_state_t {
 	volatile bool cycle_report_flag;
 	volatile bool run_done_report_flag;
 	volatile bool run_flag;
+
+	bool power_state;
 	
 };
 

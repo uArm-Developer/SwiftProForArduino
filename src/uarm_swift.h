@@ -7,8 +7,8 @@
 
 #define DEVICE_NAME						"SwiftPro"
 #define HARDWARE_VERSION			hardware_version
-#define SOFTWARE_VERSION			"V4.1.0"
-#define API_VERSION						"V4.0.2"
+#define SOFTWARE_VERSION			"V4.1.1"
+#define API_VERSION						"V4.0.1"
 #define BLE_UUID							"FFFFFFFF"
 
 void uarm_swift_init(void);

@@ -4,7 +4,7 @@ struct uarm_state_t uarm = {0};
 char hardware_version[8] = {0};
 
 void uarm_swift_init(void){
-//	DB_PRINT_STR("uarm init\r\n");
+	//DB_PRINT_STR("uarm init\r\n");
 	delay_ms(10);
 
 	read_hardware_version();	
@@ -16,7 +16,7 @@ void uarm_swift_init(void){
 	pump_off();
 	gripper_relesae();
 	laser_off();
-
+	
 	angle_to_coord( uarm.init_arml_angle, uarm.init_armr_angle, uarm.init_base_angle-90,
 									&(uarm.coord_x), &(uarm.coord_y), &(uarm.coord_z) );
 
@@ -28,6 +28,7 @@ void uarm_swift_init(void){
 
 	DDRG &= ~(1<<3);
 	PORTG |= (1<<3);
+	uarm.motor_state_bits = 0x0F;
 	
 	printString( "@1\n" );
 }

@@ -71,13 +71,13 @@
 	coord_effect2arm( &x, &y, &z );                               // calculate the effect offset
 	coord_to_angle( x, y, z,																			
 									&final_angle[X_AXIS], &final_angle[Y_AXIS], &final_angle[Z_AXIS] ); // calculate final angle
-
-/*	char l_str[20], r_str[20], b_str[20];
+/*
+	char l_str[20], r_str[20], b_str[20];
 	dtostrf( final_angle[X_AXIS], 5, 4, l_str );
 	dtostrf( final_angle[Y_AXIS], 5, 4, r_str );
 	dtostrf( final_angle[Z_AXIS], 5, 4, b_str );
 
-	DB_PRINT_STR( "final_angle: %s, %s, %s\r\n", l_str, r_str, b_str );	*/
+	DB_PRINT_STR( "final_angle: %s, %s, %s\r\n", l_str, r_str, b_str );*/
 
 	if( is_angle_legal( final_angle[X_AXIS], final_angle[Y_AXIS], final_angle[Z_AXIS] ) == false ){   // check the angle
 		//DB_PRINT_STR( "E22 position cnan't reach\n" );

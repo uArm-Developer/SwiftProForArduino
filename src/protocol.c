@@ -163,7 +163,7 @@ void protocol_main_loop()
     if (sys.abort) { return; } // Bail to main() program loop to reset system. 
 
 		report_parse_result();
-//		check_motor_positon();
+		check_motor_positon();
   }
   return; /* Never reached */
 }

@@ -176,16 +176,29 @@ void report_parse_result(void){
 		cycle_report_coord();
 	}
 
-	static uint8_t per_status = 0;																//<! report limit sw 											
-	uint8_t cur_status = get_limit_switch_status();
-	if( cur_status != per_status ){
+	static uint8_t limit_per_status = 0;																//<! report limit sw 											
+	uint8_t limit_cur_status = get_limit_switch_status();
+	if( limit_cur_status != limit_per_status ){
 		delay_ms(10);
-		cur_status = get_limit_switch_status();
-		if( cur_status != per_status ){
-			uart_printf( "@6 N0 V%d\n", cur_status );
-			per_status = cur_status;
+		limit_cur_status = get_limit_switch_status();
+		if( limit_cur_status != limit_per_status ){
+			uart_printf( "@6 N0 V%d\n", limit_cur_status );
+			limit_per_status = limit_cur_status;
 		}
 	}
+
+/*	static uint8_t power_per_status = 0;																//<! report power 											
+	uint8_t power_cur_status = get_power_status();
+	if( power_cur_status != power_per_status ){
+		delay_ms(10);
+		power_cur_status = get_power_status();
+		if( power_cur_status != power_per_status ){
+			uart_printf( "@5 V%d\n", power_cur_status );
+			power_per_status = power_cur_status;
+			uarm.power_state = power_cur_status;
+		}
+	}*/
+
 
 
 	if( sys.state == STATE_IDLE && uarm.run_done_report_flag ){		//<! move complete report
@@ -280,6 +293,7 @@ static enum uarm_protocol_e uarm_cmd_g2202(char *payload){						// <! move motor
 				break;
 			case 3:
 				servo_set_angle(angle);
+				return UARM_CMD_OK;
 				break;
 		}
 		return UARM_CMD_ERROR;
@@ -395,9 +409,21 @@ static void uarm_cmd_m17(void){				// <! lock all motor
 	servo_init();
 	uarm.motor_state_bits = 0x0F;
 
-	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML);		// <! calculate init angle
+	memset(&sys, 0, sizeof(system_t));	// Clear all system variables
+	plan_sync_position();
+	gc_sync_position();
+	
+	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML);
 	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);
 	uarm.init_base_angle = calculate_current_angle(CHANNEL_BASE);
+	
+	uarm.target_step[X_AXIS] = sys.position[X_AXIS];
+	uarm.target_step[Y_AXIS] = sys.position[Y_AXIS];
+	uarm.target_step[Z_AXIS] = sys.position[Z_AXIS];
+
+	angle_to_coord( uarm.init_arml_angle, uarm.init_armr_angle, uarm.init_base_angle-90,
+									&(uarm.coord_x), &(uarm.coord_y), &(uarm.coord_z) );
+
 
 //	angle_sensor_init();
 }

@@ -391,6 +391,7 @@ uint8_t get_limit_switch_status(void){
 
 uint8_t get_power_status(void){
 	uint16_t power_adc_value = getAnalogPinValue(59);
+//	DB_PRINT_STR( "%d\r\n", power_adc_value );
 	
 	if( power_adc_value > 100 ){
 		return 1;
@@ -399,13 +400,10 @@ uint8_t get_power_status(void){
 	}
 }
 
-
-
 void check_motor_positon(void){
-	if( sys.state == STATE_IDLE ){
+	if( sys.state == STATE_IDLE && uarm.motor_state_bits == 0x0F /*&& uarm.power_state*/ ){
 		float current_angle_l = 0, current_angle_r = 0, current_angle_b = 0;
-//		get_current_angle( sys.position[X_AXIS], sys.position[Y_AXIS], sys.position[Z_AXIS], 
-//											 &current_angle_l, &current_angle_r, &current_angle_b );
+
 		coord_to_angle( uarm.coord_x, uarm.coord_y, uarm.coord_z, &current_angle_l, &current_angle_r, &current_angle_b );
 
 		float reg_angle_l = calculate_current_angle(CHANNEL_ARML);		
@@ -413,25 +411,32 @@ void check_motor_positon(void){
 		float reg_angle_b = calculate_current_angle(CHANNEL_BASE) ;
 
 		if( fabs(current_angle_l-reg_angle_l)>0.5 || fabs(current_angle_r-reg_angle_r)>0.5 || fabs(current_angle_b-reg_angle_b+90)>0.5 ){
-
 			char l_str[20], r_str[20], b_str[20];
-			dtostrf( current_angle_l, 5, 4, l_str );
-			dtostrf( current_angle_r, 5, 4, r_str );
-			dtostrf( current_angle_b, 5, 4, b_str );
-		
-			DB_PRINT_STR( "angle1: %s, %s, %s\r\n", l_str, r_str, b_str );
 
-			dtostrf( reg_angle_l, 5, 4, l_str );
-			dtostrf( reg_angle_r, 5, 4, r_str );
-			dtostrf( reg_angle_b, 5, 4, b_str );
-		
-			DB_PRINT_STR( "angle2: %s, %s, %s\r\n", l_str, r_str, b_str );
-
+			memset(&sys, 0, sizeof(system_t));  // Clear all system variables
+			plan_sync_position();
+    	gc_sync_position();
+			
 			uarm.init_arml_angle = reg_angle_l;
 			uarm.init_armr_angle = reg_angle_r;
 			uarm.init_base_angle = reg_angle_b;
 			beep_tone(260, 1000);
 
+			uarm.target_step[X_AXIS] = sys.position[X_AXIS];
+			uarm.target_step[Y_AXIS] = sys.position[Y_AXIS];
+			uarm.target_step[Z_AXIS] = sys.position[Z_AXIS];
+
+	/*		angle_to_coord( uarm.init_arml_angle, uarm.init_armr_angle, uarm.init_base_angle-90,
+											&(uarm.coord_x), &(uarm.coord_y), &(uarm.coord_z) );
+
+			
+			dtostrf( uarm.coord_x, 5, 4, l_str );
+			dtostrf( uarm.coord_y, 5, 4, r_str );
+			dtostrf( uarm.coord_z, 5, 4, b_str );
+
+			DB_PRINT_STR( "coord: %s, %s, %s\r\n", l_str, r_str, b_str );*/
+
+			
 			float target[3] = {0};
 			target[X_AXIS] = uarm.coord_x;
 			target[Y_AXIS] = uarm.coord_y;

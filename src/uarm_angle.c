@@ -203,8 +203,8 @@ void angle_sensor_init(void){
 	uarm.init_base_angle = calculate_current_angle(CHANNEL_BASE);
 
 
-
-/*	char l_str[20], r_str[20], b_str[20];
+/*
+	char l_str[20], r_str[20], b_str[20];
 	dtostrf( uarm.init_arml_angle, 5, 4, l_str );
 	dtostrf( uarm.init_armr_angle, 5, 4, r_str );
 	dtostrf( uarm.init_base_angle, 5, 4, b_str );
