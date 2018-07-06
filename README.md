@@ -3,7 +3,7 @@
 ----------
 ## Update Summary for v4.1.1
 * Fix cmd M17 bug
-* Add out of step back features
+* Add closed-loop stepper control (step losing detection and auto-adjusting)
 ## Update Summary for v4.1.0
 * Transplant Grbl framework.
 * Optimize stepper motor performance,improve motor speed,fix motor shake.
@@ -16,9 +16,9 @@
 #### Not support app control 
 #### For uArmStudio control
 
-- BLOCKLY is not support **input** and **Grove** module.
-- Draw/Laser is not support.
-- 3D Printing is not support.
+-  input and Grove module in BLOCKLY are not supported.
+- Draw/Laser is not supported.
+- 3D Printing is not supported.
 
 ## Communication protocol
 #### For serial terminal control
