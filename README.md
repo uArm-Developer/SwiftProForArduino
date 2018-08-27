@@ -2,13 +2,14 @@
 
 ----------
 ## Update Summary for v4.2.0
-* Fix cmd M17 bug
+
 * Add closed-loop stepper control (step losing detection and auto-adjusting)
 * Add M2123 cmd to control closed-loop stepper system
-* Fix G1 move bug
-* Add M2412 cmd to set offset of the effect-stepper
-* Fix P2206 cmd to get effect angle
 * Add pro work mode,plus work mode and touch pen work mode
+* Add M2412 cmd to set offset of the effect-stepper
+* Fix P2206 cmd to get effect angle bug
+* Fix G1 move bug
+* Fix cmd M17 bug
 * Fix old uarn pro cann't read refer value bug
 * Fix P2242 P2243 bug
 ## Update Summary for v4.1.0
