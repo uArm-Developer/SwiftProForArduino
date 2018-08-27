@@ -297,6 +297,7 @@ void report_probe_parameters()
 // Prints Grbl NGC parameters (coordinate offsets, probing)
 void report_ngc_parameters()
 {
+	
   float coord_data[N_AXIS];
   uint8_t coord_select, i;
   for (coord_select = 0; coord_select <= SETTING_INDEX_NCOORD; coord_select++) { 
@@ -327,12 +328,14 @@ void report_ngc_parameters()
   printFloat_CoordValue(gc_state.tool_length_offset);
   printPgmString(PSTR("]\r\n"));
   report_probe_parameters(); // Print probe parameters. Not persistent in memory.
+  
 }
 
 
 // Print current gcode parser mode state
 void report_gcode_modes()
 {
+	
   printPgmString(PSTR("["));
   
   switch (gc_state.modal.motion) {
@@ -401,7 +404,7 @@ void report_gcode_modes()
 // Prints specified startup line
 void report_startup_line(uint8_t n, char *line)
 {
-  printPgmString(PSTR("$N")); print_uint8_base10(n);
+ printPgmString(PSTR("$N")); print_uint8_base10(n);
   printPgmString(PSTR("=")); printString(line);
   printPgmString(PSTR("\r\n"));
 }

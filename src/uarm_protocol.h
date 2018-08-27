@@ -26,7 +26,6 @@ enum uarm_protocol_e uarm_execute_g_cmd(uint16_t cmd, char *line, uint8_t *char_
 enum uarm_protocol_e uarm_execute_p_cmd(uint16_t cmd, char *line, uint8_t *char_counter);
 enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_counter);
 
-
 void receive_cmd_line(char *line);
 void parse_cmd_line(void);
 void report_parse_result(void);

@@ -168,6 +168,11 @@ uint8_t read_global_settings() {
   } else {
     return(false); 
   }
+	/*
+	if( settings.steps_per_mm[X_AXIS]!=7000 || settings.steps_per_mm[Y_AXIS]!=7000 || settings.steps_per_mm[Z_AXIS]!=7000 ){
+		return(false); 
+	}*/
+	
   return(true);
 }
 
@@ -277,21 +282,21 @@ uint8_t settings_store_global_setting(uint8_t parameter, float value) {
 // Initialize the config subsystem
 void settings_init() {
   if(!read_global_settings()) {
-    report_status_message(STATUS_SETTING_READ_FAIL);
+    //report_status_message(STATUS_SETTING_READ_FAIL);
     settings_restore(SETTINGS_RESTORE_ALL); // Force restore all EEPROM data.
-    report_grbl_settings();
+    //report_grbl_settings();
   }
 
   // NOTE: Checking paramater data, startup lines, and build info string should be done here, 
   // but it seems fairly redundant. Each of these can be manually checked and reset or restored.
   // Check all parameter data into a dummy variable. If error, reset to zero, otherwise do nothing.
-  // float coord_data[N_AXIS];
-  // uint8_t i;
-  // for (i=0; i<=SETTING_INDEX_NCOORD; i++) {
-  //   if (!settings_read_coord_data(i, coord_data)) {
-  // 	report_status_message(STATUS_SETTING_READ_FAIL);
-  //   }
-  // }
+   float coord_data[N_AXIS];
+   uint8_t i;
+   for (i=0; i<=SETTING_INDEX_NCOORD; i++) {
+     if (!settings_read_coord_data(i, coord_data)) {
+   	report_status_message(STATUS_SETTING_READ_FAIL);
+     }
+   }
   // NOTE: Startup lines are checked and executed by protocol_main_loop at the end of initialization.
 }
 

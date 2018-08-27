@@ -15,25 +15,40 @@ uint16_t reference_param_pointc[3] = {0};
 
 // <! reference point angle
 /*
-#define POINT_A_ARML_ANGLE		(27.683153)
-#define POINT_A_ARMR_ANGLE		(110.509674)
+//high = 107.1
+#define POINT_A_ARML_ANGLE		(27.698502)
+#define POINT_A_ARMR_ANGLE		(111.610764)
 #define POINT_A_BASE_ANGLE		(90.0)
-#define POINT_B_ARML_ANGLE		(32.183559)
-#define POINT_B_ARMR_ANGLE		(88.302086)
+#define POINT_B_ARML_ANGLE		(32.901226)
+#define POINT_B_ARMR_ANGLE		(88.911507)
 #define POINT_B_BASE_ANGLE		(90.0)
-#define POINT_C_ARML_ANGLE		(24.049515)
-#define POINT_C_ARMR_ANGLE		(62.108681)
+#define POINT_C_ARML_ANGLE		(24.679539)
+#define POINT_C_ARMR_ANGLE		(62.550117)
 #define POINT_C_BASE_ANGLE		(90.0)*/
-
-#define POINT_A_ARML_ANGLE		(28.979406)
-#define POINT_A_ARMR_ANGLE		(109.275169)
+/*
+//high = 106.1
+#define POINT_A_ARML_ANGLE		(28.275969)
+#define POINT_A_ARMR_ANGLE		(111.350243)
 #define POINT_A_BASE_ANGLE		(90.0)
-#define POINT_B_ARML_ANGLE		(33.081184)
-#define POINT_B_ARMR_ANGLE		(87.177917)
+#define POINT_B_ARML_ANGLE		(33.376331)
+#define POINT_B_ARMR_ANGLE		(88.679108)
 #define POINT_B_BASE_ANGLE		(90.0)
-#define POINT_C_ARML_ANGLE		(23.994249)
-#define POINT_C_ARMR_ANGLE		(60.965763)
+#define POINT_C_ARML_ANGLE		(25.037569)
+#define POINT_C_ARMR_ANGLE		(62.398289)
 #define POINT_C_BASE_ANGLE		(90.0)
+*/
+
+//high = 107.4
+#define POINT_A_ARML_ANGLE		(27.526186)
+#define POINT_A_ARMR_ANGLE		(111.687637)
+#define POINT_A_BASE_ANGLE		(90.0)
+#define POINT_B_ARML_ANGLE		(32.758930)
+#define POINT_B_ARMR_ANGLE		(88.980537)
+#define POINT_B_BASE_ANGLE		(90.0)
+#define POINT_C_ARML_ANGLE		(24.572023)
+#define POINT_C_ARMR_ANGLE		(62.595272)
+#define POINT_C_BASE_ANGLE		(90.0)
+
 
 
 static float get_point_b_angle(enum angle_channel_e channel){
@@ -90,15 +105,22 @@ float calculate_current_angle(enum angle_channel_e channel){
 
 
 static void read_angle_reference_param(void){
+	uint8_t angle_addr_flag = eeprom_get_char(EEPROM_ANGLE_REFER_FLAG);
+
 	int8_t read_size = sizeof(struct refer_value_t);
-	unsigned int read_addr = EEPROM_ADDR_ANGLE_REFER;
+	unsigned int read_addr = 0;
+	if( angle_addr_flag == 0xBB ){
+		read_addr = EEPROM_ADDR_ANGLE_REFER;	
+	}else{
+		read_addr = EEPROM_OLD_ADDR_ANGLE_REFER;
+	}
 	
 	char *p = (char *)(&reference);
 	for( ; read_size > 0; read_size-- ){
 		*(p++) = eeprom_get_char(read_addr++);
 	}
 
-//	DB_PRINT_STR( "refer : %d, %d, %d\r\n", reference.param_l, reference.param_r, reference.param_b );
+	DB_PRINT_STR( "refer:B%d L%d R%d\r\n", reference.param_b, reference.param_l, reference.param_r );
 	
 }
 
@@ -110,6 +132,9 @@ static void write_angle_reference_param(void){
 	for( ; write_size > 0; write_size-- ){
 		eeprom_put_char( write_addr++, *(p++) );
 	}
+  
+	eeprom_put_char( EEPROM_ANGLE_REFER_FLAG, 0xBB );
+	
 	read_angle_reference_param();
 	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML);		// <! calculate init angle
 	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);
@@ -192,6 +217,12 @@ void get_refer_value(uint16_t *value){
 	value[0] = reference.param_l;
 	value[1] = reference.param_r;
 	value[2] = reference.param_b;
+}
+
+void get_angle_reg_value(uint16_t *value){
+	value[0] = read_angle_reg_value(CHANNEL_ARML);
+	value[1] = read_angle_reg_value(CHANNEL_ARMR);
+	value[2] = read_angle_reg_value(CHANNEL_BASE);
 }
 
 void angle_sensor_init(void){

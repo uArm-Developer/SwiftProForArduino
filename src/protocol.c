@@ -63,7 +63,7 @@ void protocol_main_loop()
   // ------------------------------------------------------------
   
   // Print welcome message   
-  report_init_message();
+//  report_init_message();
 
   // Check for and report alarm state after a reset, error, or an initial power up.
   if (sys.state == STATE_ALARM) {
@@ -89,6 +89,7 @@ void protocol_main_loop()
 	uint8_t line_remain = 0;
 	uint8_t line_num = 0;
 	uint8_t line_execute_p = 0;
+	
   for (;;) {
 
     // Process one line of incoming serial data, as the data becomes available. Performs an
@@ -100,71 +101,80 @@ void protocol_main_loop()
     // exceed 256 characters, but the Arduino Uno does not have the memory space for this.
     // With a better processor, it would be very easy to pull this initial parsing out as a 
     // seperate task to be shared by the g-code parser and Grbl's system commands.
-    
-    while((c = serial_read()) != SERIAL_NO_DATA) {
-      if ((c == '\n') || (c == '\r')) { // End of line reached
-        line[char_counter] = 0; // Set string termination character.
-        receive_cmd_line(line);				
-        comment = COMMENT_NONE;
-        char_counter = 0;
-				break;
-      } else {
-        if (comment != COMMENT_NONE) {
-          // Throw away all comment characters
-          if (c == ')') {
-            // End of comment. Resume line. But, not if semicolon type comment.
-            if (comment == COMMENT_TYPE_PARENTHESES) { comment = COMMENT_NONE; }
-          }
-        } else {
-          if (c <= ' ') { 
-            // Throw away whitepace and control characters  
-          } else if (c == '/') { 
-            // Block delete NOT SUPPORTED. Ignore character.
-            // NOTE: If supported, would simply need to check the system if block delete is enabled.
-          } else if (c == '(') {
-            // Enable comments flag and ignore all characters until ')' or EOL.
-            // NOTE: This doesn't follow the NIST definition exactly, but is good enough for now.
-            // In the future, we could simply remove the items within the comments, but retain the
-            // comment control characters, so that the g-code parser can error-check it.
-            comment = COMMENT_TYPE_PARENTHESES;
-          } else if (c == ';') {
-            // NOTE: ';' comment to EOL is a LinuxCNC definition. Not NIST.
-            comment = COMMENT_TYPE_SEMICOLON;
-            
-          // TODO: Install '%' feature 
-          // } else if (c == '%') {
-            // Program start-end percent sign NOT SUPPORTED.
-            // NOTE: This maybe installed to tell Grbl when a program is running vs manual input,
-            // where, during a program, the system auto-cycle start will continue to execute 
-            // everything until the next '%' sign. This will help fix resuming issues with certain
-            // functions that empty the planner buffer to execute its task on-time.
+    if( uarm.effect_origin_check ){
+			end_effector_check_limit();
+		}else{
+	    while((c = serial_read()) != SERIAL_NO_DATA) {
+	      if ((c == '\n') || (c == '\r')) { // End of line reached
+	        line[char_counter] = 0; // Set string termination character.
+	        receive_cmd_line(line);				
+	        comment = COMMENT_NONE;
+	        char_counter = 0;
+					break;
+	      } else {
+	        if (comment != COMMENT_NONE) {
+	          // Throw away all comment characters
+	          if (c == ')') {
+	            // End of comment. Resume line. But, not if semicolon type comment.
+	            if (comment == COMMENT_TYPE_PARENTHESES) { comment = COMMENT_NONE; }
+	          }
+	        } else {
+	          if (c <= ' ') { 
+	            // Throw away whitepace and control characters  
+	          } else if (c == '/') { 
+	            // Block delete NOT SUPPORTED. Ignore character.
+	            // NOTE: If supported, would simply need to check the system if block delete is enabled.
+	          } else if (c == '(') {
+	            // Enable comments flag and ignore all characters until ')' or EOL.
+	            // NOTE: This doesn't follow the NIST definition exactly, but is good enough for now.
+	            // In the future, we could simply remove the items within the comments, but retain the
+	            // comment control characters, so that the g-code parser can error-check it.
+	            comment = COMMENT_TYPE_PARENTHESES;
+	          } else if (c == ';') {
+	            // NOTE: ';' comment to EOL is a LinuxCNC definition. Not NIST.
+	            comment = COMMENT_TYPE_SEMICOLON;
+	            
+	          // TODO: Install '%' feature 
+	          // } else if (c == '%') {
+	            // Program start-end percent sign NOT SUPPORTED.
+	            // NOTE: This maybe installed to tell Grbl when a program is running vs manual input,
+	            // where, during a program, the system auto-cycle start will continue to execute 
+	            // everything until the next '%' sign. This will help fix resuming issues with certain
+	            // functions that empty the planner buffer to execute its task on-time.
 
-          } else if (char_counter >= (LINE_BUFFER_SIZE-1)) {
-            // Detect line buffer overflow. Report error and reset line buffer.
-            report_status_message(STATUS_OVERFLOW);
-            comment = COMMENT_NONE;
-            char_counter = 0;
-          } else if (c >= 'a' && c <= 'z') { // Upcase lowercase
-						line[char_counter++] = c-'a'+'A';
-          } else {
-						line[char_counter++] = c;
-          }
-        }
-      }
-    }	
-		parse_cmd_line();
-		
-    // If there are no more characters in the serial read buffer to be processed and executed,
-    // this indicates that g-code streaming has either filled the planner buffer or has 
-    // completed. In either case, auto-cycle start, if enabled, any queued moves.
-    //uarm_swift_tick_run();
-    protocol_auto_cycle_start();
-    protocol_execute_realtime();  // Runtime command check point.
-    if (sys.abort) { return; } // Bail to main() program loop to reset system. 
+	          } else if (char_counter >= (LINE_BUFFER_SIZE-1)) {
+	            // Detect line buffer overflow. Report error and reset line buffer.
+	            report_status_message(STATUS_OVERFLOW);
+	            comment = COMMENT_NONE;
+	            char_counter = 0;
+	          } else if (c >= 'a' && c <= 'z') { // Upcase lowercase
+							line[char_counter++] = c-'a'+'A';
+	          } else {
+							line[char_counter++] = c;
+	          }
+	        }
+	      }
+	    }
+			//if( position_origin_flag && end_angle_origin_flag ){
+				parse_cmd_line();
+			//}
+			
+	    // If there are no more characters in the serial read buffer to be processed and executed,
+	    // this indicates that g-code streaming has either filled the planner buffer or has 
+	    // completed. In either case, auto-cycle start, if enabled, any queued moves.
+	    //uarm_swift_tick_run();
+	    protocol_auto_cycle_start();
+	    protocol_execute_realtime();  // Runtime command check point.
+	    if (sys.abort) { return; } // Bail to main() program loop to reset system. 
 
-		report_parse_result();
-		check_motor_positon();
+			report_parse_result();
+			if( uarm.motor_position_check ){
+				check_motor_positon();
+			}
+
+	  }
   }
+	
   return; /* Never reached */
 }
 

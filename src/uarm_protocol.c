@@ -187,19 +187,18 @@ void report_parse_result(void){
 		}
 	}
 
-/*	static uint8_t power_per_status = 0;																//<! report power 											
-	uint8_t power_cur_status = get_power_status();
-	if( power_cur_status != power_per_status ){
-		delay_ms(10);
-		power_cur_status = get_power_status();
+	static uint32_t cnt = 0;
+	static uint8_t power_per_status = 0;																//<! report power
+	if( cnt++ > 0xff ){
+		cnt = 0;
+		//get_power_status();
+		uint8_t power_cur_status = get_power_status();
 		if( power_cur_status != power_per_status ){
 			uart_printf( "@5 V%d\n", power_cur_status );
 			power_per_status = power_cur_status;
 			uarm.power_state = power_cur_status;
-		}
-	}*/
-
-
+		}		
+	}
 
 	if( sys.state == STATE_IDLE && uarm.run_done_report_flag ){		//<! move complete report
 		if( uarm.run_flag ){
@@ -292,7 +291,7 @@ static enum uarm_protocol_e uarm_cmd_g2202(char *payload){						// <! move motor
 				return mc_line( 0, target, speed, false );				
 				break;
 			case 3:
-				servo_set_angle(angle);
+				end_effector_set_angle(angle);
 				return UARM_CMD_OK;
 				break;
 		}
@@ -406,7 +405,7 @@ static void uarm_cmd_m17(void){				// <! lock all motor
 	ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
 	ARMR_STEPPERS_DISABLE_PORT |= ARMR_STEPPERS_DISABLE_MASK;
 	BASE_STEPPERS_DISABLE_PORT |= BASE_STEPPERS_DISABLE_MASK;
-	servo_init();
+	end_effector_init();
 	uarm.motor_state_bits = 0x0F;
 
 	memset(&sys, 0, sizeof(system_t));	// Clear all system variables
@@ -449,7 +448,7 @@ static void uarm_cmd_m2019(void){				// <! unlock all motor
 	ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
 	ARMR_STEPPERS_DISABLE_PORT &= (~ARMR_STEPPERS_DISABLE_MASK);
 	BASE_STEPPERS_DISABLE_PORT &= (~BASE_STEPPERS_DISABLE_MASK);
-	servo_deinit();
+	end_effector_deinit();
 	uarm.motor_state_bits = 0x00;
 }
 
@@ -479,6 +478,18 @@ static void uarm_cmd_m2122(uint8_t param){
 	}
 }
 
+static void uarm_cmd_m2123(uint8_t param){
+	
+	switch( param ){
+		case 0:
+						uarm.motor_position_check = false;
+			break;
+		case 1:
+						uarm.motor_position_check = true;
+			break;
+	}
+}
+
 static void uarm_cmd_m2201(uint8_t param){		// <! lock n motor
 	switch(param){
 		case 0:
@@ -494,7 +505,7 @@ static void uarm_cmd_m2201(uint8_t param){		// <! lock n motor
 			uarm.motor_state_bits |= 0x02;
 			break;
 		case 3:
-			servo_init();
+			end_effector_init();
 			uarm.motor_state_bits |= 0x08;
 			break;
 	}
@@ -515,7 +526,7 @@ static void uarm_cmd_m2202(uint8_t param){		// <! unlock n motor
 			uarm.motor_state_bits &= (~0x02);
 			break;
 		case 3:
-			servo_deinit();
+			end_effector_deinit();
 			uarm.motor_state_bits &= (~0x08);
 			break;
 	}
@@ -640,29 +651,60 @@ static void uarm_cmd_m2233(uint8_t param){
 
 static void uarm_cmd_m2400(uint8_t param){	// <! set work mode
 	switch(param){
-		case 0:				// <! nomal mode
+		case WORK_MODE_NORMAL:				// <! nomal mode
+						end_effector_deinit();
 						uarm.param.work_mode = WORK_MODE_NORMAL;
 						uarm.param.high_offset 	= DEFAULT_NORMAL_HEIGHT;
 						uarm.param.front_offset = DEFAULT_NORMAL_FRONT;
 			break;
-		case 1:				// <! laser mode 
+		case WORK_MODE_LASER:				// <! laser mode 
+						end_effector_deinit();		
 						uarm.param.work_mode = WORK_MODE_LASER;
 						uarm.param.high_offset 	= DEFAULT_LASER_HEIGHT;
 						uarm.param.front_offset = DEFAULT_LASER_FRONT;			
 			break;
-		case 2:				// <! 3D printer mode
+		case WORK_MODE_PRINTER:				// <! 3D printer mode
+						end_effector_deinit();		
 						uarm.param.work_mode = WORK_MODE_PRINTER;
 						uarm.param.high_offset 	= DEFAULT_3DPRINT_HEIGHT;
 						uarm.param.front_offset = DEFAULT_3DPRINT_FRONT;				
 			break;
-		case 3:				// <! pen mode
+		case WORK_MODE_PEN:				// <! pen mode
+						end_effector_deinit();	
 						uarm.param.work_mode = WORK_MODE_PEN;
 						uarm.param.high_offset 	= DEFAULT_PEN_HEIGHT;
 						uarm.param.front_offset = DEFAULT_PEN_FRONT;							
 			break;
+		case WORK_MODE_STEPER_FLAT:				// <! end effect steper mode
+						end_effector_deinit();
+						uarm.param.work_mode 		= WORK_MODE_STEPER_FLAT;
+						uarm.param.high_offset 	= DEFAULT_STEP_FLAT_HEIGHT;
+						uarm.param.front_offset	= DEFAULT_STEP_FLAT_FRONT;
+						end_effector_get_origin();
+		break;
+		case WORK_MODE_STEPER_STANDARD:
+						end_effector_deinit();
+						uarm.param.work_mode 		= WORK_MODE_STEPER_STANDARD;
+						uarm.param.high_offset  = DEFAULT_STEP_STANDARD_HEIGHT;
+						uarm.param.front_offset = DEFAULT_STEP_STANDARD_FRONT;
+						end_effector_get_origin();
+			break;
+		case WORK_MODE_TOUCH_PEN:				// <! touch pen mode
+						end_effector_deinit();	
+						uarm.param.work_mode = WORK_MODE_TOUCH_PEN;
+						uarm.param.high_offset 	= DEFAULT_ROUND_PEN_HEIGHT;
+						uarm.param.front_offset = DEFAULT_ROUND_PEN_FRONT;		
+		break;	
+		case 7: 
+						end_effector_deinit();	
+						uarm.param.work_mode = WORK_MODE_TEST;
+						uarm.param.high_offset 	= DEFAULT_TEST_HEIGHT;
+						uarm.param.front_offset = DEFAULT_TEST_FRONT;				
+		break;
 	}
 
 	save_sys_param();
+	
 	
 }
 
@@ -692,6 +734,24 @@ static bool uarm_cmd_m2411(char *payload){
 		return true;
 	}	
 }
+
+static bool uarm_cmd_m2412(char *payload){
+	float effect_angle_offset = 0;
+	char offset_str[20] = {0};
+	
+	uint8_t rtn = 0;
+	if( rtn = sscanf(payload, "V%[0-9-+.]", offset_str) < 1 ){
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return false;
+	}else{
+		if( !read_float(offset_str, NULL, &effect_angle_offset) ){ return false; }
+		uarm.param.effect_angle_offset = effect_angle_offset;
+		save_sys_param();
+		end_effector_get_origin();
+		return true;
+	}	
+}
+
 
 static void uarm_cmd_m2420(uint8_t param){
 	multi_point_reference(param);
@@ -735,12 +795,17 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 								return UARM_CMD_OK;
 			break;
 		case 2122:
-								//DB_PRINT_STR( "M2122\r\n" );
 								if( (line[0]=='V') && (line[1]>='0'&&line[1]<='1') ){
 									uarm_cmd_m2122( line[1]-'0' );
 									return UARM_CMD_OK;
 								}else{ return UARM_CMD_ERROR; }
 
+			break;
+		case 2123:
+								if( (line[0]=='V') && (line[1]>='0'&&line[1]<='1') ){
+									uarm_cmd_m2123( line[1]-'0' );
+									return UARM_CMD_OK;
+								}else{ return UARM_CMD_ERROR; }				
 			break;
 		case 2201:
 								if( (line[0]=='N') && (line[1]>='0'&&line[1]<='3') ){
@@ -846,7 +911,7 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 			//DB_PRINT_STR( "M2307\r\n" );
 			break;	
 		case 2400:
-								if( (line[0]=='S') && (line[1]>='0'&&line[1]<='3') ){
+								if( (line[0]=='S') && (line[1]>='0'&&line[1]<='7') ){
 									uarm_cmd_m2400( line[1]-'0' );
 									return UARM_CMD_OK;
 								}else{ return UARM_CMD_ERROR; }	
@@ -866,6 +931,13 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 								}else{
 									return UARM_CMD_ERROR;
 								} 
+			break;
+		case 2412:
+								if( uarm_cmd_m2412(line) == true ){
+									return UARM_CMD_OK;
+								}else{
+									return UARM_CMD_ERROR;
+								} 			
 			break;
 		case 2420:
 							if( (line[0]=='P') && (line[1]>='0'&&line[1]<='2') ){
@@ -893,9 +965,11 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 static void uarm_cmd_p2200(void){				// <! get current angle  
 	float angle_l = 0, angle_r = 0, angle_b = 0;
 	char l_str[20] = {0}, r_str[20] = {0}, b_str[20] = {0};
-	get_current_angle( sys.position[X_AXIS], sys.position[Y_AXIS], sys.position[Z_AXIS],
-										 &angle_l, &angle_r, &angle_b );
-	angle_b += 90;
+
+	angle_l = calculate_current_angle(CHANNEL_ARML);		// <! calculate init angle
+	angle_r = calculate_current_angle(CHANNEL_ARMR);
+	angle_b = calculate_current_angle(CHANNEL_BASE);
+										 
 	dtostrf( angle_l, 5, 4, l_str );
 	dtostrf( angle_r, 5, 4, r_str );
 	dtostrf( angle_b, 5, 4, b_str );
@@ -925,23 +999,26 @@ static void uarm_cmd_p2205(void){
 
 
 void uarm_cmd_p2206(uint8_t param){
-	float angle_l = 0, angle_r = 0, angle_b = 0;
-	char l_str[20] = {0}, r_str[20] = {0}, b_str[20] = {0};
+	float angle_l = 0, angle_r = 0, angle_b = 0, angle_e = 0;
+	char l_str[20] = {0}, r_str[20] = {0}, b_str[20] = {0} , e_str[20] = {0};
 	get_current_angle( sys.position[X_AXIS], sys.position[Y_AXIS], sys.position[Z_AXIS],
 										 &angle_l, &angle_r, &angle_b );
 	float x = 0, y = 0, z = 0;
-//	angle_to_coord( angle_l, angle_r, angle_b, &x, &y, &z );				// <! ghost bug!!!!!!!!, this code deleted will build failed
 	angle_b += 90;
+	angle_e = end_effector_get_angle();
 	dtostrf( angle_l, 5, 4, l_str );
 	dtostrf( angle_r, 5, 4, r_str );
 	dtostrf( angle_b, 5, 4, b_str );
+	dtostrf( angle_e, 5, 4, e_str );
 
 	switch( param ){
-		case 0:			sprintf( tail_report_str, " %s", l_str);
+		case 0:			sprintf( tail_report_str, " %s", b_str);
 			break;
-		case 1:			sprintf( tail_report_str, " %s", r_str);
+		case 1:			sprintf( tail_report_str, " %s", l_str);
 			break;
-		case 2:			sprintf( tail_report_str, " %s", b_str);
+		case 2:			sprintf( tail_report_str, " %s", r_str);
+			break;
+		case 3:			sprintf( tail_report_str, " %s", e_str);				
 			break;
 	}
 }
@@ -954,7 +1031,7 @@ static void uarm_cmd_p2220(void){					// <! get curren coord
 	angle_l = calculate_current_angle(CHANNEL_ARML);		// <! calculate init angle
 	angle_r = calculate_current_angle(CHANNEL_ARMR);
 	angle_b = calculate_current_angle(CHANNEL_BASE)-90;
-	//angle_e = servo_get_angle();
+	//angle_e = end_effector_get_angle();
 
 	angle_to_coord( angle_l, angle_r, angle_b, &x, &y, &z );
 
@@ -1012,9 +1089,14 @@ static void uarm_cmd_p2235(void){
 static void uarm_cmd_p2242(void){
 	uint16_t refer_value[3] = {0};
 	get_refer_value(&refer_value);
-	sprintf( tail_report_str, " B%d L%d R%d\n", refer_value[0], refer_value[1], refer_value[2] );
+	sprintf( tail_report_str, " B%d L%d R%d\n", refer_value[2], refer_value[0], refer_value[1] );
 }
 
+static void uarm_cmd_p2243(void){
+	uint16_t angle_reg_value[3] = {0};
+	get_angle_reg_value(&angle_reg_value);
+	sprintf( tail_report_str, " B%d L%d R%d\n", angle_reg_value[2], angle_reg_value[0], angle_reg_value[1] );
+}
 
 static void uarm_cmd_p2400(void){
 	sprintf( tail_report_str, " V%d\n", uarm.param.work_mode );	
@@ -1049,7 +1131,7 @@ enum uarm_protocol_e uarm_execute_p_cmd(uint16_t cmd, char *line, uint8_t *char_
 							return UARM_CMD_OK;
 			break;
 		case 2206:
-							if( (line[0]=='N') && (line[1]>='0'&&line[1]<='2') ){
+							if( (line[0]=='N') && (line[1]>='0'&&line[1]<='3') ){
 								uarm_cmd_p2206(line[1]-'0');
 								return UARM_CMD_OK;
 							}else{ return UARM_CMD_ERROR; }							
@@ -1090,6 +1172,10 @@ enum uarm_protocol_e uarm_execute_p_cmd(uint16_t cmd, char *line, uint8_t *char_
 			break;
 		case 2242:
 							uarm_cmd_p2242();
+							return UARM_CMD_OK;
+			break;
+		case 2243:
+							uarm_cmd_p2243();
 							return UARM_CMD_OK;
 			break;
 		case 2400:

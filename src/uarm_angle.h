@@ -13,6 +13,7 @@ enum angle_channel_e {
 void angle_sensor_init(void);
 float calculate_current_angle(enum angle_channel_e channel);
 void get_refer_value(uint16_t *value);
+void get_angle_reg_value(uint16_t *value);
 
 
 void single_point_reference(void);

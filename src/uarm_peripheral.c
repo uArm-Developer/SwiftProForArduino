@@ -1,16 +1,20 @@
-#include "uarm_peripheral.h"
+#include "uarm_common.h"
+#include "uarm_coord_convert.h"
 
 
-/*	servo driver
+/*	end-effector driver
  *
  */
+
+
+/*************** servo mode ****************/
 float duty_ms = 1.7;
-void servo_init(void){
+static void servo_init(void){
 	time4_pwm_init(20000);
   time4_set_duty( 3, (duty_ms/21.0) * 1023 );
 }
 
-void servo_set_angle(float angle){
+static void servo_set_angle(float angle){
 	if( angle > 180 ){ angle = 0; }
 	if( angle < 0 ){ angle = 180; }
 	angle = 180 - angle;
@@ -20,13 +24,137 @@ void servo_set_angle(float angle){
 	//delay_ms(500);
 }
 
-void servo_deinit(void){
+static void servo_deinit(void){
 	time4_stop();
 }
 
-float servo_get_angle(void){
+static float servo_get_angle(void){
 	return 180 - (duty_ms - 0.7) / 2.0 *180;
 }
+
+/************ steper mode ******************/
+int32_t step_count = 0;
+float steper_current_angle = 0;
+
+void step_creater(void){
+	static bool status_flag = false;
+	if( step_count > 0 ){
+		if( status_flag ){
+			status_flag = false;
+			step_count--;
+			PORTH |= (1<<6);
+		}else{
+			status_flag = true;
+			PORTH &= ~(1<<6);
+		}
+	}else{
+		time4_stop();
+		step_count = 0;
+		//DB_PRINT_STR( "time4 stop\r\n" );
+	}
+}
+
+static void steper_init(void){
+	DDRH |= (1<<5);		// <! DIR
+  DDRH |= (1<<6);		// <! STEP	
+
+	PORTH |= (1<<5);	// <! DIR clockwise
+}
+
+static void steper_set_angle(float angle){
+	if( uarm.param.work_mode==WORK_MODE_STEPER_FLAT ){
+		step_count = angle / 0.9 * 64;
+		time4_set( 0.0002, step_creater );
+	}else if( uarm.param.work_mode == WORK_MODE_STEPER_STANDARD ){
+		step_count = angle / 1.8 * 64;
+		time4_set( 0.0002, step_creater );		
+	}
+	time4_start();
+}
+
+static void steper_deinit(void){
+	step_count = 0;
+	time4_stop();
+	uarm.effect_origin_check = false;
+}
+
+static float steper_get_angle(void){
+	return steper_current_angle;
+}
+
+
+void end_effector_init(void){
+	if( uarm.param.work_mode==WORK_MODE_STEPER_FLAT || uarm.param.work_mode==WORK_MODE_STEPER_STANDARD ){
+		steper_init();
+	}else{
+		servo_init();
+	}
+}
+
+void end_effector_set_angle(float angle){
+	if( angle > 360 || angle < 0 ){ return; }
+
+	if( uarm.param.work_mode==WORK_MODE_STEPER_FLAT || uarm.param.work_mode==WORK_MODE_STEPER_STANDARD ){
+		float offset_angle = angle - steper_current_angle;
+		steper_current_angle = angle;
+		if( offset_angle > 0 ){
+			PORTH &= ~(1<<5);	// <!  anticlockwise
+		}else{
+			PORTH |= (1<<5);	// <! clockwise
+		}
+		steper_set_angle(fabs(offset_angle));
+	}else{
+		servo_set_angle(angle);
+	}
+}
+
+void end_effector_deinit(void){
+	steper_deinit();
+	servo_deinit();
+
+}
+
+float end_effector_get_angle(void){
+	if( uarm.param.work_mode==WORK_MODE_STEPER_FLAT || uarm.param.work_mode==WORK_MODE_STEPER_STANDARD ){
+		return steper_get_angle();
+	}else{
+		return servo_get_angle();
+	}
+}
+
+void end_effector_get_origin(void){
+	if( uarm.param.work_mode==WORK_MODE_STEPER_FLAT || uarm.param.work_mode==WORK_MODE_STEPER_STANDARD ){
+		steper_current_angle = 0;
+		DDRK &= ~(1<<5);
+		PORTK |= (1<<5);
+		
+		PORTH |= (1<<5);   // <! clockwise
+		steper_set_angle(360);
+		uarm.effect_origin_check = true;
+
+	}
+}
+
+void end_effector_check_limit(void){
+	if( (PINK & (1<<5)) == 0 ){
+		time4_stop();
+		uarm.effect_origin_check = false;
+		PORTH &= ~(1<<5);	// <! DIR counterclockwise
+		steper_current_angle = -uarm.param.effect_angle_offset;
+		end_effector_set_angle(90);
+	}
+	if( step_count == 0 ){			// <! check timeout
+		uarm.effect_origin_check = false;	
+		DB_PRINT_STR( "effect check timeout!\r\n" );
+	}
+}
+
+/*
+void end_effect_adjust_angle(void){
+	float current_angle = end_effector_get_angle();
+	steper_current_angle -= uarm.param.effect_angle_offset;
+	end_effector_set_angle(current_angle);
+}*/
 
  /*  beep driver
 	*
@@ -178,24 +306,38 @@ void read_sys_param(void){
 
 	p = (char *)(&(uarm.param.front_offset));
 	read_size = sizeof(uarm.param.front_offset);
-	read_addr = EEPROM_FRONT_ADDR;
+	read_addr = EEPROM_FRONT_OFFSET_ADDR;
 	for( ; read_size > 0; read_size-- ){
 		*(p++) = eeprom_get_char(read_addr++);
 	}	
 
 	p = (char *)(&(uarm.param.high_offset));
 	read_size = sizeof(uarm.param.high_offset);
-	read_addr = EEPROM_HEIGHT_ADDR;
+	read_addr = EEPROM_HEIGHT_OFFSET_ADDR;
 	for( ; read_size > 0; read_size-- ){
 		*(p++) = eeprom_get_char(read_addr++);
 	}	
 
+	p = (char *)(&(uarm.param.effect_angle_offset));
+	read_size = sizeof(uarm.param.effect_angle_offset);
+	read_addr = EEPROM_EFFECT_ANGLE_OFFSET_ADDR;
+	for( ; read_size > 0; read_size-- ){
+		*(p++) = eeprom_get_char(read_addr++);
+	}
+	if( uarm.param.effect_angle_offset > 360 || isnan(uarm.param.effect_angle_offset) ){
+		uarm.param.effect_angle_offset = 0;
+	}
+	
 /*	char l_str[20], r_str[20], b_str[20];
 	dtostrf( uarm.param.work_mode, 5, 4, l_str );
 	dtostrf( uarm.param.front_offset, 5, 4, r_str );
 	dtostrf( uarm.param.high_offset, 5, 4, b_str );
 	
 	DB_PRINT_STR( "mode:%s, front:%s, high:%s\r\n", l_str, r_str, b_str );*/
+
+	char l_str[20], r_str[20], b_str[20];
+	dtostrf( uarm.param.effect_angle_offset, 5, 4, b_str );
+	DB_PRINT_STR( "angle offset:%s\r\n", b_str );
 
 }
 
@@ -213,18 +355,24 @@ void save_sys_param(void){
 
 	p = (char *)(&(uarm.param.front_offset));
 	write_size = sizeof(uarm.param.front_offset);
-	write_addr = EEPROM_FRONT_ADDR;	
+	write_addr = EEPROM_FRONT_OFFSET_ADDR;	
 	for( ; write_size > 0; write_size-- ){
 		eeprom_put_char( write_addr++, *(p++) );
 	}	
 
 	p = (char *)(&(uarm.param.high_offset));
 	write_size = sizeof(uarm.param.high_offset);
-	write_addr = EEPROM_HEIGHT_ADDR;	
+	write_addr = EEPROM_HEIGHT_OFFSET_ADDR;	
 	for( ; write_size > 0; write_size-- ){
 		eeprom_put_char( write_addr++, *(p++) );
 	}	
 
+	p = (char *)(&(uarm.param.effect_angle_offset));
+	write_size = sizeof(uarm.param.effect_angle_offset);
+	write_addr = EEPROM_EFFECT_ANGLE_OFFSET_ADDR;	
+	for( ; write_size > 0; write_size-- ){
+		eeprom_put_char( write_addr++, *(p++) );
+	}	
 }
 
 
@@ -317,7 +465,7 @@ void pump_off(void){
 uint8_t get_pump_status(void){
 	if( (PORTG & 0x10) == 0x00 ){ return 0; }
 	uint16_t value = getAnalogPinValue(63);
-	DB_PRINT_STR( "ad:%d\r\n", value );
+//	DB_PRINT_STR( "ad:%d\r\n", value );
 	if( value < 10){
 		return 0;
 	}else if( value <= 70 ){
@@ -390,8 +538,9 @@ uint8_t get_limit_switch_status(void){
 }
 
 uint8_t get_power_status(void){
-	uint16_t power_adc_value = getAnalogPinValue(59);
-//	DB_PRINT_STR( "%d\r\n", power_adc_value );
+	//uint16_t power_adc_value = getAnalogPinValue(59);
+	uint16_t power_adc_value = adc_read_value(59);
+	//DB_PRINT_STR( "%d\r\n", power_adc_value );
 	
 	if( power_adc_value > 100 ){
 		return 1;
@@ -401,7 +550,7 @@ uint8_t get_power_status(void){
 }
 
 void check_motor_positon(void){
-	if( sys.state == STATE_IDLE && uarm.motor_state_bits == 0x0F /*&& uarm.power_state*/ ){
+	if( sys.state == STATE_IDLE && uarm.motor_state_bits == 0x0F && uarm.power_state ){
 		float current_angle_l = 0, current_angle_r = 0, current_angle_b = 0;
 
 		coord_to_angle( uarm.coord_x, uarm.coord_y, uarm.coord_z, &current_angle_l, &current_angle_r, &current_angle_b );

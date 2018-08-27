@@ -68,7 +68,7 @@
 	
 	float x= target[X_AXIS], y= target[Y_AXIS], z = target[Z_AXIS];
 
-	coord_effect2arm( &x, &y, &z );                               // calculate the effect offset
+	coord_effect2arm( &x, &y, &z );                               // calculate the arm current coord
 	coord_to_angle( x, y, z,																			
 									&final_angle[X_AXIS], &final_angle[Y_AXIS], &final_angle[Z_AXIS] ); // calculate final angle
 /*
@@ -78,28 +78,33 @@
 	dtostrf( final_angle[Z_AXIS], 5, 4, b_str );
 
 	DB_PRINT_STR( "final_angle: %s, %s, %s\r\n", l_str, r_str, b_str );*/
+//	final_angle[X_AXIS] += 0.15;
+//	final_angle[Y_AXIS] -= 0.15;
 
 	if( is_angle_legal( final_angle[X_AXIS], final_angle[Y_AXIS], final_angle[Z_AXIS] ) == false ){   // check the angle
-		//DB_PRINT_STR( "E22 position cnan't reach\n" );
-		//uarm.coord_error_flag = true;
 		return UARM_COORD_ERROR;
 	}
+
+//	angle_to_coord( final_angle[X_AXIS], final_angle[Y_AXIS], final_angle[Z_AXIS], &x, &y, &z );
+//	coord_arm2effect( &x, &y, &z );
+	
+//	target[X_AXIS] = x;
+//	target[Y_AXIS] = y;
+//	target[Z_AXIS] = z;
 	
 	step_to_coord( uarm.target_step[X_AXIS], uarm.target_step[Y_AXIS], uarm.target_step[Z_AXIS], 
-								 &current_coord[X_AXIS], &current_coord[Y_AXIS], &current_coord[Z_AXIS]);		// calculate the current coord  
+								 &current_coord[X_AXIS], &current_coord[Y_AXIS], &current_coord[Z_AXIS]);				// calculate the arm current coord  
+	coord_arm2effect( &current_coord[X_AXIS], &current_coord[Y_AXIS], &current_coord[Z_AXIS] );		// calculate the effect current coord  
 	settings_init();
 	switch( mode ){
 		case MOTION_MODE_SEEK:				// <!  G0
 															divide_numbers=1;												
-															/*settings.steps_per_mm[X_AXIS] = 50000;
-															settings.steps_per_mm[Y_AXIS] = 50000;
-															settings.steps_per_mm[Y_AXIS] = 50000;*/
 			break;
 		case MOTION_MODE_LINEAR:			// <! G1
 															if( feed_rate > 100 ){ feed_rate = 100; }
-														  divide_numbers = sqrt((x - current_coord[X_AXIS])*(x - current_coord[X_AXIS]) + // unit is mm
-														                  (y - current_coord[Y_AXIS])*(y - current_coord[Y_AXIS]) +
-														                  (z - current_coord[Z_AXIS])*(z - current_coord[Z_AXIS])) * 30 / feed_rate;	
+														  divide_numbers = sqrt((target[X_AXIS] - current_coord[X_AXIS])*(target[X_AXIS] - current_coord[X_AXIS]) + // unit is mm
+														                  (target[Y_AXIS] - current_coord[Y_AXIS])*(target[Y_AXIS] - current_coord[Y_AXIS]) +
+														                  (target[Z_AXIS] - current_coord[Z_AXIS])*(target[Z_AXIS] - current_coord[Z_AXIS])) * 30 / feed_rate;	
 		
 															if( divide_numbers < 10 ){ divide_numbers = 10; }	
 															
@@ -114,17 +119,21 @@
 	}
 	
 //	DB_PRINT_STR( "divide num : %d\r\n", divide_numbers );
+	
 	float delta_coord[3];
-  delta_coord[X_AXIS] = (x - current_coord[X_AXIS]) / divide_numbers; 					// calculate delta coord
-  delta_coord[Y_AXIS] = (y - current_coord[Y_AXIS]) / divide_numbers; 
-  delta_coord[Z_AXIS] = (z - current_coord[Z_AXIS]) / divide_numbers; 
+  delta_coord[X_AXIS] = (target[X_AXIS] - current_coord[X_AXIS]) / divide_numbers; 					// calculate delta coord
+  delta_coord[Y_AXIS] = (target[Y_AXIS] - current_coord[Y_AXIS]) / divide_numbers; 
+  delta_coord[Z_AXIS] = (target[Z_AXIS] - current_coord[Z_AXIS]) / divide_numbers; 
 
 	float final_coord[3];
 	float final_step[3];
 	for( int i = 1; i <= divide_numbers; i++ ){
+		
 		final_coord[X_AXIS] = current_coord[X_AXIS] + delta_coord[X_AXIS]  * i;
     final_coord[Y_AXIS] = current_coord[Y_AXIS] + delta_coord[Y_AXIS]  * i; 
     final_coord[Z_AXIS] = current_coord[Z_AXIS] + delta_coord[Z_AXIS]  * i; 
+
+		coord_effect2arm( &final_coord[X_AXIS], &final_coord[Y_AXIS], &final_coord[Z_AXIS] );
 
 		uarm.coord_x = final_coord[X_AXIS];
 		uarm.coord_y = final_coord[Y_AXIS];
