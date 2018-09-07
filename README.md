@@ -25,7 +25,6 @@
 #### For uArmStudio control
 
 - input and Grove module in BLOCKLY are not supported.
-- Draw/Laser is not supported.
 - 3D Printing is not supported.
 
 ## Communication protocol
