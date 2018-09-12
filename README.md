@@ -12,6 +12,7 @@
 * Fix cmd M17 bug
 * Fix old uarn pro cann't read refer value bug
 * Fix P2242 P2243 bug
+
 ## Update Summary for v4.1.0
 * Transplant Grbl framework.
 * Optimize stepper motor performance,improve motor speed,fix motor shake.
@@ -20,12 +21,10 @@
 
 ## Caution
 #### The current firmware is not perfect and will be updated periodically
-#### Not support learning mode 
 #### Not support app control 
 #### For uArmStudio control
 
--  input and Grove module in BLOCKLY are not supported.
-- Draw/Laser is not supported.
+- input and Grove module in BLOCKLY are not supported.
 - 3D Printing is not supported.
 
 ## Communication protocol
