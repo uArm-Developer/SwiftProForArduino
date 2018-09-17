@@ -10,7 +10,7 @@
 * Fix P2206 cmd to get effect angle bug
 * Fix G1 move bug
 * Fix cmd M17 bug
-* Fix old uarn pro cann't read refer value bug
+* Fix old uarm pro cann't read refer value bug
 * Fix P2242 P2243 bug
 
 ## Update Summary for v4.1.0
