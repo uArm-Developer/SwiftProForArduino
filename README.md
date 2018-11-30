@@ -5,8 +5,8 @@
 
 * Add serial port automatic identification system
 * Add extern I/O Control CMD M2240,M2241,P2240,P2241
-* Fix Z aixs problem
-
+* Fix Z aixs some problem
+* Optimize speed setting
 
 ## Caution
 #### The current firmware is not perfect and will be updated periodically
