@@ -168,10 +168,10 @@ uint8_t read_global_settings() {
   } else {
     return(false); 
   }
-	/*
-	if( settings.steps_per_mm[X_AXIS]!=7000 || settings.steps_per_mm[Y_AXIS]!=7000 || settings.steps_per_mm[Z_AXIS]!=7000 ){
+	
+	if( settings.steps_per_mm[X_AXIS]!=DEFAULT_X_STEPS_PER_MM || settings.steps_per_mm[Y_AXIS]!=DEFAULT_Y_STEPS_PER_MM || settings.steps_per_mm[Z_AXIS]!=DEFAULT_Z_STEPS_PER_MM ){
 		return(false); 
-	}*/
+	}
 	
   return(true);
 }

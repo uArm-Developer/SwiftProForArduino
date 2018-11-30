@@ -2,6 +2,7 @@
 
 struct uarm_state_t uarm = {0};
 char hardware_version[8] = {0};
+char bt_mac_addr[13] = {0};
 
 void uarm_swift_init(void){
 	//DB_PRINT_STR("uarm init\r\n");
@@ -34,6 +35,7 @@ void uarm_swift_init(void){
 	uart_printf( "api ver : %s\r\n", API_VERSION );
 	uart_printf( "work mode : %d\r\n", uarm.param.work_mode );
 	printString( "@1\n" );
+
 }
 
 void uarm_swift_tick_run(void){

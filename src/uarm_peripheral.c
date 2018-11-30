@@ -8,10 +8,10 @@
 
 
 /*************** servo mode ****************/
-float duty_ms = 1.7;
+float duty_ms = 1.51;
 static void servo_init(void){
 	time4_pwm_init(20000);
-  time4_set_duty( 3, (duty_ms/21.0) * 1023 );
+  time4_set_duty( 3, (duty_ms/20.0) * 1023 );
 }
 
 static void servo_set_angle(float angle){
@@ -19,8 +19,8 @@ static void servo_set_angle(float angle){
 	if( angle < 0 ){ angle = 180; }
 	angle = 180 - angle;
 	
-	duty_ms = (angle / 180.0) * 2.0 + 0.7;
-	time4_set_duty( 3, (duty_ms/21.0) * 1023 );
+	duty_ms = (angle / 180.0) * 2.0 + 0.5;
+	time4_set_duty( 3, (duty_ms/20.0) * 1023 );
 	//delay_ms(500);
 }
 
@@ -29,7 +29,7 @@ static void servo_deinit(void){
 }
 
 static float servo_get_angle(void){
-	return 180 - (duty_ms - 0.7) / 2.0 *180;
+	return 180 - (duty_ms - 0.5) / 2.0 *180;
 }
 
 /************ steper mode ******************/
@@ -327,6 +327,16 @@ void read_sys_param(void){
 	if( uarm.param.effect_angle_offset > 360 || isnan(uarm.param.effect_angle_offset) ){
 		uarm.param.effect_angle_offset = 0;
 	}
+	for( ; read_size > 0; read_size-- ){
+		*(p++) = eeprom_get_char(read_addr++);
+	}
+
+	p = bt_mac_addr;
+	read_size = 12;
+	read_addr = EEPROM_BT_MAC_ADDR;
+	for( ; read_size > 0; read_size-- ){
+		*(p++) = eeprom_get_char(read_addr++);
+	}
 	
 /*	char l_str[20], r_str[20], b_str[20];
 	dtostrf( uarm.param.work_mode, 5, 4, l_str );
@@ -464,8 +474,8 @@ void pump_off(void){
 
 uint8_t get_pump_status(void){
 	if( (PORTG & 0x10) == 0x00 ){ return 0; }
-	uint16_t value = getAnalogPinValue(63);
-//	DB_PRINT_STR( "ad:%d\r\n", value );
+	uint16_t value = analogRead(A9);
+
 	if( value < 10){
 		return 0;
 	}else if( value <= 70 ){
@@ -538,9 +548,8 @@ uint8_t get_limit_switch_status(void){
 }
 
 uint8_t get_power_status(void){
-	//uint16_t power_adc_value = getAnalogPinValue(59);
-	uint16_t power_adc_value = adc_read_value(59);
-	//DB_PRINT_STR( "%d\r\n", power_adc_value );
+
+	uint16_t power_adc_value = analogRead(A5);
 	
 	if( power_adc_value > 100 ){
 		return 1;
@@ -596,5 +605,6 @@ void check_motor_positon(void){
 		}
 	}
 }
+
 
 

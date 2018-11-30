@@ -60,7 +60,7 @@ static float get_point_b_angle(enum angle_channel_e channel){
 }
 
 static uint16_t read_angle_reg_value(enum angle_channel_e channel){
-	uint16_t temp_value = 0, max = 0, min = 0, sum_value = 0;
+	uint16_t temp_value = 0, max = 0, min = 0, sum_value = 0, aver_value = 0;
 	temp_value = ((uint16_t)iic_read_byte(channel, (0x36<<1), 0x0e))<<8 | iic_read_byte(channel, (0x36<<1), 0x0f);
 	max = temp_value;
 	min = temp_value;
@@ -73,7 +73,12 @@ static uint16_t read_angle_reg_value(enum angle_channel_e channel){
 		sum_value += temp_value;
 	}
 	
-	return ((sum_value - max - min)/3);
+	aver_value = ((sum_value - max - min)/3);
+	if( aver_value > 4096 ){
+		return 0;
+	}
+	
+	return aver_value;
 }
 
 float calculate_current_angle(enum angle_channel_e channel){
@@ -228,10 +233,17 @@ void get_angle_reg_value(uint16_t *value){
 void angle_sensor_init(void){
 	angle_iic_init();
 	read_angle_reference_param();	// <! read reference param from eeprom 
-	
+
+#if defined(UARM_2500)
+	uarm.init_arml_angle = 90;
+	uarm.init_armr_angle = 0;
+	uarm.init_base_angle = 90;
+#else
 	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML);		// <! calculate init angle
 	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);
 	uarm.init_base_angle = calculate_current_angle(CHANNEL_BASE);
+#endif
+	
 
 
 /*

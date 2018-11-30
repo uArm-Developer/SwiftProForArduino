@@ -20,7 +20,7 @@
 */
 
 #include "grbl.h"
-
+#include "uarm_common.h"
 
 // Some useful constants.
 #define DT_SEGMENT (1.0/(ACCELERATION_TICKS_PER_SECOND*60.0)) // min/segment 
@@ -540,10 +540,24 @@ void stepper_init()
 	MS3_DDRD										|= 		MS3_MASK;
 	MS2_DDRD										|= 		MS2_MASK;
 	MS1_DDRD										|= 		MS1_MASK;
-	// MS3=1 MS2=1 MS1=0  1/64 step
-	MS3_PORT										|= 		MS3_MASK;
+
+	#if defined(UARM_2500)
+	// MS3=0 MS2=1 MS1=0  1/4 step
+	MS3_PORT									  &= 		(~MS3_MASK);
 	MS2_PORT										|= 		MS2_MASK;
 	MS1_PORT										&= 		(~MS1_MASK);
+	#else
+	// MS3=1 MS2=1 MS1=0	1/64 step
+/*	MS3_PORT										|=		MS3_MASK;
+	MS2_PORT										|=		MS2_MASK;
+	MS1_PORT										&=		(~MS1_MASK);*/
+	// MS3=1 MS2=0 MS1=1	1/32 step
+	MS3_PORT										|=		MS3_MASK;
+	MS2_PORT										&=	~(MS2_MASK);
+	MS1_PORT										|=		MS1_MASK;
+	#endif
+	
+	
 
 	if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)){
 		ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;

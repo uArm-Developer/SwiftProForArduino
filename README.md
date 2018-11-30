@@ -1,23 +1,12 @@
-# Swift Pro Firmware V4.2.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
+# Swift Pro Firmware V4.3.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
 
 ----------
-## Update Summary for v4.2.0
+## Update Summary for v4.3.0
 
-* Add closed-loop stepper control (step losing detection and auto-adjusting)
-* Add M2123 cmd to control closed-loop stepper system
-* Add pro work mode,plus work mode and touch pen work mode
-* Add M2412 cmd to set offset of the effect-stepper
-* Fix P2206 cmd to get effect angle bug
-* Fix G1 move bug
-* Fix cmd M17 bug
-* Fix old uarm pro cann't read refer value bug
-* Fix P2242 P2243 bug
+* Add serial port automatic identification system
+* Add extern I/O Control CMD M2240,M2241,P2240,P2241
+* Fix Z aixs problem
 
-## Update Summary for v4.1.0
-* Transplant Grbl framework.
-* Optimize stepper motor performance,improve motor speed,fix motor shake.
-* Fix servo shake in end-effector.
-* Optimize code efficiency and improve readability.
 
 ## Caution
 #### The current firmware is not perfect and will be updated periodically
@@ -33,12 +22,10 @@
 First, connect to uArm using the serial terminal of your choice.Set the baud rate to 115200 as 8-N-1 (8-bits, no parity, and 1-stop bit.) .Cmd list reference to [protocol documents](doc/).
 
 * move cmd support **G0,G1,G2004,G2201,G2202,G2204,G2205**.
-* setting cmd support **M17,M204,M2019,M2120,M2121,M2122,M2201,M2202,M2203,M2210,M2215,M2220,M2221,M2222,M2231,M2232,M2233,M2400,M2401,M2410,M2411**.                                                                                                                                                                           
-not support currently **M2211,M2212,M2213,M2234,M2240,M2241,M2245**.
+* setting cmd support **M17,M204,M2019,M2120,M2121,M2122,M2201,M2202,M2203,M2210,M2215,M2220,M2221,M2222,M2231,M2232,M2233,M2400,M2401,M2410,M2411,M2240,M2241**.                                                                                                                                                                           
+not support currently **M2211,M2212,M2213,M2234,M2245**.
 * query cmd support 
-**P2200,P2201,P2202,P2203,P2204,P2205,P2206,P2220,P2221,P2231,P2231,P2232,P2233,P2234,P2242,P2400**.                                                                  
-not support currently **P2240,P2241**.
-
+**P2200,P2201,P2202,P2203,P2204,P2205,P2206,P2220,P2221,P2231,P2231,P2232,P2233,P2234,P2240,P2241,P2242,P2400**.                                                                  
 ----------
 ## How to upgrade uArm
 
@@ -65,7 +52,8 @@ The upload process generally takes about 10 seconds to finish. Once completed, a
 you have three ways to control your uArm:
 
 * using the serial terminal [example](example)
-* using the Python library
+* using the [Python library 2.0](https://github.com/uArm-Developer/uArm-Python-SDK/tree/2.0 "Python library 2.0")
+* using the [https://github.com/uArm-Developer/uArm-SDK](https://github.com/uArm-Developer/uArm-SDK "C++ library")
 * using the uArmStudio
 
 

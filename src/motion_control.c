@@ -108,13 +108,14 @@
 		
 															if( divide_numbers < 10 ){ divide_numbers = 10; }	
 															
-															float accel = (0.005+feed_rate*0.02);
+															float accel = 0.5 + feed_rate * 4.5 / 100.0;
 															settings.acceleration[X_AXIS] = accel * 60 * 60;
 															settings.acceleration[Y_AXIS] = accel * 60 * 60;
 															settings.acceleration[Z_AXIS] = accel * 60 * 60;	
 															if( settings.acceleration[Z_AXIS] >= 1.3*60*60 ){
 																settings.acceleration[Z_AXIS] = 1.3 * 60 * 60;
 															}
+															
 			break;
 	}
 	

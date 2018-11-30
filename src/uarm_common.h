@@ -3,6 +3,9 @@
 
 #include "grbl.h"
 
+#include <stdio.h>
+#include <Arduino.h>
+
 #include "uarm_debug.h"
 #include "uarm_angle.h"
 #include "uarm_timer.h"
@@ -11,16 +14,20 @@
 // The Atmega2560 has 4KB EEPROM.
 //#define EEPROM_ADDR_ANGLE_REFER		 	3072U
 
-#define EEPROM_ADDR_ANGLE_REFER		 			820U
-#define EEPROM_OLD_ADDR_ANGLE_REFER		 	800U
-#define EEPROM_ANGLE_REFER_FLAG					818U
+//#define UARM_MINI
+//#define UARM_2500
 
 
-#define EEPROM_ADDR_PARAM 	 				3200U				// refer to v3.2.0 firmware
-#define EEPROM_MODE_ADDR						900U
-#define EEPROM_HEIGHT_OFFSET_ADDR		910U
-#define EEPROM_FRONT_OFFSET_ADDR		920U
-#define EEPROM_EFFECT_ANGLE_OFFSET_ADDR 3202U
+#define EEPROM_ADDR_ANGLE_REFER		 				820U
+#define EEPROM_OLD_ADDR_ANGLE_REFER		 		800U
+#define EEPROM_ANGLE_REFER_FLAG						818U
+#define EEPROM_BT_MAC_ADDR								1002U
+
+#define EEPROM_ADDR_PARAM 	 							3200U				// refer to v3.2.0 firmware
+#define EEPROM_MODE_ADDR									900U
+#define EEPROM_HEIGHT_OFFSET_ADDR					910U
+#define EEPROM_FRONT_OFFSET_ADDR					920U
+#define EEPROM_EFFECT_ANGLE_OFFSET_ADDR 	3202U
 
 
 

@@ -1,39 +1,66 @@
 #include "uarm_coord_convert.h"
 
-/*
-#define ARM_A      (148.0)// Lower arm length
-#define ARM_B      (160.0)// Upper arm length
-#define ARM_2AB    (47360)// 2*A*B
-#define ARM_A2     (21904)// A^2
-#define ARM_B2     (25600)// B^2
-#define ARM_A2B2   (47504)// A^2+B^2
-*/
-#define ARM_A      (142.07)// Lower arm length
-#define ARM_B      (158.81)// Upper arm length
-#define ARM_2AB    (2*ARM_A*ARM_B)// 2*A*B
-#define ARM_A2     (ARM_A*ARM_A)// A^2
-#define ARM_B2     (ARM_B*ARM_B)// B^2
-#define ARM_A2B2   (ARM_A2+ARM_B2)// A^2+B^2
-
-
-
-#define Z_BASIC		 (107.4)
-
-#define length_center_to_origin   (13.2)
-#define gearbox_ratio     (4.5)
-#define micro_steps       (64.0)
-#define steps_per_angle   (micro_steps/1.8*gearbox_ratio)
-
-#define ARMA_MAX_ANGLE      		(135.6)
-#define ARMA_MIN_ANGLE      		(0)
-#define ARMB_MAX_ANGLE      		(119.9)
-#define ARMB_MIN_ANGLE      		(0)	
-#define BASE_MAX_ANGLE					(90)
-#define BASE_MIN_ANGLE					(-90)
-#define ARMA_ARMB_MAX_ANGLE    	(151)
-#define ARMA_ARMB_MIN_ANGLE    	(10)
-
-
+#if defined(UARM_MINI)
+	#define ARM_A 		 (142.07)// Lower arm length
+	#define ARM_B 		 (142.07)// Upper arm length
+	#define ARM_2AB 	 (2*ARM_A*ARM_B)// 2*A*B
+	#define ARM_A2		 (ARM_A*ARM_A)// A^2
+	#define ARM_B2		 (ARM_B*ARM_B)// B^2
+	#define ARM_A2B2	 (ARM_A2+ARM_B2)// A^2+B^2
+	#define Z_BASIC 	 (108.8)
+	#define length_center_to_origin 	(13.2)
+	#define gearbox_ratio 		(4.5)
+	#define micro_steps 			(64.0)
+	#define steps_per_angle 	(micro_steps/1.8*gearbox_ratio)
+	#define ARMA_MAX_ANGLE					(135.6)
+	#define ARMA_MIN_ANGLE					(0)
+	#define ARMB_MAX_ANGLE					(119.9)
+	#define ARMB_MIN_ANGLE					(0) 
+	#define BASE_MAX_ANGLE					(90)
+	#define BASE_MIN_ANGLE					(-90)
+	#define ARMA_ARMB_MAX_ANGLE 		(151)
+	#define ARMA_ARMB_MIN_ANGLE 		(10)
+#elif defined(UARM_2500)
+	#define ARM_A 		 (300.0)// Lower arm length
+	#define ARM_B 		 (300.6)// Upper arm length
+	#define ARM_2AB 	 (2*ARM_A*ARM_B)// 2*A*B
+	#define ARM_A2		 (ARM_A*ARM_A)// A^2
+	#define ARM_B2		 (ARM_B*ARM_B)// B^2
+	#define ARM_A2B2	 (ARM_A2+ARM_B2)// A^2+B^2
+	#define Z_BASIC 	 (184.5)
+	#define length_center_to_origin 	(0.0)
+	#define gearbox_ratio 		(100.0)
+	#define micro_steps 			(4.0)
+	#define steps_per_angle 	(micro_steps/1.8*gearbox_ratio)
+	#define ARMA_MAX_ANGLE					(135.6)
+	#define ARMA_MIN_ANGLE					(0)
+	#define ARMB_MAX_ANGLE					(119.9)
+	#define ARMB_MIN_ANGLE					(0) 
+	#define BASE_MAX_ANGLE					(90)
+	#define BASE_MIN_ANGLE					(-90)
+	#define ARMA_ARMB_MAX_ANGLE 		(151)
+	#define ARMA_ARMB_MIN_ANGLE 		(10)
+#else
+	#define ARM_A      (142.07)// Lower arm length
+	#define ARM_B      (158.81)// Upper arm length
+	#define ARM_2AB    (2*ARM_A*ARM_B)// 2*A*B
+	#define ARM_A2     (ARM_A*ARM_A)// A^2
+	#define ARM_B2     (ARM_B*ARM_B)// B^2
+	#define ARM_A2B2   (ARM_A2+ARM_B2)// A^2+B^2
+	#define Z_BASIC		 (107.4)
+	#define length_center_to_origin   (13.2)
+	#define gearbox_ratio     (4.5)
+	#define micro_steps       (32.0)
+	#define steps_per_angle   (micro_steps/1.8*gearbox_ratio)
+	#define ARMA_MAX_ANGLE      		(135.6)
+	#define ARMA_MIN_ANGLE      		(0)
+	#define ARMB_MAX_ANGLE      		(119.9)
+	#define ARMB_MIN_ANGLE      		(0)	
+	#define BASE_MAX_ANGLE					(90)
+	#define BASE_MIN_ANGLE					(-90)
+	#define ARMA_ARMB_MAX_ANGLE    	(151)
+	#define ARMA_ARMB_MIN_ANGLE    	(10)
+#endif
 
 //               /\          |          /              |            \
 //       ARM_A  /  \  ARM_B  |    ARM_A/               |             \ ARM_B
@@ -47,6 +74,7 @@
 	BASE angle -> anglec
 */
 bool is_angle_legal(float anglea, float angleb, float anglec){
+
 	if( isnan(anglea) || isnan(angleb) || isnan(anglec) ){
 		//DB_PRINT_STR("value is nan\r\n");
 		return false;
@@ -67,7 +95,6 @@ bool is_angle_legal(float anglea, float angleb, float anglec){
 		//DB_PRINT_STR("angle_c error\r\n");
 		return false;		
 	}
-	//DB_PRINT_STR( "%d  ,  %d  ,  %d\r\n", (int)anglea, (int)angleb, (int)anglec );
 	
 	return true;
 }
@@ -94,12 +121,23 @@ void angle_to_coord(float anglea, float angleb, float anglec, float *x, float *y
 }
 
 void coord_to_angle(float x, float y, float z, float *anglea, float *angleb, float *anglec){		
+
+
+/*	DB_PRINT_STR("coord xyz:");
+	DB_PRINT_FLOAT(x);DB_PRINT_STR(" ");
+	DB_PRINT_FLOAT(y);DB_PRINT_STR(" ");
+	DB_PRINT_FLOAT(z);DB_PRINT_STR("\r\n"); 	*/
+
+
+
 	double _stretch = sqrt(x * x + y * y) - length_center_to_origin;  //_stretch = sqrt(x^2+y^2)
   double _height = z - Z_BASIC;
 
 	// get angle A
 	double xx = _stretch * _stretch + _height * _height;
   double xxx = ARM_A2 - ARM_B2 + xx;
+
+	
   *anglea = acos((_stretch * xxx - _height * sqrt(4.0 * ARM_A2 * xx - xxx * xxx)) / (xx * 2.0 * ARM_A)) * RAD_TO_DEG;
 
   // get angle B
@@ -122,6 +160,12 @@ void coord_to_angle(float x, float y, float z, float *anglea, float *angleb, flo
 	}else{
 		*anglec = atan(y / x) * RAD_TO_DEG;
 	}	
+	
+
+/*	DB_PRINT_STR("coord abc:");
+	DB_PRINT_FLOAT(*anglea);DB_PRINT_STR(" ");
+	DB_PRINT_FLOAT(*angleb);DB_PRINT_STR(" ");
+	DB_PRINT_FLOAT(*anglec);DB_PRINT_STR("\r\n");*/
 }
 
 void get_current_step(float anglea, float angleb, float anglec, float *x_step, float *y_step, float *z_step){

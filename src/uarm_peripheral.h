@@ -3,8 +3,8 @@
 
 #include "uarm_common.h"
 
-extern char hardware_version[8]; 
-
+extern char hardware_version[8];
+extern char bt_mac_addr[13];
 
 void end_effector_init(void);
 void end_effector_set_angle(float angle);
@@ -45,8 +45,6 @@ uint8_t get_power_status(void);
 
 void check_motor_positon(void);
 
-
-
-
 	
 #endif
+

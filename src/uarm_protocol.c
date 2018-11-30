@@ -252,7 +252,7 @@ static enum uarm_protocol_e uarm_cmd_g2201(char *payload){						// <! polar coor
 		target[Y_AXIS] = length * sin(angle);
 		target[Z_AXIS] = high; 		
 		
-		return mc_line( 0, target, speed, false );
+		return mc_line( 1, target, speed, false );
 	}
 }
 
@@ -273,11 +273,13 @@ static enum uarm_protocol_e uarm_cmd_g2202(char *payload){						// <! move motor
 		float target[3] = {0};
 		get_current_angle( uarm.target_step[X_AXIS], uarm.target_step[Y_AXIS], uarm.target_step[Z_AXIS], 
 											 &angle_l, &angle_r, &angle_b );
+	
 		switch( num ){
 			case 0:																														// <! base motor
 				angle -= 90;
-				angle_to_coord( angle_l, angle_r, angle, &target[X_AXIS], &target[Y_AXIS], &target[Z_AXIS] );
+				angle_to_coord( angle_l, angle_r, angle, &target[X_AXIS], &target[Y_AXIS], &target[Z_AXIS] );				
 				coord_arm2effect( &target[X_AXIS], &target[Y_AXIS], &target[Z_AXIS] );
+				
 				return mc_line( 0, target, speed, false );
 				break;
 			case 1:																														//  <! left motor
@@ -321,7 +323,7 @@ static enum uarm_protocol_e uarm_cmd_g2204(char *payload){					// <! coord offse
 		target[Y_AXIS] += y;
 		target[Z_AXIS] += z;
 
-		return mc_line( 0 , target, speed, false );
+		return mc_line( 1 , target, speed, false );
 	}
 }
 
@@ -359,7 +361,7 @@ static  enum uarm_protocol_e uarm_cmd_g2205(char *payload){		// <! polar coord o
 		dtostrf( target[Z_AXIS], 5, 4, b_str );
 		dtostrf( length, 5, 4, str );
 			
-		return mc_line( 0, target, speed, false );
+		return mc_line( 1, target, speed, false );
 	}	
 }
 
@@ -649,6 +651,42 @@ static void uarm_cmd_m2233(uint8_t param){
 	}	
 }
 
+static bool uarm_cmd_m2240(char *payload){
+	uint8_t rtn = 0;
+	int pin, value;
+	if( rtn = sscanf(payload, "N%dV%d", &pin, &value) < 2 ){
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return false;
+	}else{
+		if( pin<0 || pin>69 || value<0 || value>1 ){ return false; }
+		if( value ){
+			digitalWrite(pin, HIGH);
+		}else{
+			digitalWrite(pin, LOW);
+		}
+		
+	}
+	return true;
+}
+
+static bool uarm_cmd_m2241(char *payload){
+	uint8_t rtn = 0;
+	int pin, value;
+	if( rtn = sscanf(payload, "N%dV%d", &pin, &value) < 2 ){
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return false;
+	}else{
+		if( pin<0 || pin>69 || value<0 || value>1 ){ return false; }
+		if( value ){
+			pinMode(pin, OUTPUT);
+		}else{
+			pinMode(pin, INPUT);
+		}
+		
+	}
+	return true;	
+}
+
 static void uarm_cmd_m2400(uint8_t param){	// <! set work mode
 	switch(param){
 		case WORK_MODE_NORMAL:				// <! nomal mode
@@ -888,12 +926,19 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 								return UARM_CMD_OK;
 			break;
 		case 2240:
-			//DB_PRINT_STR( "M2240\r\n" );
+							if( uarm_cmd_m2240(line) == true ){
 								return UARM_CMD_OK;
+							}else{
+								return UARM_CMD_ERROR;
+							}	
 			break;
 		case 2241:
-			//DB_PRINT_STR( "M2241\r\n" );
+							if( uarm_cmd_m2241(line) == true ){
 								return UARM_CMD_OK;
+							}else{
+								return UARM_CMD_ERROR;
+							}				
+								
 			break;
 		case 2245:
 			//DB_PRINT_STR( "M2245\r\n" );
@@ -994,7 +1039,7 @@ static void uarm_cmd_p2204(void){
 }
 
 static void uarm_cmd_p2205(void){
-	sprintf( tail_report_str, " %s\n", BLE_UUID );
+	sprintf( tail_report_str, " V%s\n", BLE_UUID );
 }
 
 
@@ -1012,13 +1057,13 @@ void uarm_cmd_p2206(uint8_t param){
 	dtostrf( angle_e, 5, 4, e_str );
 
 	switch( param ){
-		case 0:			sprintf( tail_report_str, " %s", b_str);
+		case 0:			sprintf( tail_report_str, " %s\n", b_str);
 			break;
-		case 1:			sprintf( tail_report_str, " %s", l_str);
+		case 1:			sprintf( tail_report_str, " %s\n", l_str);
 			break;
-		case 2:			sprintf( tail_report_str, " %s", r_str);
+		case 2:			sprintf( tail_report_str, " %s\n", r_str);
 			break;
-		case 3:			sprintf( tail_report_str, " %s", e_str);				
+		case 3:			sprintf( tail_report_str, " %s\n", e_str);				
 			break;
 	}
 }
@@ -1085,6 +1130,36 @@ static void uarm_cmd_p2234(void){
 static void uarm_cmd_p2235(void){
 	sprintf( tail_report_str, " V%d\n", get_laser_status() );	
 }
+
+static bool uarm_cmd_p2240(char *payload){
+	uint8_t rtn = 0;
+	int pin;
+	if( rtn = sscanf(payload, "N%d", &pin) < 1 ){
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return false;
+	}else{
+		if( pin<0 || pin>69 ){ return false; }
+		int value = digitalRead(pin);
+		sprintf( tail_report_str, " V%d\n", value );
+	}
+	return true;	
+}
+
+static bool uarm_cmd_p2241(char *payload){
+	uint8_t rtn = 0;
+	int pin;
+	if( rtn = sscanf(payload, "N%d", &pin) < 1 ){
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return false;
+	}else{
+		if( pin<0 || pin>15 ){ return false; }
+		int value = analogRead(pin);
+		sprintf( tail_report_str, " V%d\n", value );
+	}
+	return true;	
+
+}
+
 
 static void uarm_cmd_p2242(void){
 	uint16_t refer_value[3] = {0};
@@ -1165,10 +1240,18 @@ enum uarm_protocol_e uarm_execute_p_cmd(uint16_t cmd, char *line, uint8_t *char_
 							return UARM_CMD_OK;			
 			break;
 		case 2240:
-							return UARM_CMD_OK;
+							if( uarm_cmd_p2240(line) == true ){
+								return UARM_CMD_OK;
+							}else{
+								return UARM_CMD_ERROR;
+							} 
 			break;
 		case 2241:
-							return UARM_CMD_OK;
+							if( uarm_cmd_p2241(line) == true ){
+								return UARM_CMD_OK;
+							}else{
+								return UARM_CMD_ERROR;
+							} 
 			break;
 		case 2242:
 							uarm_cmd_p2242();
