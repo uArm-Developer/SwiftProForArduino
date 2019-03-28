@@ -108,12 +108,12 @@ void time4_stop(void){
   TIMSK4 &= ~(1<<TOIE4);
 }
 
-ISR(TIMER4_OVF_vect){
-  TCNT4 = time4.tcnt;
-  if( time4.time_callback != NULL ){
-    time4.time_callback();
-  }
-}
+//ISR(TIMER4_OVF_vect){
+//  TCNT4 = time4.tcnt;
+//  if( time4.time_callback != NULL ){
+//    time4.time_callback();
+//  }
+//}
 #define TIMER4_RESOLUTION 65536UL
 
 void time4_set_period(unsigned long period_us){

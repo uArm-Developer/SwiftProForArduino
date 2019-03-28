@@ -547,10 +547,6 @@ void stepper_init()
 	MS2_PORT										|= 		MS2_MASK;
 	MS1_PORT										&= 		(~MS1_MASK);
 	#else
-	// MS3=1 MS2=1 MS1=0	1/64 step
-/*	MS3_PORT										|=		MS3_MASK;
-	MS2_PORT										|=		MS2_MASK;
-	MS1_PORT										&=		(~MS1_MASK);*/
 	// MS3=1 MS2=0 MS1=1	1/32 step
 	MS3_PORT										|=		MS3_MASK;
 	MS2_PORT										&=	~(MS2_MASK);

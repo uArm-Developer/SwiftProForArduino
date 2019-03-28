@@ -87,11 +87,26 @@ float calculate_current_angle(enum angle_channel_e channel){
 	float angle = 0.0;
 
 	switch( channel ){
-		case CHANNEL_ARML:		offset = (int long)reference.param_l - (int long)angle_reg_value;
+		case CHANNEL_ARML:
+			#if defined(UARM_2500)
+				offset = (int long)angle_reg_value - (int long)reference.param_l;
+			#else
+				offset = (int long)reference.param_l - (int long)angle_reg_value;
+			#endif
 			break;
-		case CHANNEL_ARMR:		offset = (int long)reference.param_r - (int long)angle_reg_value;
+		case CHANNEL_ARMR:	
+			#if defined(UARM_2500)
+				offset = (int long)angle_reg_value - (int long)reference.param_r;
+			#else
+				offset = (int long)reference.param_r - (int long)angle_reg_value;
+			#endif	
 			break;
-		case CHANNEL_BASE:		offset = (int long)reference.param_b - (int long)angle_reg_value;
+		case CHANNEL_BASE:		
+			#if defined(UARM_2500)
+				offset = (int long)angle_reg_value - (int long)reference.param_b;
+			#else
+				offset = (int long)reference.param_b - (int long)angle_reg_value;
+			#endif
 			break;
 	}
 	
@@ -198,20 +213,11 @@ bool calculate_refer_write_eeprom(void){
 	float pointc_b_arml_offset =  reference_param_pointc[0] - (POINT_C_ARML_ANGLE-POINT_B_ARML_ANGLE)*4096/360.0;
 	float pointc_b_armr_offset =	reference_param_pointc[1] - (POINT_C_ARMR_ANGLE-POINT_B_ARMR_ANGLE)*4096/360.0;
 
-/*	DB_PRINT_STR("value offset:");
-	DB_PRINT_FLOAT( pointa_b_arml_offset );DB_PRINT_STR(" ");
-	DB_PRINT_FLOAT( pointa_b_armr_offset );DB_PRINT_STR(" ");
-	DB_PRINT_FLOAT( pointc_b_arml_offset );DB_PRINT_STR(" ");
-	DB_PRINT_FLOAT( pointc_b_armr_offset );DB_PRINT_STR("\r\n");*/
-
 	
 	reference.param_l = (pointa_b_arml_offset + pointc_b_arml_offset + reference_param_pointb[0])/3.0 + 0.5;
 	reference.param_r = (pointa_b_armr_offset + pointc_b_armr_offset + reference_param_pointb[1])/3.0 + 0.5;
 	reference.param_b = reference_param_pointb[2];
-/*	DB_PRINT_STR("value1 offset:");
-	DB_PRINT_FLOAT( reference_param[0] );DB_PRINT_STR(" ");
-	DB_PRINT_FLOAT( reference_param[1] );DB_PRINT_STR(" ");
-	DB_PRINT_FLOAT( reference_param[2] );DB_PRINT_STR("\r\n");	*/
+
 
 	write_angle_reference_param();
 	return true;
@@ -234,30 +240,9 @@ void angle_sensor_init(void){
 	angle_iic_init();
 	read_angle_reference_param();	// <! read reference param from eeprom 
 
-#if defined(UARM_2500)
-	uarm.init_arml_angle = 90;
-	uarm.init_armr_angle = 0;
-	uarm.init_base_angle = 90;
-#else
-	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML);		// <! calculate init angle
+	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML); 	// <! calculate init angle
 	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);
 	uarm.init_base_angle = calculate_current_angle(CHANNEL_BASE);
-#endif
-	
-
-
-/*
-	char l_str[20], r_str[20], b_str[20];
-	dtostrf( uarm.init_arml_angle, 5, 4, l_str );
-	dtostrf( uarm.init_armr_angle, 5, 4, r_str );
-	dtostrf( uarm.init_base_angle, 5, 4, b_str );
-
-	DB_PRINT_STR( "init angle: %s, %s, %s\r\n", l_str, r_str, b_str );*/
-
-/*	DB_PRINT_STR("angle abc:");
-	DB_PRINT_FLOAT(uarm.init_arml_angle);DB_PRINT_STR(" ");
-	DB_PRINT_FLOAT(uarm.init_armr_angle);DB_PRINT_STR(" ");
-	DB_PRINT_FLOAT(uarm.init_base_angle);DB_PRINT_STR("\r\n");*/
 	
 }
 

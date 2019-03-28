@@ -138,7 +138,10 @@ void parse_cmd_line(void){
 	if( !uarm.gcode_delay_flag && syn_pack_remain ){ 	// <! delay cmd done && syn queue is not empty
 
 		static uint8_t syn_parse_sp = 0;
+		if( uarm.effect_ldie == false ){ return; }
+	
 		syn_queue[syn_parse_sp].parse_result = gc_execute_line(syn_queue[syn_parse_sp].line);
+		
 		add_result_to_report( syn_queue[syn_parse_sp].parse_result, syn_queue[syn_parse_sp].report_str );
 		
 		syn_queue[syn_parse_sp].line_parse_done = true;
@@ -159,7 +162,7 @@ void report_parse_result(void){
 		asyn_pack.line_parse_done = false;
 	}
 
-	if( sys.state == STATE_IDLE ){																//<! report syn result
+	if( sys.state==STATE_IDLE && uarm.effect_ldie==true ){			//<! report syn result
 		static uint8_t syn_report_sp = 0;
 		for( int i=0; i < PACK_MAX_SIZE; i++ ){
 			if( syn_queue[syn_report_sp].line_parse_done == true ){
@@ -293,7 +296,7 @@ static enum uarm_protocol_e uarm_cmd_g2202(char *payload){						// <! move motor
 				return mc_line( 0, target, speed, false );				
 				break;
 			case 3:
-				end_effector_set_angle(angle);
+				end_effector_set_angle(angle, speed);
 				return UARM_CMD_OK;
 				break;
 		}
@@ -404,9 +407,20 @@ enum uarm_protocol_e uarm_execute_g_cmd(uint16_t cmd, char *line, uint8_t *char_
  */
  
 static void uarm_cmd_m17(void){				// <! lock all motor 
-	ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
+/*	ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
 	ARMR_STEPPERS_DISABLE_PORT |= ARMR_STEPPERS_DISABLE_MASK;
-	BASE_STEPPERS_DISABLE_PORT |= BASE_STEPPERS_DISABLE_MASK;
+	BASE_STEPPERS_DISABLE_PORT |= BASE_STEPPERS_DISABLE_MASK;*/
+	
+	if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)){
+		ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
+		ARMR_STEPPERS_DISABLE_PORT |= ARMR_STEPPERS_DISABLE_MASK;
+		BASE_STEPPERS_DISABLE_PORT |= BASE_STEPPERS_DISABLE_MASK;
+	}else{
+		ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
+		ARMR_STEPPERS_DISABLE_PORT &= (~ARMR_STEPPERS_DISABLE_MASK);
+		BASE_STEPPERS_DISABLE_PORT &= (~BASE_STEPPERS_DISABLE_MASK);
+	}
+	
 	end_effector_init();
 	uarm.motor_state_bits = 0x0F;
 
@@ -447,9 +461,20 @@ static bool uarm_cmd_m204(char *payload){
 }
 
 static void uarm_cmd_m2019(void){				// <! unlock all motor
-	ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
+/*	ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
 	ARMR_STEPPERS_DISABLE_PORT &= (~ARMR_STEPPERS_DISABLE_MASK);
-	BASE_STEPPERS_DISABLE_PORT &= (~BASE_STEPPERS_DISABLE_MASK);
+	BASE_STEPPERS_DISABLE_PORT &= (~BASE_STEPPERS_DISABLE_MASK);*/
+
+	if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)){
+		ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
+		ARMR_STEPPERS_DISABLE_PORT &= (~ARMR_STEPPERS_DISABLE_MASK);
+		BASE_STEPPERS_DISABLE_PORT &= (~BASE_STEPPERS_DISABLE_MASK);
+	}else{
+		ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
+		ARMR_STEPPERS_DISABLE_PORT |= ARMR_STEPPERS_DISABLE_MASK;
+		BASE_STEPPERS_DISABLE_PORT |= BASE_STEPPERS_DISABLE_MASK;
+	}
+
 	end_effector_deinit();
 	uarm.motor_state_bits = 0x00;
 }
@@ -1046,24 +1071,27 @@ static void uarm_cmd_p2205(void){
 void uarm_cmd_p2206(uint8_t param){
 	float angle_l = 0, angle_r = 0, angle_b = 0, angle_e = 0;
 	char l_str[20] = {0}, r_str[20] = {0}, b_str[20] = {0} , e_str[20] = {0};
-	get_current_angle( sys.position[X_AXIS], sys.position[Y_AXIS], sys.position[Z_AXIS],
-										 &angle_l, &angle_r, &angle_b );
-	float x = 0, y = 0, z = 0;
-	angle_b += 90;
-	angle_e = end_effector_get_angle();
-	dtostrf( angle_l, 5, 4, l_str );
-	dtostrf( angle_r, 5, 4, r_str );
-	dtostrf( angle_b, 5, 4, b_str );
-	dtostrf( angle_e, 5, 4, e_str );
 
 	switch( param ){
-		case 0:			sprintf( tail_report_str, " %s\n", b_str);
+		case 0:			
+								angle_b = calculate_current_angle(CHANNEL_BASE);
+								dtostrf( angle_b, 5, 4, b_str );
+								sprintf( tail_report_str, " V%s\n", b_str);
 			break;
-		case 1:			sprintf( tail_report_str, " %s\n", l_str);
+		case 1:			
+								angle_l = calculate_current_angle(CHANNEL_ARML);
+								dtostrf( angle_l, 5, 4, l_str );
+								sprintf( tail_report_str, " V%s\n", l_str);
 			break;
-		case 2:			sprintf( tail_report_str, " %s\n", r_str);
+		case 2:			
+								angle_r = calculate_current_angle(CHANNEL_ARMR);
+								dtostrf( angle_r, 5, 4, r_str );
+								sprintf( tail_report_str, " V%s\n", r_str);
 			break;
-		case 3:			sprintf( tail_report_str, " %s\n", e_str);				
+		case 3:			
+								angle_e = end_effector_get_angle();
+								dtostrf( angle_e, 5, 4, e_str );
+								sprintf( tail_report_str, " V%s\n", e_str);				
 			break;
 	}
 }

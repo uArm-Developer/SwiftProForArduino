@@ -1,12 +1,12 @@
-# Swift Pro Firmware V4.3.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
+# Swift Pro Firmware V4.4.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
 
 ----------
-## Update Summary for v4.3.0
+## Update Summary for v4.4.0
 
-* Add serial port automatic identification system
-* Add extern I/O Control CMD M2240,M2241,P2240,P2241
-* Fix Z aixs some problem
-* Optimize speed setting
+* Fix G1 motion planning
+* Fix step effector motion bug
+* Optimize step effector return funciton
+* Add step effector speed control
 
 ## Caution
 #### The current firmware is not perfect and will be updated periodically

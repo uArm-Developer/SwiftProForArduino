@@ -7,7 +7,7 @@ extern char hardware_version[8];
 extern char bt_mac_addr[13];
 
 void end_effector_init(void);
-void end_effector_set_angle(float angle);
+void end_effector_set_angle(float angle, float speed);
 void end_effector_deinit(void);
 float end_effector_get_angle(void);
 void end_effector_check_limit(void);

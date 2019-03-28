@@ -128,13 +128,23 @@
 
 	float final_coord[3];
 	float final_step[3];
+	float angle_x, angle_y, angle_z;
 	for( int i = 1; i <= divide_numbers; i++ ){
 		
-		final_coord[X_AXIS] = current_coord[X_AXIS] + delta_coord[X_AXIS]  * i;
+		final_coord[X_AXIS] = current_coord[X_AXIS] + delta_coord[X_AXIS]  * i;					// <! this is effect position
     final_coord[Y_AXIS] = current_coord[Y_AXIS] + delta_coord[Y_AXIS]  * i; 
     final_coord[Z_AXIS] = current_coord[Z_AXIS] + delta_coord[Z_AXIS]  * i; 
 
-		coord_effect2arm( &final_coord[X_AXIS], &final_coord[Y_AXIS], &final_coord[Z_AXIS] );
+		coord_effect2arm( &final_coord[X_AXIS], &final_coord[Y_AXIS], &final_coord[Z_AXIS] );		// <! convert the position
+
+		coord_to_angle( final_coord[X_AXIS], final_coord[Y_AXIS], final_coord[Z_AXIS],																			
+											&angle_x, &angle_y, &angle_z ); 																			// <! calculate final angle
+											
+		if( is_angle_legal( angle_x, angle_y, angle_z ) == false ){ 														// check the angle
+			continue;
+		}
+
+		
 
 		uarm.coord_x = final_coord[X_AXIS];
 		uarm.coord_y = final_coord[Y_AXIS];

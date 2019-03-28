@@ -36,35 +36,64 @@ enum uarm_work_mode_e {
 	WORK_MODE_LASER,
 	WORK_MODE_PRINTER,
 	WORK_MODE_PEN,
-	WORK_MODE_STEPER_FLAT,							// <! flat steper mode
+	WORK_MODE_STEPER_FLAT,									// <! flat steper mode
 	WORK_MODE_STEPER_STANDARD,							// <! standard steper mode
 	WORK_MODE_TOUCH_PEN,
 	WORK_MODE_TEST,
 };
 
-#define DEFAULT_NORMAL_HEIGHT		74.55
-#define DEFAULT_NORMAL_FRONT		56.65
+#if defined(UARM_2500)
+	#define DEFAULT_NORMAL_HEIGHT 	74.55
+	#define DEFAULT_NORMAL_FRONT		56.65
 
-#define DEFAULT_LASER_HEIGHT		51.04
-#define DEFAULT_LASER_FRONT			64.4
+	#define DEFAULT_LASER_HEIGHT		51.04
+	#define DEFAULT_LASER_FRONT 		64.4
 
-#define DEFAULT_3DPRINT_HEIGHT	74.43
-#define DEFAULT_3DPRINT_FRONT		56.5
+	#define DEFAULT_3DPRINT_HEIGHT	74.43
+	#define DEFAULT_3DPRINT_FRONT 	56.5
 
-#define DEFAULT_PEN_HEIGHT			43
-#define DEFAULT_PEN_FRONT				69.5 	
+	#define DEFAULT_PEN_HEIGHT			43
+	#define DEFAULT_PEN_FRONT 			69.5	
 
-#define DEFAULT_STEP_FLAT_HEIGHT   	39
-#define DEFAULT_STEP_FLAT_FRONT		 	76.5
+	#define DEFAULT_STEP_FLAT_HEIGHT		39
+	#define DEFAULT_STEP_FLAT_FRONT 		76.5
 
-#define DEFAULT_STEP_STANDARD_HEIGHT   	73.4
-#define DEFAULT_STEP_STANDARD_FRONT		 	76
+	#define DEFAULT_STEP_STANDARD_HEIGHT		27.5
+	#define DEFAULT_STEP_STANDARD_FRONT 		75.5
 
-#define DEFAULT_ROUND_PEN_HEIGHT   	77.2
-#define DEFAULT_ROUND_PEN_FRONT		 	54.5
+	#define DEFAULT_ROUND_PEN_HEIGHT		77.2
+	#define DEFAULT_ROUND_PEN_FRONT 		54.5
 
-#define DEFAULT_TEST_HEIGHT   	25.49
-#define DEFAULT_TEST_FRONT		 	44.5
+	#define DEFAULT_TEST_HEIGHT 		25.49
+	#define DEFAULT_TEST_FRONT			44.5
+
+#else
+	#define DEFAULT_NORMAL_HEIGHT		74.55
+	#define DEFAULT_NORMAL_FRONT		56.65
+
+	#define DEFAULT_LASER_HEIGHT		51.04
+	#define DEFAULT_LASER_FRONT			64.4
+
+	#define DEFAULT_3DPRINT_HEIGHT	74.43
+	#define DEFAULT_3DPRINT_FRONT		56.5
+
+	#define DEFAULT_PEN_HEIGHT			43
+	#define DEFAULT_PEN_FRONT				69.5 	
+
+	#define DEFAULT_STEP_FLAT_HEIGHT   	39
+	#define DEFAULT_STEP_FLAT_FRONT		 	76.5
+
+	#define DEFAULT_STEP_STANDARD_HEIGHT   	73.4
+	#define DEFAULT_STEP_STANDARD_FRONT		 	76
+
+	#define DEFAULT_ROUND_PEN_HEIGHT   	77.2
+	#define DEFAULT_ROUND_PEN_FRONT		 	54.5
+
+	#define DEFAULT_TEST_HEIGHT   	25.49
+	#define DEFAULT_TEST_FRONT		 	44.5
+#endif
+
+
 
 
 
@@ -95,6 +124,7 @@ struct uarm_state_t {
 	volatile bool run_flag;
 
 	bool effect_origin_check;
+	bool effect_ldie;
 	bool power_state;
 	bool motor_position_check;
 	
