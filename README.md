@@ -5,6 +5,7 @@
 
 * Fix G1 motion planning
 * Fix motion bug for stepper end-effector
+* Fix P2206 cmd bug
 * Optimize the returning funciton of stepper end-effector
 * Add speed control for stepper end-effector
 
