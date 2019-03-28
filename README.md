@@ -4,9 +4,9 @@
 ## Update Summary for v4.4.0
 
 * Fix G1 motion planning
-* Fix step effector motion bug
-* Optimize step effector return funciton
-* Add step effector speed control
+* Fix motion bug for stepper end-effector
+* Optimize the returning funciton of stepper end-effector
+* Add speed control for stepper end-effector
 
 ## Caution
 #### The current firmware is not perfect and will be updated periodically
