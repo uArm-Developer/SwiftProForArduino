@@ -1,13 +1,18 @@
-# Swift Pro Firmware V4.4.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
+# Swift Pro Firmware V4.5.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
 
 ----------
-## Update Summary for v4.4.0
+## Update Summary for v4.5.0
 
-* Fix G1 motion planning
-* Fix motion bug for stepper end-effector
-* Fix P2206 cmd bug
-* Optimize the returning funciton of stepper end-effector
-* Add speed control for stepper end-effector
+* Fix beep bug
+* Fix effector motor control bug
+* Add multi motor control interface
+* Fix motor angle read bug
+* Fix G2204 bug
+* Fix M2201 update position bug
+* Add M2220/M2221 interface
+* Add S1000 start/stop motion interface
+* Add S1100 clear current motion interface
+* Add uart3 communication interface
 
 ## Caution
 #### The current firmware is not perfect and will be updated periodically
