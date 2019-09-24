@@ -32,18 +32,19 @@ void receive_cmd_line(char *line){
 	}else if( line[0] == '#' ){																		// <! prase debug head
 		sscanf( line, "#%[0-9]", temp_str );
 		p = line+strlen(temp_str)+1;
-	}else if( (line[0]=='G') || (line[0]=='M') || (line[0]=='P') ){
+	}else if( (line[0]=='G') || (line[0]=='M') || (line[0]=='P') || (line[0]=='S') ){
 		
 	}else{																													
 		return;
 	}
 
 
-	if( p[0] == 'P' ){
+	if( p[0] == 'P' || p[0] == 'S' ){
+//		uart_printf( "1111\r\n" );
 		strcpy( asyn_pack.line, p );															// <! save asyn cmd
 		
 		if( strlen(temp_str) ){
-			sprintf( asyn_pack.report_str, "$%s", temp_str );
+			sprintf( asyn_pack.report_str, "$%s", temp_str );				// <! get serial number
 		}
 		
 		memset( line, 0x0, CMD_BUFFER_SIZE );
@@ -138,7 +139,10 @@ void parse_cmd_line(void){
 	if( !uarm.gcode_delay_flag && syn_pack_remain ){ 	// <! delay cmd done && syn queue is not empty
 
 		static uint8_t syn_parse_sp = 0;
-		if( uarm.effect_ldie == false ){ return; }
+		if( uarm.effect_ldie == false || uarm.beep_ldie == false ){ 
+//			DB_PRINT_STR( "no ldie, %d, %d\r\n", uarm.effect_ldie, uarm.beep_ldie );
+			return; 
+		}
 	
 		syn_queue[syn_parse_sp].parse_result = gc_execute_line(syn_queue[syn_parse_sp].line);
 		
@@ -162,7 +166,7 @@ void report_parse_result(void){
 		asyn_pack.line_parse_done = false;
 	}
 
-	if( sys.state==STATE_IDLE && uarm.effect_ldie==true ){			//<! report syn result
+	if( sys.state==STATE_IDLE && uarm.effect_ldie==true && uarm.beep_ldie==true ){			//<! report syn result
 		static uint8_t syn_report_sp = 0;
 		for( int i=0; i < PACK_MAX_SIZE; i++ ){
 			if( syn_queue[syn_report_sp].line_parse_done == true ){
@@ -254,7 +258,7 @@ static enum uarm_protocol_e uarm_cmd_g2201(char *payload){						// <! polar coor
 		target[X_AXIS] = length * cos(angle); 
 		target[Y_AXIS] = length * sin(angle);
 		target[Z_AXIS] = high; 		
-		
+
 		return mc_line( 1, target, speed, false );
 	}
 }
@@ -296,14 +300,13 @@ static enum uarm_protocol_e uarm_cmd_g2202(char *payload){						// <! move motor
 				return mc_line( 0, target, speed, false );				
 				break;
 			case 3:
-				end_effector_set_angle(angle, speed);
+				end_effector_set_angle(angle);
 				return UARM_CMD_OK;
 				break;
 		}
 		return UARM_CMD_ERROR;
 	}		
 }
-
 
 static enum uarm_protocol_e uarm_cmd_g2204(char *payload){					// <! coord offset 
 	uint8_t rtn = 0;
@@ -368,6 +371,27 @@ static  enum uarm_protocol_e uarm_cmd_g2205(char *payload){		// <! polar coord o
 	}	
 }
 
+static enum uarm_protocol_e uarm_cmd_g2206(char *payload){
+	char angle_b_str[20], angle_l_str[20], angle_r_str[20] ,speed_str[20];
+	float angle_b, angle_l, angle_r, speed;
+	uint8_t rtn = 0;
+	if( rtn = sscanf(payload, "B%[0-9-+.]L%[0-9-+.]R%[0-9-+.]F%[0-9-+.]", angle_b_str, angle_l_str, angle_r_str, speed_str ) < 4 ){
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return UARM_CMD_ERROR;
+	}else{
+		if( !read_float(angle_b_str, NULL, &angle_b) ){ return false; }
+		if( !read_float(angle_l_str, NULL, &angle_l) ){ return false; }
+		if( !read_float(angle_r_str, NULL, &angle_r) ){ return false; }
+		if( !read_float(speed_str, NULL, &speed) ){ return false; }
+		angle_b -= 90;
+
+		float target[3] = {0};
+		angle_to_coord( angle_l, angle_r, angle_b, &target[X_AXIS], &target[Y_AXIS], &target[Z_AXIS] );				
+		coord_arm2effect( &target[X_AXIS], &target[Y_AXIS], &target[Z_AXIS] );
+		
+		return mc_line( 0, target, speed, false );	
+	}
+}
 
 
 enum uarm_protocol_e uarm_execute_g_cmd(uint16_t cmd, char *line, uint8_t *char_counter){
@@ -391,12 +415,57 @@ enum uarm_protocol_e uarm_execute_g_cmd(uint16_t cmd, char *line, uint8_t *char_
 		case 2205:
 								return uarm_cmd_g2205(line);
 			break;
+		case 2206:
+								return uarm_cmd_g2206(line);
+			break;
 	}
 
 	return UARM_CMD_NOTFIND;
 }
 
 
+
+/*
+ *
+ *				CMD -> S
+ *
+ */
+static void uarm_cmd_s1000(uint8_t param){
+	switch( param ){
+		case 0:
+			bit_true_atomic(sys_rt_exec_state, EXEC_FEED_HOLD);
+			break;
+		case 1:
+			bit_true_atomic(sys_rt_exec_state, EXEC_CYCLE_START);
+			break;
+			
+		default:	break;
+	}
+}
+
+static void uarm_cmd_s1100(void){
+	mc_reset();
+}
+
+
+
+enum uarm_protocol_e uarm_execute_s_cmd(uint16_t cmd, char *line, uint8_t *char_counter){
+	switch(cmd){
+		case 1000:
+			if( (line[0]=='V') && (line[1]>='0'&&line[1]<='1') ){
+				uarm_cmd_s1000( line[1]-'0' );
+				return UARM_CMD_OK;
+			}else{ return UARM_CMD_ERROR; }
+
+			break;
+		case 1100:
+			uarm_cmd_s1100();
+			return UARM_CMD_OK;
+			break;
+	}
+
+	return UARM_CMD_NOTFIND;
+}
 
 
 
@@ -407,9 +476,6 @@ enum uarm_protocol_e uarm_execute_g_cmd(uint16_t cmd, char *line, uint8_t *char_
  */
  
 static void uarm_cmd_m17(void){				// <! lock all motor 
-/*	ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
-	ARMR_STEPPERS_DISABLE_PORT |= ARMR_STEPPERS_DISABLE_MASK;
-	BASE_STEPPERS_DISABLE_PORT |= BASE_STEPPERS_DISABLE_MASK;*/
 	
 	if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)){
 		ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
@@ -424,23 +490,7 @@ static void uarm_cmd_m17(void){				// <! lock all motor
 	end_effector_init();
 	uarm.motor_state_bits = 0x0F;
 
-	memset(&sys, 0, sizeof(system_t));	// Clear all system variables
-	plan_sync_position();
-	gc_sync_position();
-	
-	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML);
-	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);
-	uarm.init_base_angle = calculate_current_angle(CHANNEL_BASE);
-	
-	uarm.target_step[X_AXIS] = sys.position[X_AXIS];
-	uarm.target_step[Y_AXIS] = sys.position[Y_AXIS];
-	uarm.target_step[Z_AXIS] = sys.position[Z_AXIS];
-
-	angle_to_coord( uarm.init_arml_angle, uarm.init_armr_angle, uarm.init_base_angle-90,
-									&(uarm.coord_x), &(uarm.coord_y), &(uarm.coord_z) );
-
-
-//	angle_sensor_init();
+	update_motor_position();
 }
 
 static bool uarm_cmd_m204(char *payload){
@@ -461,9 +511,6 @@ static bool uarm_cmd_m204(char *payload){
 }
 
 static void uarm_cmd_m2019(void){				// <! unlock all motor
-/*	ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
-	ARMR_STEPPERS_DISABLE_PORT &= (~ARMR_STEPPERS_DISABLE_MASK);
-	BASE_STEPPERS_DISABLE_PORT &= (~BASE_STEPPERS_DISABLE_MASK);*/
 
 	if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)){
 		ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
@@ -520,15 +567,39 @@ static void uarm_cmd_m2123(uint8_t param){
 static void uarm_cmd_m2201(uint8_t param){		// <! lock n motor
 	switch(param){
 		case 0:
-			BASE_STEPPERS_DISABLE_PORT |= BASE_STEPPERS_DISABLE_MASK;
+			if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)){
+				ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
+				ARMR_STEPPERS_DISABLE_PORT |= ARMR_STEPPERS_DISABLE_MASK;
+				BASE_STEPPERS_DISABLE_PORT |= BASE_STEPPERS_DISABLE_MASK;
+			}else{
+				ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
+				ARMR_STEPPERS_DISABLE_PORT &= (~ARMR_STEPPERS_DISABLE_MASK);
+				BASE_STEPPERS_DISABLE_PORT &= (~BASE_STEPPERS_DISABLE_MASK);
+			}
 			uarm.motor_state_bits |= 0x04;
 			break;
 		case 1:
-			ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
+			if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)){
+				ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
+				ARMR_STEPPERS_DISABLE_PORT |= ARMR_STEPPERS_DISABLE_MASK;
+				BASE_STEPPERS_DISABLE_PORT |= BASE_STEPPERS_DISABLE_MASK;
+			}else{
+				ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
+				ARMR_STEPPERS_DISABLE_PORT &= (~ARMR_STEPPERS_DISABLE_MASK);
+				BASE_STEPPERS_DISABLE_PORT &= (~BASE_STEPPERS_DISABLE_MASK);
+			}
 			uarm.motor_state_bits |= 0x01;
 			break;
 		case 2:
-			ARMR_STEPPERS_DISABLE_PORT |= ARMR_STEPPERS_DISABLE_MASK;
+			if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)){
+				ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
+				ARMR_STEPPERS_DISABLE_PORT |= ARMR_STEPPERS_DISABLE_MASK;
+				BASE_STEPPERS_DISABLE_PORT |= BASE_STEPPERS_DISABLE_MASK;
+			}else{
+				ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
+				ARMR_STEPPERS_DISABLE_PORT &= (~ARMR_STEPPERS_DISABLE_MASK);
+				BASE_STEPPERS_DISABLE_PORT &= (~BASE_STEPPERS_DISABLE_MASK);
+			}
 			uarm.motor_state_bits |= 0x02;
 			break;
 		case 3:
@@ -536,20 +607,33 @@ static void uarm_cmd_m2201(uint8_t param){		// <! lock n motor
 			uarm.motor_state_bits |= 0x08;
 			break;
 	}
+	update_motor_position();
 }
 
 static void uarm_cmd_m2202(uint8_t param){		// <! unlock n motor
 	switch(param){
 		case 0:
-			BASE_STEPPERS_DISABLE_PORT &= (~BASE_STEPPERS_DISABLE_MASK);
+			if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)){
+				BASE_STEPPERS_DISABLE_PORT &= (~BASE_STEPPERS_DISABLE_MASK);
+			}else{
+				BASE_STEPPERS_DISABLE_PORT |= BASE_STEPPERS_DISABLE_MASK;
+			}
 			uarm.motor_state_bits &= (~0x04);
 			break;
 		case 1:
-			ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
+			if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)){
+				ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
+			}else{
+				ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
+			}
 			uarm.motor_state_bits &= (~0x01);
 			break;
 		case 2:
-			ARMR_STEPPERS_DISABLE_PORT &= (~ARMR_STEPPERS_DISABLE_MASK);
+			if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)){
+				ARMR_STEPPERS_DISABLE_PORT &= (~ARMR_STEPPERS_DISABLE_MASK);
+			}else{
+				ARMR_STEPPERS_DISABLE_PORT |= ARMR_STEPPERS_DISABLE_MASK;
+			}
 			uarm.motor_state_bits &= (~0x02);
 			break;
 		case 3:
@@ -592,6 +676,19 @@ static void uarm_cmd_m2203(uint8_t param){	// <! get motor status
 	}
 }
 
+static bool uarm_cmd_m2205(char *payload){
+	int rtn;
+	char sn_num[13];
+	if( rtn = sscanf(payload, "VUB%[0-9.]", sn_num ) < 1 ){
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return false;
+	}else{
+		memcpy( bt_mac_addr, sn_num, 12 );
+		write_sn_num();
+		return true;
+	}
+}
+
 static bool uarm_cmd_m2210(char *payload){
 	int duration = 0; 
 	float	frequency = 0;
@@ -618,12 +715,69 @@ static void uarm_cmd_m2215(void){
 	read_hardware_version();
 }
 
+static bool uarm_cmd_m2220(char *payload){     // <! coord to angle
+	char x_str[20] = {0}, y_str[20] = {0}, z_str[20] = {0};
+	float x = 0, y = 0, z = 0;
+	int rtn = 0;
+	
+	if( rtn = sscanf(payload, "X%[0-9-+.]Y%[0-9-+.]Z%[0-9-+.]", x_str, y_str, z_str ) < 3 ){
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return false;
+	}else{
+		if( !read_float(x_str, NULL, &x) ){ return false; }
+		if( !read_float(y_str, NULL, &y) ){ return false; }
+		if( !read_float(z_str, NULL, &z) ){ return false; }
+
+		float angle_b = 0, angle_l = 0, angle_r = 0;
+		char b_str[20] = {0}, l_str[20] = {0}, r_str[20] = {0};
+		coord_effect2arm( &x, &y, &z );
+		coord_to_angle( x, y, z, &angle_l, &angle_r, &angle_b );
+		angle_b += 90;
+
+		dtostrf( angle_l, 5, 4, l_str );
+		dtostrf( angle_r, 5, 4, r_str );
+		dtostrf( angle_b, 5, 4, b_str );
+
+		sprintf( tail_report_str, " B%s L%s R%s\n", b_str, l_str, r_str );
+		return true;
+	}
+}
+
+static bool uarm_cmd_m2221(char *payload){    // <! angle to coord
+	char b_str[20] = {0}, l_str[20] = {0}, r_str[20] = {0};
+	float angle_b = 0, angle_l = 0, angle_r = 0;
+	int rtn = 0;
+	
+	if( rtn = sscanf(payload, "B%[0-9-+.]L%[0-9-+.]R%[0-9-+.]", b_str, l_str, r_str ) < 3 ){
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return false;
+	}else{
+		if( !read_float(b_str, NULL, &angle_b) ){ return false; }
+		if( !read_float(l_str, NULL, &angle_l) ){ return false; }
+		if( !read_float(r_str, NULL, &angle_r) ){ return false; }
+
+		float x = 0, y = 0, z = 0;
+		char x_str[20] = {0}, y_str[20] = {0}, z_str[20] = {0};
+		angle_b -= 90;
+		angle_to_coord( angle_l, angle_r, angle_b, &x, &y, &z );
+		coord_arm2effect( &x, &y, &z );
+		
+		dtostrf( x, 5, 4, x_str );
+		dtostrf( y, 5, 4, y_str );
+		dtostrf( z, 5, 4, z_str );
+		
+		sprintf( tail_report_str, " X%s Y%s Z%s\n", x_str, y_str, z_str );
+		return true;
+	}
+}
+
+
 static bool uarm_cmd_m2222(char *payload){	// <! check coord if legal
 	float x=0, y=0, z=0;
 	char x_str[20] = {0}, y_str[20] = {0}, z_str[20] = {0};
 	int mode = 0xFF;
 	uint8_t rtn = 0;
-	if( rtn = sscanf(payload, "X%[0-9-+.]Y%[0-9-+.]Z%[0-9-+.]P%d", x_str, y_str, z_str, &mode) < 3 ){
+	if( rtn = sscanf(payload, "X%[0-9-+.]Y%[0-9-+.]Z%[0-9-+.]P%d", x_str, y_str, z_str, &mode) < 4 ){
 		DB_PRINT_STR( "sscanf %d\r\n", rtn );
 		return false;
 	}else{
@@ -817,11 +971,15 @@ static bool uarm_cmd_m2412(char *payload){
 
 
 static void uarm_cmd_m2420(uint8_t param){
-	multi_point_reference(param);
+//	multi_point_reference(param);
 }
 
 static bool uarm_cmd_m2421(void){
-	return calculate_refer_write_eeprom();
+//	return calculate_refer_write_eeprom();
+}
+
+static bool uarm_cmd_m2500(void){
+	return atuo_angle_calibra();
 }
 
 enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_counter){
@@ -888,6 +1046,13 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 									return UARM_CMD_OK;
 								}else{ return UARM_CMD_ERROR; }
 			break;
+		case 2205:
+								if( uarm_cmd_m2205(line) == true ){
+									return UARM_CMD_OK;
+								}else{
+									return UARM_CMD_ERROR;
+								} 		
+			break;
 		case 2210:
 								if( uarm_cmd_m2210(line) == true ){
 									return UARM_CMD_OK;
@@ -911,12 +1076,18 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 								uarm_cmd_m2215();
 								return UARM_CMD_OK;
 		case 2220:
-			//DB_PRINT_STR( "M2220\r\n" );
-								return UARM_CMD_OK;
+								if( uarm_cmd_m2220(line) == true ){
+									return UARM_CMD_OK;
+								}else{
+									return UARM_CMD_ERROR;
+								}		
 			break;
 		case 2221:
-			//DB_PRINT_STR( "M2221\r\n" );
-								return UARM_CMD_OK;
+								if( uarm_cmd_m2221(line) == true ){
+									return UARM_CMD_OK;
+								}else{
+									return UARM_CMD_ERROR;
+								} 	
 			break;
 		case 2222:
 								if( uarm_cmd_m2222(line) == true ){
@@ -926,7 +1097,6 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 								}		
 			break;	
 		case 2231:
-								//DB_PRINT_STR( "M2231\r\n" );
 								if( (line[0]=='V') && (line[1]>='0'&&line[1]<='1') ){
 									uarm_cmd_m2231( line[1]-'0' );
 									return UARM_CMD_OK;
@@ -1009,15 +1179,12 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 									return UARM_CMD_ERROR;
 								} 			
 			break;
-		case 2420:
-							if( (line[0]=='P') && (line[1]>='0'&&line[1]<='2') ){
-								uarm_cmd_m2420(line[1]-'0');
-								return UARM_CMD_OK;
-							}else{ return UARM_CMD_ERROR; }
-			break;	
-		case 2421:
-							if( !uarm_cmd_m2421() ){ return UARM_CMD_ERROR; }
-							return UARM_CMD_OK;
+		case 2500:
+								if( uarm_cmd_m2500() == true ){
+									return UARM_CMD_OK;
+								}else{
+									return UARM_CMD_ERROR;
+								}							
 			break;
 	}
 	return UARM_CMD_NOTFIND;

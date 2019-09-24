@@ -1,6 +1,6 @@
 #include "uarm_common.h"
 #include "uarm_coord_convert.h"
-#include "step_lowlevel.h"
+
 
 /*	end-effector driver
  *
@@ -19,7 +19,7 @@ static void servo_set_angle(float angle){
 	
 	duty_ms = (angle / 180.0) * 2.0 + 0.5;
 	time4_set_duty( 3, (duty_ms/20.0) * 1023 );
-
+	//delay_ms(500);
 }
 
 static void servo_deinit(void){
@@ -31,77 +31,69 @@ static float servo_get_angle(void){
 }
 
 /************ steper mode ******************/
-//int32_t step_count = 0;
+int32_t step_count = 0;
 float steper_current_angle = 0;
 
-//void step_creater(void){
-//	static bool status_flag = false;
-//	if( step_count > 0 ){
-//		if( status_flag ){
-//			status_flag = false;
-//			step_count--;
-//			PORTH |= (1<<6);
-//		}else{
-//			status_flag = true;
-//			PORTH &= ~(1<<6);
-//		}
-//	}else{
-//		time4_stop();
-//		step_count = 0;
-//		uarm.effect_ldie = true;
-//		
-//		//DB_PRINT_STR( "time4 stop\r\n" );
-//	}
-//}
+void step_creater(void){
+	static bool status_flag = false;
+	if( step_count > 0 ){
+		if( status_flag ){
+			status_flag = false;
+			step_count--;
+			PORTH |= (1<<6);
+		}else{
+			status_flag = true;
+			PORTH &= ~(1<<6);
+		}
+	}else{
+		time4_stop();
+		step_count = 0;
+		uarm.effect_ldie = true;
+//		DB_PRINT_STR( "time4 stop\r\n" );
+	}
+}
 
 static void steper_init(void){
+	DDRH |= (1<<5);		// <! DIR
+  DDRH |= (1<<6);		// <! STEP	
 
-	step_init_ll();
+	PORTH |= (1<<5);	// <! DIR clockwise
 }
 
 static void steper_deinit(void){
-//	step_count = 0;
+	step_count = 0;
 	time4_stop();
 	uarm.effect_origin_check = false;
 }
 
-void step_move_complete(void){
-	uarm.effect_ldie = true;
-	uarm.effect_origin_check = false;
-	DB_PRINT_STR( "effect move done\r\n" );
-}
 
-
-static void steper_set_angle(float angle, float speed){
-	int32_t step_count = 0;
-
-	if( speed > 200 ){ 
-		speed = 200; 
-	}else if( speed < 0 ){
-		speed = 0; 
-	}
-	
-	long timer_delay = 300 - speed;
-	
+static void steper_set_angle(float angle){
 	#if defined(UARM_2500)
 		if( uarm.param.work_mode==WORK_MODE_STEPER_FLAT ){
 			step_count = angle / 0.9 * 64;
+			time4_set( 0.0002, step_creater );
 		}else if( uarm.param.work_mode == WORK_MODE_STEPER_STANDARD ){
 			step_count = angle / 0.18 * 16;
+			time4_set( 0.0002, step_creater );		
 		}
+		time4_start();		
 	#else
 		if( uarm.param.work_mode==WORK_MODE_STEPER_FLAT ){
 			step_count = angle / 0.9 * 64;
+			time4_set( 0.0002, step_creater );
 		}else if( uarm.param.work_mode == WORK_MODE_STEPER_STANDARD ){
 			step_count = angle / 1.8 * 64;
+			time4_set( 0.0002, step_creater );		
 		}
+		time4_start();
 	#endif
-	set_steps( step_count, timer_delay, step_move_complete, false );
 }
+
 
 static float steper_get_angle(void){
 	return steper_current_angle;
 }
+
 
 void end_effector_init(void){
 	if( uarm.param.work_mode==WORK_MODE_STEPER_FLAT || uarm.param.work_mode==WORK_MODE_STEPER_STANDARD ){
@@ -111,14 +103,21 @@ void end_effector_init(void){
 	}
 }
 
-void end_effector_set_angle(float angle, float speed){
+void end_effector_set_angle(float angle){
 	if( angle > 360 || angle < 0 ){ return; }
 
 	if( uarm.param.work_mode==WORK_MODE_STEPER_FLAT || uarm.param.work_mode==WORK_MODE_STEPER_STANDARD ){
 		float offset_angle = angle - steper_current_angle;
+		if( offset_angle == 0 ){ return; }
+	
 		steper_current_angle = angle;
+		if( offset_angle > 0 ){
+			PORTH &= ~(1<<5);	// <!  anticlockwise
+		}else{
+			PORTH |= (1<<5);	// <! clockwise
+		}
+		steper_set_angle(fabs(offset_angle));
 		uarm.effect_ldie = false;
-		steper_set_angle(offset_angle, speed);
 	}else{
 		servo_set_angle(angle);
 		uarm.effect_ldie = true;
@@ -142,24 +141,37 @@ float end_effector_get_angle(void){
 void end_effector_get_origin(void){
 	uarm.effect_ldie = true;
 	if( uarm.param.work_mode==WORK_MODE_STEPER_FLAT || uarm.param.work_mode==WORK_MODE_STEPER_STANDARD ){
-		DDRK &= ~(1<<5);
-		PORTK |= (1<<5);
 		uarm.effect_ldie = false;
 		steper_current_angle = 0;
-		steper_set_angle(-360, 50);
+		DDRK &= ~(1<<5);
+		PORTK |= (1<<5);
+		
+		PORTH |= (1<<5);   // <! clockwise
+		steper_set_angle(360);
 		uarm.effect_origin_check = true;
 	}
 }
 
 void end_effector_check_limit(void){
 	if( (PINK & (1<<5)) == 0 ){
-		step_terminate();
-//		DB_PRINT_STR( "detach limit sw!\r\n" );	
+		time4_stop();
 		uarm.effect_origin_check = false;
+		PORTH &= ~(1<<5);	// <! DIR counterclockwise
 		steper_current_angle = -uarm.param.effect_angle_offset;
-		end_effector_set_angle(90, 50);
-	}	
+		end_effector_set_angle(90);
+	}
+	if( step_count == 0 ){			// <! check timeout
+		uarm.effect_origin_check = false;	
+		DB_PRINT_STR( "effect check timeout!\r\n" );
+	}
 }
+
+/*
+void end_effect_adjust_angle(void){
+	float current_angle = end_effector_get_angle();
+	steper_current_angle -= uarm.param.effect_angle_offset;
+	end_effector_set_angle(current_angle);
+}*/
 
  /*  beep driver
 	*
@@ -178,10 +190,12 @@ static void beep_creater_callback(void){
   if( cnt++ > beep_duration ){
     cnt = 0;
     time2_stop();
+		uarm.beep_ldie = true;
   }	
 }
 
 void beep_tone(unsigned long duration, double frequency){
+	uarm.beep_ldie = false;
   DDRL  |= 1<<5;  
   PORTL &= ~(1<<5); 
 	beep_duration = duration * 2;
@@ -392,26 +406,39 @@ void save_sys_param(void){
 }
 
 
+void write_sn_num(void){
+	int8_t write_size = 0;
+	unsigned int write_addr = 0;
+	char *p = NULL;
+
+	p = bt_mac_addr;
+	write_size = 12;
+	write_addr = EEPROM_BT_MAC_ADDR;	
+	for( ; write_size > 0; write_size-- ){
+		eeprom_put_char( write_addr++, *(p++) );
+	}		
+}
+
 void read_hardware_version(void){
 #define HARD_MASK	 ( 1<<6 | 1<<5 | 1<<4 | 1<<3 )
 	DDRJ &= ~HARD_MASK;
-	if( (PINJ & HARD_MASK) == (1 <<6) ){
+	if( (PINJ & HARD_MASK) == (1 << 6) ){
+		settings_store_global_setting( 4, 1 );
 		strcpy( hardware_version, "V3.3.1" );
 		settings_store_global_setting( 3, 0 );
-	}else if( (PINJ & HARD_MASK) == 0x00 ){
+	}else if( (PINJ & HARD_MASK) == 0x00 ){			// <! old version hardware
+		settings_store_global_setting( 4, 1 );
 		strcpy( hardware_version, "V3.3.0" );
 		settings_store_global_setting( 3, 7 );
-	}
-	
-
-	#if defined(UARM_2500)
-	  DDRH |= (1<<4);		
-		PORTH |= (1<<4);	// <! driver sLeep io
-	//	settings_store_global_setting( 4, 0 );
-	//	settings_store_global_setting( 3, 7 );
-	#else
+	}else if((PINJ & HARD_MASK) == (1 << 5)){
 		settings_store_global_setting( 4, 1 );
-	#endif
+		strcpy( hardware_version, "V3.3.2" );	
+		settings_store_global_setting( 3, 0 );
+	}else{
+		settings_store_global_setting( 4, 1 );
+		strcpy( hardware_version, "V0.0.0" );
+		settings_store_global_setting( 3, 0 );
+	}
 
 	settings_init();
 	
@@ -620,5 +647,29 @@ void check_motor_positon(void){
 	}
 }
 
+void update_motor_position(void){
+	memset(&sys, 0, sizeof(system_t));	// Clear all system variables
+	plan_sync_position();
+	gc_sync_position();
+	
+	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML);
+	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);
+	uarm.init_base_angle = calculate_current_angle(CHANNEL_BASE);
+	
+	uarm.target_step[X_AXIS] = sys.position[X_AXIS];
+	uarm.target_step[Y_AXIS] = sys.position[Y_AXIS];
+	uarm.target_step[Z_AXIS] = sys.position[Z_AXIS];
+
+	angle_to_coord( uarm.init_arml_angle, uarm.init_armr_angle, uarm.init_base_angle-90,
+									&(uarm.coord_x), &(uarm.coord_y), &(uarm.coord_z) );	
+
+
+//		char x_str[20], y_str[20], z_str[20];
+//		dtostrf( gc_state.position[X_AXIS], 5, 4, x_str );
+//		dtostrf( gc_state.position[Y_AXIS], 5, 4, y_str );
+//		dtostrf( gc_state.position[Z_AXIS], 5, 4, z_str );
+//	
+//		DB_PRINT_STR( "coord: %s, %s, %s\r\n", x_str, y_str, z_str );
+}
 
 

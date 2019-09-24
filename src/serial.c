@@ -34,6 +34,7 @@ enum serial_mode_e{
 	UART0 = 0,
 	UART1,
 	UART2,
+	UART3,
 } current_uart = UART0;
 
 
@@ -119,7 +120,24 @@ void serial_init()
   // enable interrupt on complete reception of a byte
   UCSR2B |= 1<<RXCIE2;	
 	
-	  
+	/********************  uart3  ********************/
+  // Set baud rate
+  #if BAUD_RATE < 57600
+    uint16_t UBRR3_value = ((F_CPU / (8L * BAUD_RATE)) - 1)/2 ;
+    UCSR3A &= ~(1 << U2X3); // baud doubler off  - Only needed on Uno XXX
+  #else
+    uint16_t UBRR3_value = ((F_CPU / (4L * BAUD_RATE)) - 1)/2;
+    UCSR3A |= (1 << U2X3);  // baud doubler on for high baud rates, i.e. 115200
+  #endif
+  UBRR3H = UBRR3_value >> 8;
+  UBRR3L = UBRR3_value;
+            
+  // enable rx and tx
+  UCSR3B |= 1<<RXEN3;
+  UCSR3B |= 1<<TXEN3;
+	
+  // enable interrupt on complete reception of a byte
+  UCSR3B |= 1<<RXCIE3;	  
   // defaults to 8-bit, no parity, 1 stop bit
 }
 
@@ -151,6 +169,9 @@ void serial_write(uint8_t data) {
 			break;
 		case UART2:
 								UCSR2B |=  (1 << UDRIE2);
+			break;
+		case UART3:
+								UCSR3B |=  (1 << UDRIE3);
 			break;
 	}
   
@@ -243,6 +264,34 @@ ISR(USART2_UDRE_vect)
   if (tail == serial_tx_buffer_head) { UCSR2B &= ~(1 << UDRIE2); }
 }
 
+ISR(USART3_UDRE_vect)
+{
+  uint8_t tail = serial_tx_buffer_tail; // Temporary serial_tx_buffer_tail (to optimize for volatile)
+  
+  #ifdef ENABLE_XONXOFF
+    if (flow_ctrl == SEND_XOFF) { 
+      UDR3 = XOFF_CHAR; 
+      flow_ctrl = XOFF_SENT; 
+    } else if (flow_ctrl == SEND_XON) { 
+      UDR3 = XON_CHAR; 
+      flow_ctrl = XON_SENT; 
+    } else
+  #endif
+  { 
+    // Send a byte from the buffer	
+    UDR3 = serial_tx_buffer[tail];
+  
+    // Update tail position
+    tail++;
+    if (tail == TX_BUFFER_SIZE) { tail = 0; }
+  
+    serial_tx_buffer_tail = tail;
+  }
+  
+  // Turn off Data Register Empty Interrupt to stop tx-streaming if this concludes the transfer
+  if (tail == serial_tx_buffer_head) { UCSR3B &= ~(1 << UDRIE3); }
+}
+
 
 // Fetches the first byte in the serial read buffer. Called by main program.
 uint8_t serial_read()
@@ -266,6 +315,8 @@ uint8_t serial_read()
 					case UART1:		UCSR1B |=  (1 << UDRIE1); // Force TX
 						break;
 					case UART2:		UCSR2B |=  (1 << UDRIE2); // Force TX
+						break;
+					case UART3:		UCSR3B |=  (1 << UDRIE3); // Force TX
 						break;
 				}
       }
@@ -380,6 +431,42 @@ ISR(USART2_RX_vect)
       //TODO: else alarm on overflow?
   }
 }
+
+ISR(USART3_RX_vect)
+{
+  uint8_t data = UDR3;
+  uint8_t next_head;
+	current_uart = UART3;
+	
+  // Pick off realtime command characters directly from the serial stream. These characters are
+  // not passed into the buffer, but these set system state flag bits for realtime execution.
+  switch (data) {
+    case CMD_STATUS_REPORT: bit_true_atomic(sys_rt_exec_state, EXEC_STATUS_REPORT); break; // Set as true
+    case CMD_CYCLE_START:   bit_true_atomic(sys_rt_exec_state, EXEC_CYCLE_START); break; // Set as true
+    case CMD_FEED_HOLD:     bit_true_atomic(sys_rt_exec_state, EXEC_FEED_HOLD); break; // Set as true
+    case CMD_SAFETY_DOOR:   bit_true_atomic(sys_rt_exec_state, EXEC_SAFETY_DOOR); break; // Set as true
+    case CMD_RESET:         mc_reset(); break; // Call motion control reset routine.
+    default: // Write character to buffer    
+      next_head = serial_rx_buffer_head + 1;
+      if (next_head == RX_BUFFER_SIZE) { next_head = 0; }
+    
+      // Write data to buffer unless it is full.
+      if (next_head != serial_rx_buffer_tail) {
+        serial_rx_buffer[serial_rx_buffer_head] = data;
+        serial_rx_buffer_head = next_head;    
+        
+        #ifdef ENABLE_XONXOFF
+          if ((serial_get_rx_buffer_count() >= RX_BUFFER_FULL) && flow_ctrl == XON_SENT) {
+            flow_ctrl = SEND_XOFF;
+            UCSR3B |=  (1 << UDRIE3); // Force TX
+          } 
+        #endif
+        
+      }
+      //TODO: else alarm on overflow?
+  }
+}
+
 
 
 void serial_reset_read_buffer() 

@@ -194,7 +194,7 @@ void protocol_execute_realtime()
 {
   uint8_t rt_exec; // Temp variable to avoid calling volatile multiple times.
 
-  do { // If system is suspended, suspend loop restarts here.
+//  do { // If system is suspended, suspend loop restarts here.
     
   // Check and execute alarms. 
   rt_exec = sys_rt_exec_alarm; // Copy volatile sys_rt_exec_alarm.
@@ -376,7 +376,7 @@ void protocol_execute_realtime()
     }
   }
 
-  } while(sys.suspend); // Check for system suspend state before exiting.
+//  } while(sys.suspend); // Check for system suspend state before exiting.
   
 }  
 
@@ -405,4 +405,7 @@ void protocol_buffer_synchronize()
 // when one of these conditions exist respectively: There are no more blocks sent (i.e. streaming 
 // is finished, single commands), a command that needs to wait for the motions in the buffer to 
 // execute calls a buffer sync, or the planner buffer is full and ready to go.
-void protocol_auto_cycle_start() { bit_true_atomic(sys_rt_exec_state, EXEC_CYCLE_START); } 
+void protocol_auto_cycle_start() { 
+	if( sys.suspend ){ return; }
+	bit_true_atomic(sys_rt_exec_state, EXEC_CYCLE_START); 
+} 

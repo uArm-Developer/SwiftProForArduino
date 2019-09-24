@@ -7,14 +7,14 @@
 #if defined(UARM_MINI)
 	#define DEVICE_NAME						"SwiftPro mini"
 #elif	defined(UARM_2500)
-	#define DEVICE_NAME						"SwiftPro 2500"
+	#define DEVICE_NAME						"uArm3Plus"
 #else
 	#define DEVICE_NAME						"SwiftPro"
 #endif
 
 #define HARDWARE_VERSION			hardware_version
-#define SOFTWARE_VERSION			"V4.4.0"
-#define API_VERSION						"V4.0.3"
+#define SOFTWARE_VERSION			"V4.5.0"
+#define API_VERSION						"V4.0.4"
 #define BLE_UUID							bt_mac_addr
 
 

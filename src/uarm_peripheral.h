@@ -7,7 +7,7 @@ extern char hardware_version[8];
 extern char bt_mac_addr[13];
 
 void end_effector_init(void);
-void end_effector_set_angle(float angle, float speed);
+void end_effector_set_angle(float angle);
 void end_effector_deinit(void);
 float end_effector_get_angle(void);
 void end_effector_check_limit(void);
@@ -23,6 +23,8 @@ void cycle_report_stop(void);
 
 void read_sys_param(void);
 void save_sys_param(void);
+void write_sn_num(void);
+
 void cycle_report_coord(void);
 void read_hardware_version(void);
 
@@ -44,6 +46,7 @@ uint8_t get_limit_switch_status(void);
 uint8_t get_power_status(void);
 
 void check_motor_positon(void);
+void update_motor_position(void);
 
 	
 #endif

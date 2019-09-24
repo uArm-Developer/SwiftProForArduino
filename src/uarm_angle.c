@@ -9,36 +9,16 @@ struct refer_value_t {
 	uint16_t param_r;
 } reference = {0};
 
-uint16_t reference_param_pointa[3] = {0};
 uint16_t reference_param_pointb[3] = {0};
-uint16_t reference_param_pointc[3] = {0};
+
+
+uint16_t base_calibra_angle_map[101]		= {0};		// <! angle 0~180
+uint16_t left_calibra_angle_map[64] 		= {0};		// <! angle 115.2~1.8
+uint16_t right_calibra_angle_map[61] 		= {0};    // <! angle -1.8~108
+
+
 
 // <! reference point angle
-/*
-//high = 107.1
-#define POINT_A_ARML_ANGLE		(27.698502)
-#define POINT_A_ARMR_ANGLE		(111.610764)
-#define POINT_A_BASE_ANGLE		(90.0)
-#define POINT_B_ARML_ANGLE		(32.901226)
-#define POINT_B_ARMR_ANGLE		(88.911507)
-#define POINT_B_BASE_ANGLE		(90.0)
-#define POINT_C_ARML_ANGLE		(24.679539)
-#define POINT_C_ARMR_ANGLE		(62.550117)
-#define POINT_C_BASE_ANGLE		(90.0)*/
-/*
-//high = 106.1
-#define POINT_A_ARML_ANGLE		(28.275969)
-#define POINT_A_ARMR_ANGLE		(111.350243)
-#define POINT_A_BASE_ANGLE		(90.0)
-#define POINT_B_ARML_ANGLE		(33.376331)
-#define POINT_B_ARMR_ANGLE		(88.679108)
-#define POINT_B_BASE_ANGLE		(90.0)
-#define POINT_C_ARML_ANGLE		(25.037569)
-#define POINT_C_ARMR_ANGLE		(62.398289)
-#define POINT_C_BASE_ANGLE		(90.0)
-*/
-
-//high = 107.4
 #define POINT_A_ARML_ANGLE		(27.526186)
 #define POINT_A_ARMR_ANGLE		(111.687637)
 #define POINT_A_BASE_ANGLE		(90.0)
@@ -85,27 +65,81 @@ float calculate_current_angle(enum angle_channel_e channel){
 	uint16_t angle_reg_value = read_angle_reg_value(channel);
 	int long offset = 0;
 	float angle = 0.0;
-
+	int i = 0;
+	uint16_t head_data = 0, tail_data = 0;
+	int long refer_value = 0;  
+	
 	switch( channel ){
-		case CHANNEL_ARML:
+		case CHANNEL_ARML:;
 			#if defined(UARM_2500)
-				offset = (int long)angle_reg_value - (int long)reference.param_l;
+				for( i=0; i < sizeof(left_calibra_angle_map)/sizeof(uint16_t)-1; i++ ){
+					head_data = left_calibra_angle_map[i];
+					tail_data = left_calibra_angle_map[i+1];
+					if( head_data > tail_data   ){ 
+						tail_data += 4095; 
+					}
+					if( (angle_reg_value<=tail_data) && (angle_reg_value>=head_data) ){ break; }
+				}
+				angle = ( ( 115.2 - i*1.8 - (angle_reg_value-head_data)/4096.0*360.0) + (115.2-(i+1)*1.8+(tail_data-angle_reg_value)/4096.0*360.0) ) / 2;
+				return angle;				
 			#else
-				offset = (int long)reference.param_l - (int long)angle_reg_value;
+				refer_value = (int long)reference.param_l;
+
+				if( refer_value-(int long)angle_reg_value > 2048 ){
+					refer_value -= 4096;
+				}else if( refer_value-(int long)angle_reg_value < -2048 ){
+					refer_value += 4096;
+				}
+				
+				offset = refer_value - (int long)angle_reg_value;
 			#endif
 			break;
 		case CHANNEL_ARMR:	
 			#if defined(UARM_2500)
-				offset = (int long)angle_reg_value - (int long)reference.param_r;
+				for( i=0; i < sizeof(right_calibra_angle_map)/sizeof(uint16_t)-1; i++ ){
+					head_data = right_calibra_angle_map[i];
+					tail_data = right_calibra_angle_map[i+1];
+					if( tail_data > head_data ){
+						head_data += 4095;
+					}
+					if( (angle_reg_value<=head_data) && (angle_reg_value>=tail_data) ){ break; }
+				}
+				angle = ( ((head_data-angle_reg_value)/4096.0*360.0 + i*1.8 - 1.8) + ((i+1)*1.8 - 1.8 - (angle_reg_value-tail_data)/4096.0*360.0) ) / 2;
+				return angle;							
 			#else
-				offset = (int long)reference.param_r - (int long)angle_reg_value;
+				refer_value = (int long)reference.param_r;
+
+				if( refer_value-(int long)angle_reg_value > 2048 ){
+					refer_value -= 4096;
+				}else if( refer_value-(int long)angle_reg_value < -2048 ){
+					refer_value += 4096;
+				}
+				
+				offset = refer_value - (int long)angle_reg_value;
 			#endif	
 			break;
-		case CHANNEL_BASE:		
+		case CHANNEL_BASE:;		
 			#if defined(UARM_2500)
-				offset = (int long)angle_reg_value - (int long)reference.param_b;
+				for( i=0; i < sizeof(base_calibra_angle_map)/sizeof(uint16_t)-1; i++ ){
+					head_data = base_calibra_angle_map[i];
+					tail_data = base_calibra_angle_map[i+1];
+					if( tail_data > head_data ){
+						head_data += 4095;
+					}
+					if( (angle_reg_value<=head_data) && (angle_reg_value>tail_data) ){ break; }
+				}
+				angle = ( ((head_data-angle_reg_value)/4096.0*360.0 + i*1.8) + ((i+1)*1.8 - (angle_reg_value-tail_data)/4096.0*360.0) ) / 2;
+				return angle;
 			#else
-				offset = (int long)reference.param_b - (int long)angle_reg_value;
+				refer_value = (int long)reference.param_b;
+			
+				if( refer_value-(int long)angle_reg_value > 2048 ){
+					refer_value -= 4096;
+				}else if( refer_value-(int long)angle_reg_value < -2048 ){
+					refer_value += 4096;
+				}
+				
+				offset = refer_value - (int long)angle_reg_value;
 			#endif
 			break;
 	}
@@ -113,12 +147,12 @@ float calculate_current_angle(enum angle_channel_e channel){
 	
 	angle = get_point_b_angle(channel) - offset * 360.0 / 4096;
 
-	if(angle > 360){
-		angle -= 360;
-	}
-	if(angle < 0){
-		angle += 360;
-	}
+//	if(angle > 360){
+//		angle -= 360;
+//	}
+//	if(angle < 0){
+//		angle += 360;
+//	}
 
 	return angle;
 }
@@ -140,7 +174,7 @@ static void read_angle_reference_param(void){
 		*(p++) = eeprom_get_char(read_addr++);
 	}
 
-	DB_PRINT_STR( "refer:B%d L%d R%d\r\n", reference.param_b, reference.param_l, reference.param_r );
+//	DB_PRINT_STR( "refer:B%d L%d R%d\r\n", reference.param_b, reference.param_l, reference.param_r );
 	
 }
 
@@ -170,59 +204,165 @@ void single_point_reference(void){				// <! B point
 	write_angle_reference_param();
 }
 
-void multi_point_reference(uint8_t param){
-	switch(param){
-		case 0:
-//						DB_PRINT_STR( "a\r\n" );
-						reference_param_pointa[0]	= read_angle_reg_value(CHANNEL_ARML);		// <! A point
-						reference_param_pointa[1] = read_angle_reg_value(CHANNEL_ARMR);
-						reference_param_pointa[2] = read_angle_reg_value(CHANNEL_BASE);
-			break;
-		case 1:
-//						DB_PRINT_STR( "b\r\n" );
-						reference_param_pointb[0]	= read_angle_reg_value(CHANNEL_ARML);		// <! B point
-						reference_param_pointb[1] = read_angle_reg_value(CHANNEL_ARMR);
-						reference_param_pointb[2] = read_angle_reg_value(CHANNEL_BASE);
-			break;
-		case 2:
-//						DB_PRINT_STR( "c\r\n" );
-						reference_param_pointc[0]	= read_angle_reg_value(CHANNEL_ARML);		// <! C point
-						reference_param_pointc[1] = read_angle_reg_value(CHANNEL_ARMR);
-						reference_param_pointc[2] = read_angle_reg_value(CHANNEL_BASE);
-			break;
-	}
+static void read_angle_calibra_map(void){
+	char *p = (char *)(base_calibra_angle_map);																			// <! read base encoder angle map
+	unsigned int read_addr = EEPROM_ADDR_ANGLE_CAL_MAP;
+	int16_t read_size = sizeof(base_calibra_angle_map);	
+	for( ; read_size > 0; read_size-- ){
+		*(p++) = eeprom_get_char(read_addr++);
+	}	
+
+	p = (char *)(left_calibra_angle_map);																						// <! read left encoder angle map
+	read_addr = EEPROM_ADDR_ANGLE_CAL_MAP + sizeof(base_calibra_angle_map);
+	read_size = sizeof(left_calibra_angle_map);
+	for( ; read_size > 0; read_size-- ){
+		*(p++) = eeprom_get_char(read_addr++);
+	}	
+
+	p = (char *)(right_calibra_angle_map);																					// <! read right encoder angle map
+	read_addr = EEPROM_ADDR_ANGLE_CAL_MAP + sizeof(base_calibra_angle_map) + sizeof(left_calibra_angle_map);
+	read_size = sizeof(right_calibra_angle_map);
+	for( ; read_size > 0; read_size-- ){
+		*(p++) = eeprom_get_char(read_addr++);
+	}	
 }
 
-bool calculate_refer_write_eeprom(void){
-	if( (reference_param_pointa[0] | reference_param_pointa[1] | reference_param_pointa[2]) == 0 ){
-		DB_PRINT_STR( "a 0\r\n" );
-		return false;
-	}
-	if( (reference_param_pointb[0] | reference_param_pointb[1] | reference_param_pointb[2]) == 0 ){
-		DB_PRINT_STR( "b 0\r\n" );
-		return false;
-	}
-	if( (reference_param_pointc[0] | reference_param_pointc[1] | reference_param_pointc[2]) == 0 ){
-		DB_PRINT_STR( "c 0\r\n" );
-		return false;
-	}
-
-	float pointa_b_arml_offset =  reference_param_pointa[0] - (POINT_A_ARML_ANGLE-POINT_B_ARML_ANGLE)*4096/360.0;
-	float pointa_b_armr_offset =	reference_param_pointa[1] - (POINT_A_ARMR_ANGLE-POINT_B_ARMR_ANGLE)*4096/360.0;
+static void write_angle_calibra_map(void){
+	char *p = (char *)(base_calibra_angle_map);
+	unsigned int write_addr = EEPROM_ADDR_ANGLE_CAL_MAP;	
+	int16_t write_size = sizeof(base_calibra_angle_map);
 	
-	float pointc_b_arml_offset =  reference_param_pointc[0] - (POINT_C_ARML_ANGLE-POINT_B_ARML_ANGLE)*4096/360.0;
-	float pointc_b_armr_offset =	reference_param_pointc[1] - (POINT_C_ARMR_ANGLE-POINT_B_ARMR_ANGLE)*4096/360.0;
+	for( ; write_size > 0; write_size-- ){
+		eeprom_put_char( write_addr++, *(p++) );
+	}	
+
+	p = (char *)(left_calibra_angle_map);
+	write_addr = EEPROM_ADDR_ANGLE_CAL_MAP + sizeof(base_calibra_angle_map);
+	write_size = sizeof(left_calibra_angle_map);
+	for( ; write_size > 0; write_size-- ){
+		eeprom_put_char( write_addr++, *(p++) );
+	}
+
+	p = (char *)(right_calibra_angle_map);
+	write_addr = EEPROM_ADDR_ANGLE_CAL_MAP + sizeof(base_calibra_angle_map) + sizeof(left_calibra_angle_map);
+	write_size = sizeof(right_calibra_angle_map);
+	for( ; write_size > 0; write_size-- ){
+		eeprom_put_char( write_addr++, *(p++) );
+	}	
+	
+}
+
+bool atuo_angle_calibra(void){
+	uint16_t calibra_cnt = 0;
+	uint16_t per_angle_cnt = 0; 
+
+	BASE_DIRECTION_PORT &= (~BASE_DIRECTION_MASK);
+	for( calibra_cnt=0; calibra_cnt < sizeof(base_calibra_angle_map)/sizeof(uint16_t)-1; calibra_cnt++ ){		// <! base motor range 0~180								
+		base_calibra_angle_map[calibra_cnt] = read_angle_reg_value(CHANNEL_BASE);
+		
+		for( per_angle_cnt=0; per_angle_cnt < 400; per_angle_cnt++ ){
+			BASE_STEP_PORT |= 	BASE_STEP_MASK;
+			delay_us(10);
+			BASE_STEP_PORT &= (~BASE_STEP_MASK);
+			delay_us(300);
+		}
+		delay_ms(1000);
+	}
+	base_calibra_angle_map[calibra_cnt] = read_angle_reg_value(CHANNEL_BASE);
+
+	BASE_DIRECTION_PORT |= BASE_DIRECTION_MASK;																			// <!	base back to 90
+	for( per_angle_cnt=0; per_angle_cnt < 400*50; per_angle_cnt++ ){
+		BASE_STEP_PORT |= 	BASE_STEP_MASK;
+		delay_us(10);
+		BASE_STEP_PORT &= (~BASE_STEP_MASK);
+		delay_us(300);
+	}
+
+
+//	for( int i=0; i<sizeof(base_calibra_angle_map)/sizeof(uint16_t); i++ ){
+//		DB_PRINT_STR("%d : %d\r\n ", i, base_calibra_angle_map[i]);
+//		delay_ms(10);
+//	}
+
 
 	
-	reference.param_l = (pointa_b_arml_offset + pointc_b_arml_offset + reference_param_pointb[0])/3.0 + 0.5;
-	reference.param_r = (pointa_b_armr_offset + pointc_b_armr_offset + reference_param_pointb[1])/3.0 + 0.5;
-	reference.param_b = reference_param_pointb[2];
+	
+	ARML_DIRECTION_PORT &= (~ARML_DIRECTION_MASK);							// <! arml move to back. about L115.2
+	for( int i=0; i<14; i++ ){
+		for( per_angle_cnt=0; per_angle_cnt < 400; per_angle_cnt++ ){
+			ARML_STEP_PORT |=  ARML_STEP_MASK;
+			delay_us(10);
+			ARML_STEP_PORT &= (~ARML_STEP_MASK);
+			delay_us(300);
+		}
+	}
+	delay_ms(1000);
+	ARML_DIRECTION_PORT |= ARML_DIRECTION_MASK;	
+	for( calibra_cnt=0; calibra_cnt < sizeof(left_calibra_angle_map)/sizeof(uint16_t)-1; calibra_cnt++ ){
+		left_calibra_angle_map[calibra_cnt] =  read_angle_reg_value(CHANNEL_ARML);
+		for( per_angle_cnt=0; per_angle_cnt < 400; per_angle_cnt++ ){
+			ARML_STEP_PORT |=  ARML_STEP_MASK;
+			delay_us(10);
+			ARML_STEP_PORT &= (~ARML_STEP_MASK);
+			delay_us(500);
+		}
+		
+		if( calibra_cnt == 14 ){
+			ARMR_DIRECTION_PORT &= (~ARMR_DIRECTION_MASK);																// <! R to 57.6																
+			for( per_angle_cnt=0; per_angle_cnt < 400*32; per_angle_cnt++ ){
+				ARMR_STEP_PORT |=  ARMR_STEP_MASK;
+				delay_us(10);
+				ARMR_STEP_PORT &= (~ARMR_STEP_MASK);
+				delay_us(300);
+			}		
+		}
+		
+		delay_ms(1000);
+	}
+	left_calibra_angle_map[calibra_cnt] =  read_angle_reg_value(CHANNEL_ARML);
+
+//	for( int i=0; i<sizeof(left_calibra_angle_map)/sizeof(uint16_t); i++ ){
+//		DB_PRINT_STR("%d : %d\r\n ", i, left_calibra_angle_map[i]);
+//		delay_ms(10);
+//	}
+
+	ARML_DIRECTION_PORT &= (~ARML_DIRECTION_MASK);																// <! L to 55.8
+	for( per_angle_cnt=0; per_angle_cnt < 400*29; per_angle_cnt++ ){
+		ARML_STEP_PORT |=  ARML_STEP_MASK;
+		delay_us(10);
+		ARML_STEP_PORT &= (~ARML_STEP_MASK);
+		delay_us(300);
+	}	
+	delay_ms(1000);
+	ARMR_DIRECTION_PORT |= ARMR_DIRECTION_MASK;																// <! R to -1.8															
+	for( per_angle_cnt=0; per_angle_cnt < 400*33; per_angle_cnt++ ){
+		ARMR_STEP_PORT |=  ARMR_STEP_MASK;
+		delay_us(10);
+		ARMR_STEP_PORT &= (~ARMR_STEP_MASK);
+		delay_us(300);
+	}	
+	delay_ms(1000);
+
+	ARMR_DIRECTION_PORT &= (~ARMR_DIRECTION_MASK);
+	for( calibra_cnt=0; calibra_cnt < sizeof(right_calibra_angle_map)/sizeof(uint16_t)-1; calibra_cnt++ ){
+		right_calibra_angle_map[calibra_cnt] =  read_angle_reg_value(CHANNEL_ARMR);
+		for( per_angle_cnt=0; per_angle_cnt < 400; per_angle_cnt++ ){
+			ARMR_STEP_PORT |=  ARMR_STEP_MASK;
+			delay_us(10);
+			ARMR_STEP_PORT &= (~ARMR_STEP_MASK);
+			delay_us(300);
+		}
+		delay_ms(1000);
+	}
+	right_calibra_angle_map[calibra_cnt] =  read_angle_reg_value(CHANNEL_ARMR);	
 
 
-	write_angle_reference_param();
+	write_angle_calibra_map();
+	update_motor_position();
+//	DB_PRINT_STR( "auto angle calibra done\r\n" );
+
 	return true;
 }
-
 
 void get_refer_value(uint16_t *value){
 	value[0] = reference.param_l;
@@ -240,9 +380,28 @@ void angle_sensor_init(void){
 	angle_iic_init();
 	read_angle_reference_param();	// <! read reference param from eeprom 
 
-	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML); 	// <! calculate init angle
-	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);
-	uarm.init_base_angle = calculate_current_angle(CHANNEL_BASE);
+	read_angle_calibra_map();
+//	for( int i=0; i<sizeof(base_calibra_angle_map)/sizeof(uint16_t); i++ ){
+//		DB_PRINT_STR("%d : %d\r\n ", i, base_calibra_angle_map[i]);
+//		delay_ms(10);
+//	}
+
+//	for( int i=0; i<sizeof(left_calibra_angle_map)/sizeof(uint16_t); i++ ){
+//		DB_PRINT_STR("%d : %d\r\n ", i, left_calibra_angle_map[i]);
+//		delay_ms(10);
+//	}
+
+//	for( int i=0; i<sizeof(right_calibra_angle_map)/sizeof(uint16_t); i++ ){
+//		DB_PRINT_STR("%d : %d\r\n ", i, right_calibra_angle_map[i]);
+//		delay_ms(10);
+//	}
+
+
+//	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML); 	// <! calculate init angle
+//	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);
+//	uarm.init_base_angle = calculate_current_angle(CHANNEL_BASE);
+
+
 	
 }
 

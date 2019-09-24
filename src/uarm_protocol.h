@@ -23,6 +23,7 @@ struct protocol_private_t {
 extern char event_report_str[EVENT_BUFFER_SIZE];
 
 enum uarm_protocol_e uarm_execute_g_cmd(uint16_t cmd, char *line, uint8_t *char_counter);
+enum uarm_protocol_e uarm_execute_s_cmd(uint16_t cmd, char *line, uint8_t *char_counter);
 enum uarm_protocol_e uarm_execute_p_cmd(uint16_t cmd, char *line, uint8_t *char_counter);
 enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_counter);
 

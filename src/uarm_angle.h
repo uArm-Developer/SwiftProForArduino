@@ -17,9 +17,7 @@ void get_angle_reg_value(uint16_t *value);
 
 
 void single_point_reference(void);
-void multi_point_reference(uint8_t param);
-bool calculate_refer_write_eeprom(void);
-
+bool atuo_angle_calibra(void);
 
 
 #endif

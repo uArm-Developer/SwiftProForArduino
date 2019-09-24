@@ -18,12 +18,7 @@ void uarm_swift_init(void){
 	laser_off();
 	end_effector_init();
 	
-	angle_to_coord( uarm.init_arml_angle, uarm.init_armr_angle, uarm.init_base_angle-90,
-									&(uarm.coord_x), &(uarm.coord_y), &(uarm.coord_z) );
-
-	uarm.target_step[X_AXIS] = sys.position[X_AXIS];
-	uarm.target_step[Y_AXIS] = sys.position[Y_AXIS];
-	uarm.target_step[Z_AXIS] = sys.position[Z_AXIS];
+	update_motor_position();
 
 	ADCSRA |= ( 1<<ADPS2 | 1<<ADPS1 | 1<<ADPS0 | 1<<ADEN );			// <!adc set
 

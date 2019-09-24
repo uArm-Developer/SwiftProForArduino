@@ -15,7 +15,7 @@
 //#define EEPROM_ADDR_ANGLE_REFER		 	3072U
 
 //#define UARM_MINI
-//#define UARM_2500
+#define UARM_2500
 
 
 #define EEPROM_ADDR_ANGLE_REFER		 				820U
@@ -29,6 +29,8 @@
 #define EEPROM_FRONT_OFFSET_ADDR					920U
 #define EEPROM_EFFECT_ANGLE_OFFSET_ADDR 	3202U
 
+// <! 600 bytes
+#define EEPROM_ADDR_ANGLE_CAL_MAP					1U
 
 
 enum uarm_work_mode_e {
@@ -125,6 +127,7 @@ struct uarm_state_t {
 
 	bool effect_origin_check;
 	bool effect_ldie;
+	bool beep_ldie;
 	bool power_state;
 	bool motor_position_check;
 	

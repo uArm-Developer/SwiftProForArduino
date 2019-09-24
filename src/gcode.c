@@ -337,7 +337,14 @@ uint8_t gc_execute_line(char *line)
 
         if ( bit_istrue(command_words,bit(word_bit)) ) { FAIL(STATUS_GCODE_MODAL_GROUP_VIOLATION); }
         command_words |= bit(word_bit);
-        break;				
+        break;	
+			case 'S':
+				if (mantissa > 0) { FAIL(STATUS_GCODE_COMMAND_VALUE_NOT_INTEGER); } // [No Mxx.x commands]
+				rtn = uarm_execute_s_cmd( int_value, line+char_counter, &char_counter );
+				if( (rtn != UARM_CMD_NOTFIND) && (rtn != UARM_SYS_ABORT) ){ return rtn; }
+
+        if ( bit_istrue(command_words,bit(word_bit)) ) { FAIL(STATUS_GCODE_MODAL_GROUP_VIOLATION); }
+        command_words |= bit(word_bit);
       // NOTE: All remaining letters assign values.
       default: 
   
