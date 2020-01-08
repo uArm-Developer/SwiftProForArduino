@@ -46,7 +46,7 @@ not support currently **M2211,M2212,M2213,M2234,M2245**.
 #### To flash  hex to Swift Pro:
 
 * Download the [hex](hex/)
-* Download and extract [XLoader](https://github-production-release-asset-2e65be.s3.amazonaws.com/100216711/c333948a-8d18-11e8-8116-f20b1880562e?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIWNJYAX4CSVEH53A%2F20190920%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20190920T024059Z&X-Amz-Expires=300&X-Amz-Signature=f8dffc50f2fbaeb6d157e114d0775d1969158ab187c2c980bab2c325d64e7c97&X-Amz-SignedHeaders=host&actor_id=39727447&response-content-disposition=attachment%3B%20filename%3DxLoader_V1_339.zip&response-content-type=application%2Foctet-stream).
+* Download and extract [XLoader](https://raw.githubusercontent.com/uArm-Developer/SwiftProForArduino/Version_V4.0/imagaes/XLoader.zip).
 * Open XLoader and select your uArm's COM port from the drop down menu on the lower left.
 * Select the appropriate device from the dropdown list titled "Device".
 * Check that Xloader set the correct baud rate for the device: 115200 for Mega (ATMEGA2560).
