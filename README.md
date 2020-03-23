@@ -1,18 +1,10 @@
-# Swift Pro Firmware V4.5.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
+# Swift Pro Firmware V4.5.1 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
 
 ----------
-## Update Summary for v4.5.0
+## Update Summary for v4.5.1
 
-* Fix beep bug
-* Fix effector motor control bug
-* Add multi motor control interface
-* Fix motor angle read bug
-* Fix G2204 bug
-* Fix M2201 update position bug
-* Add M2220/M2221 interface
-* Add S1000 start/stop motion interface
-* Add S1100 clear current motion interface
-* Add uart3 communication interface
+* Compatible with version 3.0 air pump control
+
 
 ## Caution
 #### The current firmware is not perfect and will be updated periodically

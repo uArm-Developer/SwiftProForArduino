@@ -15,7 +15,7 @@
 //#define EEPROM_ADDR_ANGLE_REFER		 	3072U
 
 //#define UARM_MINI
-#define UARM_2500
+//#define UARM_2500
 
 
 #define EEPROM_ADDR_ANGLE_REFER		 				820U

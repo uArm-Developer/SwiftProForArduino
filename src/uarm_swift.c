@@ -30,6 +30,7 @@ void uarm_swift_init(void){
 	uart_printf( "soft ver : %s\r\n" , SOFTWARE_VERSION );
 	uart_printf( "api ver : %s\r\n", API_VERSION );
 	uart_printf( "work mode : %d\r\n", uarm.param.work_mode );
+	
 	printString( "@1\n" );
 
 }
@@ -37,6 +38,7 @@ void uarm_swift_init(void){
 void uarm_swift_tick_run(void){
 //	swift_buzzer.tick();
 
+	pump_tick();
 }
 
 

@@ -5,6 +5,7 @@
 /*	end-effector driver
  *
  */
+ 
 /*************** servo mode ****************/
 float duty_ms = 1.51;
 static void servo_init(void){
@@ -500,22 +501,106 @@ static int getAnalogPinValue(unsigned int pin)
 /*	pump
  *		
  */
+#define VALVE_ON_TIMES_MAX	10
+
+pump_state_t pump_state = PUMP_STATE_OFF;
+
+void pump_set_state(pump_state_t state)
+{
+	if (state >= PUMP_STATE_COUNT)
+		return;
+	
+	pump_state = state;
+}
+pump_state_t pump_get_state()
+{	
+	return pump_state;
+}
+
+
 void pump_on(void){
 	DDRG |= 0x10;		// PG4 PUMP_D5_N
 	DDRG |= 0x20;		// PG5 PUMP_D5
 	
 	PORTG |= 0x10;
 	PORTG &= (~0x20); 	
+
+
+	pump_set_state(PUMP_STATE_ON);
 }
 
 void pump_off(void){
-	DDRG |= 0x10; 	// PG4 PUMP_D5_N
-	DDRG |= 0x20; 	// PG5 PUMP_D5
-		
-	PORTG &= (~0x10);
-	PORTG |= 0x20;	
+	if (pump_get_state() == PUMP_STATE_ON)
+	{
 
+		DDRG |= 0x10;	// PG4 PUMP_D5_N
+		DDRG |= 0x20;	// PG5 PUMP_D5
+			
+		PORTG &= (~0x10);
+		PORTG |= 0x20;	
+
+
+		pump_set_state(PUMP_STATE_VALVE_ON);
+	}
 }
+void pump_tick(void)
+{
+	static uint8_t valve_on_times = 0;
+	#define HARD_MASK	 ( 1<<6 | 1<<5 | 1<<4 | 1<<3 )
+
+
+	switch (pump_state)
+	{
+	case PUMP_STATE_OFF:
+		valve_on_times = 0;
+		break;
+		
+	case PUMP_STATE_ON:
+		valve_on_times = 0;
+		break;
+	
+	case PUMP_STATE_VALVE_ON:
+		valve_on_times++;
+		PORTG |= 0x20; 
+
+		if ( (PINJ & HARD_MASK) >0x00)
+		{
+			if (valve_on_times >= VALVE_ON_TIMES_MAX*10)
+			{
+				valve_on_times = 0;
+				PORTG &= (~0x20); 
+				pump_state = PUMP_STATE_OFF;
+
+			}			
+		}
+		else
+		{
+			
+			delay_ms(50);
+			if (valve_on_times >= VALVE_ON_TIMES_MAX)
+			{
+				valve_on_times = 0;
+				pump_state = PUMP_STATE_OFF;
+			}
+			else
+			{		
+				pump_state = PUMP_STATE_VALVE_OFF;
+			}
+			
+		}
+		break;		
+		
+	case PUMP_STATE_VALVE_OFF:
+		PORTG &= (~0x20); 
+		delay_ms(50);
+		pump_state = PUMP_STATE_VALVE_ON;
+		
+		break;
+		
+
+	}
+}
+
 
 uint8_t get_pump_status(void){
 	if( (PORTG & 0x10) == 0x00 ){ return 0; }

@@ -6,6 +6,18 @@
 extern char hardware_version[8];
 extern char bt_mac_addr[13];
 
+typedef enum _pump_state_t
+{
+	PUMP_STATE_OFF,
+	PUMP_STATE_ON,
+	PUMP_STATE_VALVE_ON,
+	PUMP_STATE_VALVE_OFF,
+
+	
+	PUMP_STATE_COUNT
+} pump_state_t;
+#define VALVE_EN		4
+
 void end_effector_init(void);
 void end_effector_set_angle(float angle);
 void end_effector_deinit(void);
@@ -30,6 +42,8 @@ void read_hardware_version(void);
 
 void pump_on(void);
 void pump_off(void);
+void pump_tick(void);
+
 uint8_t get_pump_status(void);
 
 void gripper_relesae(void);
@@ -47,6 +61,7 @@ uint8_t get_power_status(void);
 
 void check_motor_positon(void);
 void update_motor_position(void);
+unsigned long millis_2(void);
 
 	
 #endif
