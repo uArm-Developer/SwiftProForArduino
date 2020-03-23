@@ -162,7 +162,7 @@ void protocol_main_loop()
 	    // If there are no more characters in the serial read buffer to be processed and executed,
 	    // this indicates that g-code streaming has either filled the planner buffer or has 
 	    // completed. In either case, auto-cycle start, if enabled, any queued moves.
-	    //uarm_swift_tick_run();
+	    uarm_swift_tick_run();
 	    protocol_auto_cycle_start();
 	    protocol_execute_realtime();  // Runtime command check point.
 	    if (sys.abort) { return; } // Bail to main() program loop to reset system. 
