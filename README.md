@@ -1,9 +1,9 @@
-# Swift Pro Firmware V4.5.1 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
+# Swift Pro Firmware V4.6.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
 
 ----------
-## Update Summary for v4.5.1
+## Update Summary for v4.6.0
 
-* Compatible with version 3.0 air pump control
+* Fixed air pump control delay problem
 
 
 ## Caution

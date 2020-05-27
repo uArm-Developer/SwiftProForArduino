@@ -565,13 +565,14 @@ void pump_tick(void)
 
 		if ( (PINJ & HARD_MASK) >0x00)
 		{
-			if (valve_on_times >= VALVE_ON_TIMES_MAX*10)
-			{
-				valve_on_times = 0;
-				PORTG &= (~0x20); 
-				pump_state = PUMP_STATE_OFF;
-
-			}			
+			valve_on_times = 0;
+			DDRG |= 0x10; 	// PG4 PUMP_D5_N
+			DDRG |= 0x20; 	// PG5 PUMP_D5
+		
+			PORTG &= (~0x10);
+			PORTG |= 0x20;	
+			pump_state = PUMP_STATE_OFF;
+			
 		}
 		else
 		{
