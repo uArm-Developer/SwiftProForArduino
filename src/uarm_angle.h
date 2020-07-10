@@ -18,6 +18,7 @@ void get_angle_reg_value(uint16_t *value);
 
 void single_point_reference(void);
 bool atuo_angle_calibra(void);
+bool check_encoder(enum angle_channel_e channel);
 
 
 #endif

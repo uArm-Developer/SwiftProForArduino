@@ -32,6 +32,7 @@ void uarm_swift_init(void){
 	uart_printf( "work mode : %d\r\n", uarm.param.work_mode );
 	
 	printString( "@1\n" );
+	
 
 }
 

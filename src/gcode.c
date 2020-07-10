@@ -118,7 +118,6 @@ uint8_t gc_execute_line(char *line)
     if((letter < 'A') || (letter > 'Z')) { FAIL(STATUS_EXPECTED_COMMAND_LETTER); } // [Expected word letter]
     char_counter++;
     if (!read_float(line, &char_counter, &value)) { FAIL(STATUS_BAD_NUMBER_FORMAT); } // [Expected word value]
-
     // Convert values to smaller uint8 significand and mantissa values for parsing this word.
     // NOTE: Mantissa is multiplied by 100 to catch non-integer command values. This is more 
     // accurate than the NIST gcode requirement of x10 when used for commands, but not quite
@@ -371,7 +370,8 @@ uint8_t gc_execute_line(char *line)
           case 'T': word_bit = WORD_T; break; // gc.values.t = int_value;
           case 'X': word_bit = WORD_X; gc_block.values.xyz[X_AXIS] = value; axis_words |= (1<<X_AXIS); break;
           case 'Y': word_bit = WORD_Y; gc_block.values.xyz[Y_AXIS] = value; axis_words |= (1<<Y_AXIS); break;
-          case 'Z': word_bit = WORD_Z; gc_block.values.xyz[Z_AXIS] = value; axis_words |= (1<<Z_AXIS); break;
+          case 'Z': word_bit = WORD_Z; gc_block.values.xyz[Z_AXIS] = value; axis_words |= (1<<Z_AXIS); 
+						break;
           default: FAIL(STATUS_GCODE_UNSUPPORTED_COMMAND);
         } 
         
@@ -626,8 +626,8 @@ uint8_t gc_execute_line(char *line)
               if (gc_block.non_modal_command != NON_MODAL_ABSOLUTE_OVERRIDE) {
                 // Apply coordinate offsets based on distance mode.
                 if (gc_block.modal.distance == DISTANCE_MODE_ABSOLUTE) {
-                  gc_block.values.xyz[idx] += coordinate_data[idx] + gc_state.coord_offset[idx];
-                  if (idx == TOOL_LENGTH_OFFSET_AXIS) { gc_block.values.xyz[idx] += gc_state.tool_length_offset; }
+//                  gc_block.values.xyz[idx] += coordinate_data[idx] + gc_state.coord_offset[idx];
+                  if (idx == TOOL_LENGTH_OFFSET_AXIS) { gc_block.values.xyz[idx] += gc_state.tool_length_offset; }										
                 } else {  // Incremental mode
                   gc_block.values.xyz[idx] += gc_state.position[idx];
                 }
@@ -985,11 +985,11 @@ uint8_t gc_execute_line(char *line)
   if (gc_state.modal.motion != MOTION_MODE_NONE) {
     if (axis_command == AXIS_COMMAND_MOTION_MODE) {
       switch (gc_state.modal.motion) {
-        case MOTION_MODE_SEEK:
+        case MOTION_MODE_SEEK:;
           #ifdef USE_LINE_NUMBERS
             rtn_res = (uint8_t)mc_line(MOTION_MODE_SEEK, gc_block.values.xyz, gc_state.feed_rate, false, gc_state.line_number);
-          #else
-            rtn_res = (uint8_t)mc_line(MOTION_MODE_SEEK, gc_block.values.xyz, gc_state.feed_rate, false);
+          #else					
+            rtn_res = (uint8_t)mc_line(MOTION_MODE_SEEK, gc_block.values.xyz, gc_state.feed_rate, false);						
           #endif
           break;
         case MOTION_MODE_LINEAR:

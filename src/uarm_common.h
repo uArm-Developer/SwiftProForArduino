@@ -16,6 +16,12 @@
 
 //#define UARM_MINI
 //#define UARM_2500
+#define DATA_TYPE_BYTE          1
+#define DATA_TYPE_INTEGER       2
+#define DATA_TYPE_FLOAT         4
+
+#define EXTERNAL_EEPROM_USER_ADDRESS 0xa0
+#define EXTERNAL_EEPROM_SYS_ADDRESS 0xa2
 
 
 #define EEPROM_ADDR_ANGLE_REFER		 				820U
@@ -44,7 +50,34 @@ enum uarm_work_mode_e {
 	WORK_MODE_TEST,
 };
 
-#if defined(UARM_2500)
+
+#if	defined(UARM_MINI)
+
+#define DEFAULT_NORMAL_HEIGHT 	55.0
+#define DEFAULT_NORMAL_FRONT		45.0
+
+#define DEFAULT_LASER_HEIGHT		0.0
+#define DEFAULT_LASER_FRONT 		0.0
+
+#define DEFAULT_3DPRINT_HEIGHT	0.0
+#define DEFAULT_3DPRINT_FRONT 	0.0
+
+#define DEFAULT_PEN_HEIGHT			0.0
+#define DEFAULT_PEN_FRONT 			0.0	
+
+#define DEFAULT_STEP_FLAT_HEIGHT		0.0
+#define DEFAULT_STEP_FLAT_FRONT 		0.0
+
+#define DEFAULT_STEP_STANDARD_HEIGHT		0.0
+#define DEFAULT_STEP_STANDARD_FRONT 		0.0
+
+#define DEFAULT_ROUND_PEN_HEIGHT		0.0
+#define DEFAULT_ROUND_PEN_FRONT 		0.0
+
+#define DEFAULT_TEST_HEIGHT 		0.0
+#define DEFAULT_TEST_FRONT			0.0
+
+#elif defined(UARM_2500)
 	#define DEFAULT_NORMAL_HEIGHT 	74.55
 	#define DEFAULT_NORMAL_FRONT		56.65
 
@@ -68,6 +101,7 @@ enum uarm_work_mode_e {
 
 	#define DEFAULT_TEST_HEIGHT 		25.49
 	#define DEFAULT_TEST_FRONT			44.5
+
 
 #else
 	#define DEFAULT_NORMAL_HEIGHT		74.55

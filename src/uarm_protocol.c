@@ -109,7 +109,13 @@ static void add_result_to_report(uint8_t result, char *str){		// <! create repor
 					strcat( str, " " );
 				}
 				strcat( str, "E22" );
-			break;				
+			break;	
+			case UARM_ENCODER_ERR0R:
+				if( strlen(str) ){
+					strcat( str, " " );
+				}
+				strcat( str, "E26" );
+			break;
 			default:			
 				if( strlen(str) ){
 					strcat( str, " " );
@@ -143,7 +149,7 @@ void parse_cmd_line(void){
 //			DB_PRINT_STR( "no ldie, %d, %d\r\n", uarm.effect_ldie, uarm.beep_ldie );
 			return; 
 		}
-	
+
 		syn_queue[syn_parse_sp].parse_result = gc_execute_line(syn_queue[syn_parse_sp].line);
 		
 		add_result_to_report( syn_queue[syn_parse_sp].parse_result, syn_queue[syn_parse_sp].report_str );
@@ -704,6 +710,95 @@ static bool uarm_cmd_m2210(char *payload){
 	}
 }
 
+static bool uarm_cmd_m2211(char *payload){
+	unsigned char device,type; 
+	unsigned int addr;
+	int rtn;
+	char x_str[20] = {0};
+	float data=0;
+	if(rtn = sscanf(payload,"N%dA%dT%d",&device,&addr,&type)<3){
+		DB_PRINT_STR("sscanf %d\r\n",rtn);
+		return false;
+	}else{
+		if(device != 1) return false;
+		if(addr >65524) return false;
+		switch(type)
+		{
+			case 1: 
+			
+				data = getE2PROMData(device,addr,type);
+				dtostrf(data, 5, 0, x_str );
+//				uart_printf("data:%s\r\n",x_str);
+				sprintf( tail_report_str, " V%d\n",(char)data );
+
+			break;
+			
+			case 2:
+			
+				data = getE2PROMData(device,addr,type);
+				dtostrf(data, 5, 0, x_str );
+//				uart_printf("data:%s\r\n",x_str);
+				sprintf( tail_report_str, " V%d\n",(int)data );
+			break;
+			
+			case 4:
+				data = getE2PROMData(device,addr,type);
+				dtostrf(data, 5, 4, x_str );
+//				uart_printf("data:%s\r\n",x_str);
+				sprintf( tail_report_str, " V%s\n",x_str );
+			break;
+			
+			default:
+				return false;
+			break;
+		}
+		return true;
+	}
+	
+	
+
+}
+
+static bool uarm_cmd_m2212(char *payload){
+	unsigned char device,type; 
+	unsigned int addr;
+	char value[20];
+	float eeprom_value;
+	int rtn;
+	if(rtn = sscanf(payload,"N%dA%dT%dV%[0-9.]",&device,&addr,&type,value)<4){
+		DB_PRINT_STR("sscanf %d\r\n",rtn);
+		return false;
+	}else{
+		if(device != 1) return false;
+		if(addr >65524) return false;
+		if( !read_float(value, NULL, &eeprom_value) ){ return false; }
+		switch(type)
+		{
+			case 1: 
+				setE2PROMData(device,addr,type,eeprom_value);
+			break;
+			
+			case 2:
+				setE2PROMData(device,addr,type,eeprom_value);
+			break;
+			
+			case 4:
+			
+			setE2PROMData(device,addr,type,eeprom_value);
+			break;
+			default:
+				return false;
+			break;
+		}
+		delay_ms(3);
+		//uart_printf("N:%d A:%d T%d V:%s",device,addr,type,value);
+		return true;
+	}
+	
+
+	
+}
+
 static void uarm_cmd_m2215(void){				
 /*	int16_t write_size = 4096;
 	unsigned int write_addr = 0;
@@ -1062,11 +1157,21 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 			break;
 		case 2211:
 			//DB_PRINT_STR( "M2211\r\n" );
-								return UARM_CMD_OK;
+								if(uarm_cmd_m2211(line) == true)
+								{
+									return UARM_CMD_OK;
+								}else{
+									return UARM_CMD_ERROR;	
+								}
 			break;
 		case 2212:
 			//DB_PRINT_STR( "M2212\r\n" );
-								return UARM_CMD_OK;
+								if(uarm_cmd_m2212(line) == true)
+								{
+									return UARM_CMD_OK;
+								}else{
+									return UARM_CMD_ERROR;	
+								}
 			break;	
 		case 2213:
 			//DB_PRINT_STR( "M2213\r\n" );
@@ -1367,6 +1472,47 @@ static void uarm_cmd_p2243(void){
 	get_angle_reg_value(&angle_reg_value);
 	sprintf( tail_report_str, " B%d L%d R%d\n", angle_reg_value[2], angle_reg_value[0], angle_reg_value[1] );
 }
+bool uarm_cmd_p2244(void)
+{
+	char encoder_status=7;
+	encoder_status = check_encoder(CHANNEL_ARML)<<2|check_encoder(CHANNEL_ARMR)<<1|check_encoder(CHANNEL_BASE);
+	switch(encoder_status)
+	{
+	case 0:
+		sprintf( tail_report_str, " V%d\n", encoder_status);
+		return true;
+	break;
+	case 1:
+		sprintf( tail_report_str, " V%d\n", encoder_status);
+		return false;
+	break;
+	case 2:
+		sprintf( tail_report_str, " V%d\n", encoder_status);
+		return false;
+	break;
+	case 3:
+		sprintf( tail_report_str, " V%d\n", encoder_status);
+		return false;
+	break;
+	case 4:
+		sprintf( tail_report_str, " V%d\n", encoder_status);
+		return false;
+	break;
+	case 5:
+		sprintf( tail_report_str, " V%d\n", encoder_status);
+		return false;
+	break;
+	case 6:
+		sprintf( tail_report_str, " V%d\n", encoder_status);
+		return false;
+	break;
+	case 7:
+		sprintf( tail_report_str, " V%d\n", encoder_status);
+		return false;
+	break;
+
+	}
+}
 
 static void uarm_cmd_p2400(void){
 	sprintf( tail_report_str, " V%d\n", uarm.param.work_mode );	
@@ -1455,6 +1601,13 @@ enum uarm_protocol_e uarm_execute_p_cmd(uint16_t cmd, char *line, uint8_t *char_
 		case 2243:
 							uarm_cmd_p2243();
 							return UARM_CMD_OK;
+			break;
+		case 2244:
+							if(uarm_cmd_p2244()==true){
+								return UARM_CMD_OK;
+							}else{
+								return UARM_ENCODER_ERR0R;
+							}
 			break;
 		case 2400:
 							uarm_cmd_p2400();

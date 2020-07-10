@@ -86,10 +86,12 @@ void report_status_message(uint8_t status_code)
         case STATUS_GCODE_UNDEFINED_FEED_RATE:
         printPgmString(PSTR("Undefined feed rate")); break;
 				
-				case STATUS_UARM_ERROR:
-					printString( "E21\n" );
-					break;
-					
+		case STATUS_UARM_ERROR:
+			printString( "E21\n" );
+		break;
+		case STATUS_ENCODER_ERROR:
+			printString("E26\n");
+		break;			
         default:
           // Remaining g-code parser errors with error codes
           printPgmString(PSTR("Invalid gcode ID:"));

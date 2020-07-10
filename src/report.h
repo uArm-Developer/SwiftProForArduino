@@ -55,6 +55,7 @@
 #define STATUS_GCODE_G43_DYNAMIC_AXIS_ERROR 37
 
 #define STATUS_UARM_ERROR	50
+#define STATUS_ENCODER_ERROR 51
 
 // Define Grbl alarm codes.
 #define ALARM_HARD_LIMIT_ERROR 1

@@ -71,13 +71,13 @@
 	coord_effect2arm( &x, &y, &z );                               // calculate the arm current coord
 	coord_to_angle( x, y, z,																			
 									&final_angle[X_AXIS], &final_angle[Y_AXIS], &final_angle[Z_AXIS] ); // calculate final angle
-/*
-	char l_str[20], r_str[20], b_str[20];
-	dtostrf( final_angle[X_AXIS], 5, 4, l_str );
-	dtostrf( final_angle[Y_AXIS], 5, 4, r_str );
-	dtostrf( final_angle[Z_AXIS], 5, 4, b_str );
 
-	DB_PRINT_STR( "final_angle: %s, %s, %s\r\n", l_str, r_str, b_str );*/
+//	char l_str[20], r_str[20], b_str[20];
+//	dtostrf( final_angle[X_AXIS], 5, 4, l_str );
+//	dtostrf( final_angle[Y_AXIS], 5, 4, r_str );
+//	dtostrf( final_angle[Z_AXIS], 5, 4, b_str );
+
+//	DB_PRINT_STR( "final_angle: B%s L%s R%s\r\n", b_str, l_str, r_str );
 //	final_angle[X_AXIS] += 0.15;
 //	final_angle[Y_AXIS] -= 0.15;
 

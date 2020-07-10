@@ -62,6 +62,8 @@ uint8_t get_power_status(void);
 void check_motor_positon(void);
 void update_motor_position(void);
 unsigned long millis_2(void);
+void setE2PROMData(unsigned char device, unsigned int addr, unsigned char type, float value);
+double getE2PROMData(unsigned char device, unsigned int addr, unsigned char type);	
 
 	
 #endif

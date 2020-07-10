@@ -15,6 +15,7 @@ enum uarm_protocol_e {
 	
 	UARM_CMD_ERROR = 50,
 	UARM_COORD_ERROR,
+	UARM_ENCODER_ERR0R,
 };
 
 struct protocol_private_t {

@@ -1,10 +1,12 @@
 # Swift Pro Firmware V4.6.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
 
 ----------
-## Update Summary for v4.6.0
+## Update Summary for v4.7.0
 
-* Fixed air pump control delay problem
-
+* Add M2211 cmd to read external EEPROM
+* Add M2212 cmd to write external EEPROM
+* Add P2244 cmd to get the communication status of AS5600
+* Fix read bug of work mode
 
 ## Caution
 #### The current firmware is not perfect and will be updated periodically

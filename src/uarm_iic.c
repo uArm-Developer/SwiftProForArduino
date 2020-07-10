@@ -50,6 +50,201 @@
 #define BASE_READ_SDA   	BASE_SDA_READ
 
 #define AS5600_DEFAULT_ADDRESS 0x36
+#define EEPROM_SDA_SET  	(PORTB |= 0x80)
+#define EEPROM_SDA_RESET	(PORTB &= 0x7F)
+#define EEPROM_SCL_SET      (PORTB |= 0x40)
+#define EEPROM_SCL_RESET 	(PORTB &= 0xBF)
+#define EEPROM_SDA_INPUT	(DDRB  &= 0x7F)
+#define EEPROM_SDA_OUTPUT	(DDRB  |= 0x80)
+#define EEPROM_SCL_INPUT	(DDRB  &= 0xBF)
+#define EEPROM_SCL_OUTPUT	(DDRB  |= 0x40)
+#define EEPROM_SDA_READ		(PINB  &  0x80)
+#define EEPROM_PORT_DDR     (DDRB)
+#define EEPROM_SCK_H		{EEPROM_SCL_SET;}
+#define EEPROM_SCK_L		{EEPROM_SCL_RESET;}
+#define EEPROM_SDA_H		{EEPROM_SDA_SET;}
+#define EEPROM_SDA_L		{EEPROM_SDA_RESET;}
+#define EEPROM_READ_SDA     EEPROM_SDA_READ
+
+
+static void eeprom_delay_us()
+{
+
+	for (int i = 0; i < 2; i++)
+	{
+		asm volatile ("nop\n\t");
+	}
+}
+
+
+static void eeprom_iic_start(void)
+{
+	
+	EEPROM_SCK_H;
+	eeprom_delay_us();
+	EEPROM_SDA_H;
+	eeprom_delay_us();
+	EEPROM_SDA_L;
+	eeprom_delay_us();
+	EEPROM_SCK_L;
+	eeprom_delay_us();
+}
+
+static void eeprom_iic_stop(void)
+{
+	EEPROM_SCK_L;
+	eeprom_delay_us();
+	EEPROM_SDA_L;
+	eeprom_delay_us();
+	EEPROM_SCK_H;
+	eeprom_delay_us();	
+	EEPROM_SDA_H;
+	eeprom_delay_us();
+}
+
+unsigned char eeprom_iic_read_ack(void)
+{
+	unsigned char old_state;
+	old_state = EEPROM_PORT_DDR;
+	EEPROM_SDA_INPUT;
+	EEPROM_SDA_H;
+	eeprom_delay_us();
+	EEPROM_SCK_H;
+	eeprom_delay_us();
+	if(EEPROM_SDA_READ)
+	{
+		EEPROM_SCK_L;
+		eeprom_iic_stop();
+		EEPROM_PORT_DDR = old_state;
+		return 1;
+	}
+	else{
+		EEPROM_SCK_L;
+		EEPROM_PORT_DDR = old_state;
+		return 0;
+	}
+}
+
+static void eeprom_iic_send_ack(void)
+{
+	unsigned char old_state;
+	old_state = EEPROM_PORT_DDR;
+	EEPROM_SDA_OUTPUT;//SDA OUTPUT
+	EEPROM_SDA_L;//  SDA=0
+	eeprom_delay_us();
+	EEPROM_SCK_H;//  SCL=1
+	eeprom_delay_us();
+	EEPROM_SCK_L;//  SCL=0
+	eeprom_delay_us();
+	EEPROM_PORT_DDR = old_state;
+	EEPROM_SDA_H;//  SDA=1
+	eeprom_delay_us();
+}
+
+static void eeprom_iic_sendbyte(unsigned char dat)
+{
+	unsigned char i;
+	for(i=0;i<8; i++)
+	{
+		if(dat & 0x80)
+		{EEPROM_SDA_H;} //  SDA = 1;
+		else
+		{EEPROM_SDA_L;} //  SDA = 0;
+		dat <<= 1;
+		eeprom_delay_us();
+		EEPROM_SCK_H;//  SCL=1
+		eeprom_delay_us();
+		EEPROM_SCK_L;//  SCL=0
+	}
+}
+
+static unsigned char eeprom_iic_readbyte()
+{
+	unsigned char i,byte = 0;
+	unsigned char old_state;
+	old_state = EEPROM_PORT_DDR;
+	EEPROM_SDA_INPUT;//SDA INPUT
+	for(i = 0; i < 8; i++)
+	{
+		EEPROM_SCK_H;//  SCL=1
+		eeprom_delay_us();
+		byte <<= 1;
+
+		if(EEPROM_SDA_READ) // if(SDA)
+		{
+			byte |= 0x01;
+		}
+
+		eeprom_delay_us();
+		EEPROM_SCK_L;//  SCL=0
+		eeprom_delay_us();
+	}
+	EEPROM_PORT_DDR = old_state;
+	return byte;
+
+}
+
+unsigned char eeprom_iic_writebuf(unsigned char *buf,unsigned char device_addr,unsigned int addr,unsigned char len)
+{
+	EEPROM_SCL_OUTPUT;
+	EEPROM_SDA_OUTPUT;
+	EEPROM_SCK_H;
+	EEPROM_SDA_H;
+
+	unsigned char length_of_data=0;//page write
+	length_of_data = len;
+	eeprom_iic_start();
+	eeprom_iic_sendbyte(device_addr);
+	if(eeprom_iic_read_ack()) return 1;
+	eeprom_iic_sendbyte(addr>>8);
+	if(eeprom_iic_read_ack()) return 1;
+	eeprom_iic_sendbyte(addr%256);
+	if(eeprom_iic_read_ack()) return 1;
+	
+	while(len != 0)
+	{
+		eeprom_iic_sendbyte(*(buf + length_of_data - len));
+		len--;
+		if(eeprom_iic_read_ack()){ eeprom_iic_stop();return 1;}
+		delay_ms(5);
+	}
+	eeprom_iic_stop();
+
+	return 0;	
+}
+
+unsigned char eeprom_iic_readbuf(unsigned char *buf,unsigned char device_addr,unsigned int addr,unsigned char len)
+{
+	EEPROM_SCL_OUTPUT;
+	EEPROM_SDA_OUTPUT;
+	EEPROM_SCK_H;
+	EEPROM_SDA_H;
+
+	
+	unsigned char length_of_data=0;
+	length_of_data = len;
+	eeprom_iic_start();
+	eeprom_iic_sendbyte(device_addr);
+	if(eeprom_iic_read_ack()) return 1;
+	eeprom_iic_sendbyte(addr>>8);
+	if(eeprom_iic_read_ack()) return 1;
+	eeprom_iic_sendbyte(addr%256);
+	if(eeprom_iic_read_ack()) return 1;
+	eeprom_iic_start();
+	eeprom_iic_sendbyte(device_addr+1);
+	if(eeprom_iic_read_ack()) return 1;
+
+	while(len != 0)
+	{
+		*(buf + length_of_data - len) = eeprom_iic_readbyte();
+		len--;
+		if(len != 0) {
+			eeprom_iic_send_ack();
+		}
+	}
+	eeprom_iic_stop();
+	return 0;
+}
 
 
 static void arml_iic_start(void)

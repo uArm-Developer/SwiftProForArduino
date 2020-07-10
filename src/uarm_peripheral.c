@@ -318,7 +318,7 @@ void read_sys_param(void){
 	
 
 	p = (char *)(&(uarm.param.work_mode));
-	read_size = sizeof(uarm.param.work_mode);
+	read_size = sizeof(char);
 	read_addr = EEPROM_MODE_ADDR;
 	for( ; read_size > 0; read_size-- ){
 		*(p++) = eeprom_get_char(read_addr++);
@@ -377,7 +377,7 @@ void save_sys_param(void){
 	char *p = NULL;
 
 	p = (char *)(&(uarm.param.work_mode));
-	write_size = sizeof(uarm.param.work_mode);
+	write_size = sizeof(char);
 	write_addr = EEPROM_MODE_ADDR;	
 	for( ; write_size > 0; write_size-- ){
 		eeprom_put_char( write_addr++, *(p++) );
@@ -418,6 +418,157 @@ void write_sn_num(void){
 	for( ; write_size > 0; write_size-- ){
 		eeprom_put_char( write_addr++, *(p++) );
 	}		
+}
+
+void setE2PROMData(unsigned char device, unsigned int addr, unsigned char type, float value)
+{
+	uint8_t deviceAddr;
+
+	union {
+		float fdata;
+		uint8_t data[4];
+	} FData;
+
+	switch(device)
+	{
+	case 1:
+		deviceAddr = EXTERNAL_EEPROM_USER_ADDRESS;
+		break;
+
+	case 2:
+		deviceAddr = EXTERNAL_EEPROM_SYS_ADDRESS;
+		break;
+	}       
+
+	if (device == 1 || device == 2)
+	{
+		int num = 0;
+		switch(type)
+		{
+		case DATA_TYPE_BYTE:
+			FData.data[0] = (unsigned char)value;
+				
+			num = 1;
+			break;
+			
+		case DATA_TYPE_INTEGER:	    
+			{
+				int i_val = 0;
+				i_val = (int)value; 
+				FData.data[0] = (i_val & 0xff00) >> 8;
+				FData.data[1] = i_val & 0xff;
+				num = 2;
+				
+			}
+			break;
+		    
+		case DATA_TYPE_FLOAT:
+			FData.fdata = (float)value;
+			num = 4;
+			break;
+		}
+
+		unsigned char i=0;
+		i = (addr % 128);
+		// Since the eeprom's sector is 128 byte, if we want to write 5 bytes per cycle we need to care about when there's less than 5 bytes left
+		if (i >= (129-num)) 
+		{
+			i = 128 - i;
+			eeprom_iic_writebuf(FData.data, deviceAddr, addr, i);// write data
+			delay_ms(5);
+			eeprom_iic_writebuf(FData.data + i, deviceAddr, addr + i, num - i);// write data
+		}
+		//if the left bytes are greater than 5, just do it
+		else
+		{
+			eeprom_iic_writebuf(FData.data, deviceAddr, addr, num);// write data
+		}     
+	}
+
+}
+
+double getE2PROMData(unsigned char device, unsigned int addr, unsigned char type)
+{
+	double result = 0;
+	uint8_t deviceAddr;
+	uint8_t x_str[20];
+	union {
+		float fdata;
+		uint8_t data[4];
+	} FData;
+
+	
+	switch(device)
+	{
+	 case 1:
+	 	deviceAddr = EXTERNAL_EEPROM_USER_ADDRESS;
+		break;
+	 case 2:
+	 	deviceAddr = EXTERNAL_EEPROM_SYS_ADDRESS;
+        break;
+	}
+	
+	if (device == 1 || device == 2)
+	{
+		unsigned char num = 0;
+		switch(type)
+		{
+		case DATA_TYPE_BYTE:
+			num = 1;
+			break;
+		
+		case DATA_TYPE_INTEGER:
+			num = 2;
+			break;
+		
+		case DATA_TYPE_FLOAT:
+			num = 4;
+			break;
+		}	
+
+		unsigned char i=0;
+		i = (addr % 128);
+
+		if (i >= (129-num)) 
+		{
+			i = 128 - i;
+			eeprom_iic_readbuf(FData.data, deviceAddr, addr, i);
+			delay_ms(5);
+			eeprom_iic_readbuf(FData.data + i, deviceAddr, addr + i, num - i);
+		}
+		else
+		{
+	
+			x_str[1]=eeprom_iic_readbuf(FData.data, deviceAddr, addr, num);
+			
+		}      
+
+
+		switch(type)
+		{
+		case DATA_TYPE_BYTE:	
+			result = FData.data[0];
+			if(FData.data[0]==32)
+				{
+				uart_printf( "yes\n" );
+				}
+
+			break;
+			
+		case DATA_TYPE_INTEGER:		
+			result = (FData.data[0] << 8) + FData.data[1];
+			break;
+			
+		case DATA_TYPE_FLOAT:
+			result = FData.fdata;
+			break;
+			
+		}
+
+
+	}
+	return result;
+	
 }
 
 void read_hardware_version(void){
@@ -565,14 +716,16 @@ void pump_tick(void)
 
 		if ( (PINJ & HARD_MASK) >0x00)
 		{
-			valve_on_times = 0;
-			DDRG |= 0x10; 	// PG4 PUMP_D5_N
-			DDRG |= 0x20; 	// PG5 PUMP_D5
+
+				valve_on_times = 0;
+				DDRG |= 0x10; 	// PG4 PUMP_D5_N
+				DDRG |= 0x20; 	// PG5 PUMP_D5
 		
-			PORTG &= (~0x10);
-			PORTG |= 0x20;	
-			pump_state = PUMP_STATE_OFF;
-			
+				PORTG &= (~0x10);
+				PORTG |= 0x20;	
+				pump_state = PUMP_STATE_OFF;
+
+	
 		}
 		else
 		{
@@ -741,6 +894,13 @@ void update_motor_position(void){
 	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML);
 	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);
 	uarm.init_base_angle = calculate_current_angle(CHANNEL_BASE);
+
+//	char l_str[20], r_str[20], b_str[20];
+//	dtostrf( uarm.init_arml_angle, 5, 4, l_str );
+//	dtostrf( uarm.init_armr_angle, 5, 4, r_str );
+//	dtostrf( uarm.init_base_angle, 5, 4, b_str );
+
+//	DB_PRINT_STR( "init_angle: B%s L%s R%s\r\n", b_str, l_str, r_str );
 	
 	uarm.target_step[X_AXIS] = sys.position[X_AXIS];
 	uarm.target_step[Y_AXIS] = sys.position[Y_AXIS];
@@ -756,6 +916,7 @@ void update_motor_position(void){
 //		dtostrf( gc_state.position[Z_AXIS], 5, 4, z_str );
 //	
 //		DB_PRINT_STR( "coord: %s, %s, %s\r\n", x_str, y_str, z_str );
+
 }
 
 

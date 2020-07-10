@@ -17,17 +17,33 @@ uint16_t left_calibra_angle_map[64] 		= {0};		// <! angle 115.2~1.8
 uint16_t right_calibra_angle_map[61] 		= {0};    // <! angle -1.8~108
 
 
-
 // <! reference point angle
-#define POINT_A_ARML_ANGLE		(27.526186)
-#define POINT_A_ARMR_ANGLE		(111.687637)
-#define POINT_A_BASE_ANGLE		(90.0)
-#define POINT_B_ARML_ANGLE		(32.758930)
-#define POINT_B_ARMR_ANGLE		(88.980537)
-#define POINT_B_BASE_ANGLE		(90.0)
-#define POINT_C_ARML_ANGLE		(24.572023)
-#define POINT_C_ARMR_ANGLE		(62.595272)
-#define POINT_C_BASE_ANGLE		(90.0)
+#if defined(UARM_MINI)
+	#define POINT_A_ARML_ANGLE		(27.526186)
+	#define POINT_A_ARMR_ANGLE		(111.687637)
+	#define POINT_A_BASE_ANGLE		(90.0)
+	#define POINT_B_ARML_ANGLE		(20.0)
+	#define POINT_B_ARMR_ANGLE		(92.0)
+	#define POINT_B_BASE_ANGLE		(90.0)
+	#define POINT_C_ARML_ANGLE		(24.572023)
+	#define POINT_C_ARMR_ANGLE		(62.595272)
+	#define POINT_C_BASE_ANGLE		(90.0)
+#else
+	#define POINT_A_ARML_ANGLE		(27.526186)
+	#define POINT_A_ARMR_ANGLE		(111.687637)
+	#define POINT_A_BASE_ANGLE		(90.0)
+	#define POINT_B_ARML_ANGLE		(32.758930)
+	#define POINT_B_ARMR_ANGLE		(88.980537)
+	#define POINT_B_BASE_ANGLE		(90.0)
+	#define POINT_C_ARML_ANGLE		(24.572023)
+	#define POINT_C_ARMR_ANGLE		(62.595272)
+	#define POINT_C_BASE_ANGLE		(90.0)
+#endif
+
+
+
+
+
 
 
 
@@ -59,6 +75,59 @@ static uint16_t read_angle_reg_value(enum angle_channel_e channel){
 	}
 	
 	return aver_value;
+}
+
+static uint16_t read_encoder_status_value(enum angle_channel_e channel)
+{
+	uint16_t temp_value = 0;
+	temp_value = (iic_read_byte(channel,(0x36<<1),0x0B)) & 0x18;
+	//temp_value = ((uint16_t)iic_read_byte(channel,(0x36<<1),0x05))<<8 |iic_read_byte(channel,(0x36<<1),0x06);
+	return temp_value;
+}
+
+bool check_encoder(enum angle_channel_e channel)
+{
+	uint16_t mang=0;
+	switch(channel)
+	{
+		case CHANNEL_ARML:
+			mang = read_encoder_status_value(CHANNEL_ARML);
+			//uart_printf( "left mang  : %d\r\n", mang );
+			if(mang == 24)
+			{
+				return true;
+			}
+			else 
+			{
+				return false;
+			}
+			break;
+		case CHANNEL_ARMR:
+			mang = read_encoder_status_value(CHANNEL_ARMR);
+			//uart_printf( "right mang  : %d\r\n", mang );
+			if(mang == 24)
+			{
+				return true;
+			}
+			else 
+			{
+				return false;
+			}
+			break;	
+		case CHANNEL_BASE:
+			mang = read_encoder_status_value(CHANNEL_BASE);
+			//uart_printf( "base mang  : %d\r\n", mang );
+			if(mang == 24)
+			{
+				return true;
+			}
+			else 
+			{
+				return false;
+			}
+			break;	
+
+	}
 }
 
 float calculate_current_angle(enum angle_channel_e channel){
@@ -381,28 +450,6 @@ void angle_sensor_init(void){
 	read_angle_reference_param();	// <! read reference param from eeprom 
 
 	read_angle_calibra_map();
-//	for( int i=0; i<sizeof(base_calibra_angle_map)/sizeof(uint16_t); i++ ){
-//		DB_PRINT_STR("%d : %d\r\n ", i, base_calibra_angle_map[i]);
-//		delay_ms(10);
-//	}
-
-//	for( int i=0; i<sizeof(left_calibra_angle_map)/sizeof(uint16_t); i++ ){
-//		DB_PRINT_STR("%d : %d\r\n ", i, left_calibra_angle_map[i]);
-//		delay_ms(10);
-//	}
-
-//	for( int i=0; i<sizeof(right_calibra_angle_map)/sizeof(uint16_t); i++ ){
-//		DB_PRINT_STR("%d : %d\r\n ", i, right_calibra_angle_map[i]);
-//		delay_ms(10);
-//	}
-
-
-//	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML); 	// <! calculate init angle
-//	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);
-//	uarm.init_base_angle = calculate_current_angle(CHANNEL_BASE);
-
-
-	
 }
 
 
