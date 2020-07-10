@@ -1,4 +1,4 @@
-# Swift Pro Firmware V4.6.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
+# Swift Pro Firmware V4.7.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
 
 ----------
 ## Update Summary for v4.7.0
