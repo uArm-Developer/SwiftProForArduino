@@ -54,9 +54,9 @@
 	#define micro_steps       (32.0)
 	#define steps_per_angle   (micro_steps/1.8*gearbox_ratio)
 	#define ARMA_MAX_ANGLE      		(135.6)
-	#define ARMA_MIN_ANGLE      		(0)
+	#define ARMA_MIN_ANGLE      		(-4.0)
 	#define ARMB_MAX_ANGLE      		(119.9)
-	#define ARMB_MIN_ANGLE      		(0)	
+	#define ARMB_MIN_ANGLE      		(-4.0)	
 	#define BASE_MAX_ANGLE					(90)
 	#define BASE_MIN_ANGLE					(-90)
 	#define ARMA_ARMB_MAX_ANGLE    	(151)
@@ -124,10 +124,10 @@ void angle_to_coord(float anglea, float angleb, float anglec, float *x, float *y
 void coord_to_angle(float x, float y, float z, float *anglea, float *angleb, float *anglec){		
 
 
-/*	DB_PRINT_STR("coord xyz:");
-	DB_PRINT_FLOAT(x);DB_PRINT_STR(" ");
-	DB_PRINT_FLOAT(y);DB_PRINT_STR(" ");
-	DB_PRINT_FLOAT(z);DB_PRINT_STR("\r\n"); 	*/
+//	DB_PRINT_STR("coord xyz:");
+//	DB_PRINT_FLOAT(x);DB_PRINT_STR(" ");
+//	DB_PRINT_FLOAT(y);DB_PRINT_STR(" ");
+//	DB_PRINT_FLOAT(z);DB_PRINT_STR("\r\n"); 
 
 
 
@@ -140,13 +140,23 @@ void coord_to_angle(float x, float y, float z, float *anglea, float *angleb, flo
 
 	
   *anglea = acos((_stretch * xxx - _height * sqrt(4.0 * ARM_A2 * xx - xxx * xxx)) / (xx * 2.0 * ARM_A)) * RAD_TO_DEG;
-
   // get angle B
  	xxx = ARM_B2 -ARM_A2 + xx;
   *angleb = acos((_stretch * xxx + _height * sqrt(4.0 * ARM_B2 * xx -xxx * xxx)) / (xx * 2.0 * ARM_B)) * RAD_TO_DEG;
   if( _height > (ARM_A *sin(*anglea/RAD_TO_DEG)) ){
     *angleb = -*angleb;
   }
+
+//	DB_PRINT_FLOAT(fabs(z));DB_PRINT_STR(" ");
+//	DB_PRINT_FLOAT(ARM_B *sin(*angleb/RAD_TO_DEG));DB_PRINT_STR(" ");
+//	DB_PRINT_FLOAT(z);DB_PRINT_STR("\r\n"); 
+
+
+	if( fabs(_height)>(ARM_B *sin(*angleb/RAD_TO_DEG)) && _height<0.0  ){
+		*anglea = -*anglea;
+	}
+
+
 
   // get the base rotation angle
   
@@ -163,10 +173,10 @@ void coord_to_angle(float x, float y, float z, float *anglea, float *angleb, flo
 	}	
 	
 
-/*	DB_PRINT_STR("coord abc:");
-	DB_PRINT_FLOAT(*anglea);DB_PRINT_STR(" ");
-	DB_PRINT_FLOAT(*angleb);DB_PRINT_STR(" ");
-	DB_PRINT_FLOAT(*anglec);DB_PRINT_STR("\r\n");*/
+//	DB_PRINT_STR("coord abc:");
+//	DB_PRINT_FLOAT(*anglea);DB_PRINT_STR(" ");
+//	DB_PRINT_FLOAT(*angleb);DB_PRINT_STR(" ");
+//	DB_PRINT_FLOAT(*anglec);DB_PRINT_STR("\r\n");
 }
 
 void get_current_step(float anglea, float angleb, float anglec, float *x_step, float *y_step, float *z_step){
