@@ -406,6 +406,49 @@ void save_sys_param(void){
 	}	
 }
 
+void save_user_endoffest(void)
+{
+	int8_t write_size = 0;
+	unsigned int write_addr = 0;
+	char *p = NULL;
+
+	p = (char *)(&(uarm.param.front_offset));
+	write_size = sizeof(uarm.param.front_offset);
+	write_addr = EEPROM_USER_FRONT_OFFSET_ADDR;	
+	for( ; write_size > 0; write_size-- ){
+		eeprom_put_char( write_addr++, *(p++) );
+	}	
+
+	p = (char *)(&uarm.param.high_offset);
+	write_size = sizeof(uarm.param.high_offset);
+	write_addr = EEPROM_USER_HEIGHT_OFFSET_ADDR;
+	for(;write_size>0;write_size--){
+		eeprom_put_char(write_addr++,*(p++));
+	}
+	
+}
+
+void read_user_endoffest(void)
+{
+	int8_t read_size = 0;
+	unsigned  int  read_addr = 0;
+	char *p = NULL;
+
+
+	p = (char *)(&(uarm.param.front_offset));
+	read_size = sizeof(uarm.param.front_offset);
+	read_addr = EEPROM_USER_FRONT_OFFSET_ADDR;
+	for( ; read_size > 0; read_size-- ){
+		*(p++) = eeprom_get_char(read_addr++);
+	}	
+
+	p = (char *)(&(uarm.param.high_offset));
+	read_size = sizeof(uarm.param.high_offset);
+	read_addr = EEPROM_USER_HEIGHT_OFFSET_ADDR;
+	for( ; read_size > 0; read_size-- ){
+		*(p++) = eeprom_get_char(read_addr++);
+	}	
+}
 
 void write_sn_num(void){
 	int8_t write_size = 0;

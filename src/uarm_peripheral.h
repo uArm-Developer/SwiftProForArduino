@@ -35,6 +35,8 @@ void cycle_report_stop(void);
 
 void read_sys_param(void);
 void save_sys_param(void);
+void save_user_endoffest(void);
+void read_user_endoffest(void);
 void write_sn_num(void);
 
 void cycle_report_coord(void);

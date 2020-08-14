@@ -962,6 +962,7 @@ static bool uarm_cmd_m2241(char *payload){
 }
 
 static void uarm_cmd_m2400(uint8_t param){	// <! set work mode
+	char h_str[20],s_str[20];
 	switch(param){
 		case WORK_MODE_NORMAL:				// <! nomal mode
 						end_effector_deinit();
@@ -1007,7 +1008,15 @@ static void uarm_cmd_m2400(uint8_t param){	// <! set work mode
 						uarm.param.high_offset 	= DEFAULT_ROUND_PEN_HEIGHT;
 						uarm.param.front_offset = DEFAULT_ROUND_PEN_FRONT;		
 		break;	
-		case 7: 
+		case WORK_MODE_USER:
+						end_effector_deinit();
+						uarm.param.work_mode = WORK_MODE_USER;
+						read_user_endoffest();
+//						dtostf(uarm.param.high_offset,5,4,h_str);	
+//						dtostf(uarm.param.front_offset,5,4,s_str);
+//						sprintf( tail_report_str, " H%s S%s R%s\n", h_str, s_str);				
+		break;
+		case 8: 
 						end_effector_deinit();	
 						uarm.param.work_mode = WORK_MODE_TEST;
 						uarm.param.high_offset 	= DEFAULT_TEST_HEIGHT;
@@ -1026,9 +1035,24 @@ static void uarm_cmd_m2401(void){		 // <! single reference
 
 static void uarm_cmd_m2410(void){
 	float x, y, z;
-	step_to_coord( sys.position[X_AXIS], sys.position[Y_AXIS], sys.position[Z_AXIS], &x, &y, &z); // calculate the current coord  
+//	step_to_coord( sys.position[X_AXIS], sys.position[Y_AXIS], sys.position[Z_AXIS], &x, &y, &z); // calculate the current coord  
+	float angle_l = 0, angle_r = 0, angle_b =0;
+	char z_str[20] = {0};
+
+	angle_l = calculate_current_angle(CHANNEL_ARML);		// <! calculate init angle
+	angle_r = calculate_current_angle(CHANNEL_ARMR);
+	angle_b = calculate_current_angle(CHANNEL_BASE)-90;
+	//angle_e = end_effector_get_angle();
+
+	angle_to_coord( angle_l, angle_r, angle_b, &x, &y, &z );
 	uarm.param.high_offset = z;
+											 
+//	dtostrf( z, 5, 4, z_str );
+//	
+//
+//	sprintf( tail_report_str, " H%s\n", z_str );
 	save_sys_param();
+	save_user_endoffest();
 }
 
 static bool uarm_cmd_m2411(char *payload){
@@ -1043,6 +1067,8 @@ static bool uarm_cmd_m2411(char *payload){
 		if( !read_float(offset_str, NULL, &front_offset) ){ return false; }
 		uarm.param.front_offset = front_offset;
 		save_sys_param();
+		
+		save_user_endoffest();
 		return true;
 	}	
 }
@@ -1064,6 +1090,23 @@ static bool uarm_cmd_m2412(char *payload){
 	}	
 }
 
+static bool uarm_cmd_m2413(char *payload){
+	float heigth_offset = 0;
+	char offset_str[20] = {0};
+	
+	uint8_t rtn = 0;
+	if( rtn = sscanf(payload, "H%[0-9-+.]", offset_str) < 1 ){
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return false;
+	}else{
+		if( !read_float(offset_str, NULL, &heigth_offset) ){ return false; }
+		uarm.param.high_offset = heigth_offset;
+		save_sys_param();
+		
+		save_user_endoffest();
+		return true;
+	}	
+}
 
 static void uarm_cmd_m2420(uint8_t param){
 //	multi_point_reference(param);
@@ -1256,7 +1299,7 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 			//DB_PRINT_STR( "M2307\r\n" );
 			break;	
 		case 2400:
-								if( (line[0]=='S') && (line[1]>='0'&&line[1]<='7') ){
+								if( (line[0]=='S') && (line[1]>='0'&&line[1]<='8') ){
 									uarm_cmd_m2400( line[1]-'0' );
 									return UARM_CMD_OK;
 								}else{ return UARM_CMD_ERROR; }	
@@ -1284,6 +1327,13 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 									return UARM_CMD_ERROR;
 								} 			
 			break;
+		case 2413:
+								if( uarm_cmd_m2413(line) == true ){
+									return UARM_CMD_OK;
+								}else{
+									return UARM_CMD_ERROR;
+								} 
+			break;								
 		case 2500:
 								if( uarm_cmd_m2500() == true ){
 									return UARM_CMD_OK;

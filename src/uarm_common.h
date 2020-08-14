@@ -33,6 +33,9 @@
 #define EEPROM_MODE_ADDR									900U
 #define EEPROM_HEIGHT_OFFSET_ADDR					910U
 #define EEPROM_FRONT_OFFSET_ADDR					920U
+#define EEPROM_USER_HEIGHT_OFFSET_ADDR				930U
+#define EEPROM_USER_FRONT_OFFSET_ADDR				940U
+
 #define EEPROM_EFFECT_ANGLE_OFFSET_ADDR 	3202U
 
 // <! 600 bytes
@@ -47,6 +50,7 @@ enum uarm_work_mode_e {
 	WORK_MODE_STEPER_FLAT,									// <! flat steper mode
 	WORK_MODE_STEPER_STANDARD,							// <! standard steper mode
 	WORK_MODE_TOUCH_PEN,
+	WORK_MODE_USER,
 	WORK_MODE_TEST,
 };
 

@@ -1,9 +1,11 @@
-# Swift Pro Firmware V4.8.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
+# Swift Pro Firmware V4.9.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
 
 ----------
-## Update Summary for v4.8.0
+## Update Summary for v4.9.0
 
-* Fix angle limit error
+* Fix M2410 bug
+* Add M2413 interface
+* Add M2400 S7 work mode
 
 ## Caution
 #### The current firmware is not perfect and will be updated periodically
