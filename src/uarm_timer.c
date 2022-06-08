@@ -27,20 +27,34 @@ void time2_set(double resolution, void (*callback)()){
   ASSR &= ~(1<<AS2);
   TIMSK2 &= ~(1<<OCIE2A);
   
-  if ((F_CPU >= 1000000UL) && (F_CPU <= 16000000UL)) {  // prescaler set to 64
-    TCCR2B |= (1<<CS22);
-    TCCR2B &= ~((1<<CS21) | (1<<CS20));
-    prescaler = 64.0;
-  } else if (F_CPU < 1000000UL) { // prescaler set to 8
-    TCCR2B |= (1<<CS21);
-    TCCR2B &= ~((1<<CS22) | (1<<CS20));
-    prescaler = 8.0;
-  } else { // F_CPU > 16Mhz, prescaler set to 128
-    TCCR2B |= ((1<<CS22) | (1<<CS20));
-    TCCR2B &= ~(1<<CS21);
-    prescaler = 128.0;
-  } 
-  time2.tcnt = 0xff + 1 - (int)((float)F_CPU * resolution / prescaler);
+//  if ((F_CPU >= 1000000UL) && (F_CPU < 16000000UL)) {  // prescaler set to 64
+//    TCCR2B |= ((1<<CS21)| (1<<CS20));
+//        TCCR2B &= ~(1<<CS22);
+//    prescaler = 64.0;
+//  } else if (F_CPU < 1000000UL) { // prescaler set to 8
+//    TCCR2B |= (1<<CS21);
+//    TCCR2B &= ~((1<<CS22) | (1<<CS20));
+//    prescaler = 8.0;
+//  } else { // F_CPU > 16Mhz, prescaler set to 128
+//    TCCR2B |= ((1<<CS22)| (1<<CS20)|(1<<CS21)) ;
+////    TCCR2B &= ~(1<<CS21) ;
+//    prescaler = 512.0;
+//  } 
+	if(resolution<500)
+	{
+		TCCR2B |= ((1<<CS22)| (1<<CS20)|(1<<CS21)) ;
+////    TCCR2B &= ~(1<<CS21) ;
+    prescaler = 2048.0;
+	}
+	else
+		{
+		TCCR2B |= ((1<<CS22)| (1<<CS20)) ;
+			TCCR2B &= ~(1<<CS21) ;
+		prescaler = 256.0;
+
+		}
+  time2.tcnt = 0xff + 1 - (int)((float)F_CPU / resolution / prescaler);
+
 }
 
 void time2_start(void){

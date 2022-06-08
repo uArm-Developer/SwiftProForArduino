@@ -3,6 +3,7 @@
 struct uarm_state_t uarm = {0};
 char hardware_version[8] = {0};
 char bt_mac_addr[13] = {0};
+enum uarm_device_e uarm_device = UARM_PRO;
 
 void uarm_swift_init(void){
 	//DB_PRINT_STR("uarm init\r\n");
@@ -10,8 +11,10 @@ void uarm_swift_init(void){
 
 	read_hardware_version();	
 	angle_sensor_init();
+	button_init();
 
 	beep_tone(260, 1000);
+
 	read_sys_param();
 	pump_off();
 	gripper_relesae();
@@ -20,6 +23,7 @@ void uarm_swift_init(void){
 	
 	update_motor_position();
 
+	uarm.reset_flag = false;
 	ADCSRA |= ( 1<<ADPS2 | 1<<ADPS1 | 1<<ADPS0 | 1<<ADEN );			// <!adc set
 
 	DDRG &= ~(1<<3);

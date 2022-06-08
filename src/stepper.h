@@ -34,13 +34,14 @@ void st_wake_up();
 
 // Immediately disables steppers
 void st_go_idle();
+void st_go_idle_2() ;
 
 // Generate the step and direction port invert masks.
 void st_generate_step_dir_invert_masks();
 
 // Reset the stepper subsystem variables       
 void st_reset();
-             
+void st_reset2();
 // Reloads step segment buffer. Called continuously by realtime execution system.
 void st_prep_buffer();
 

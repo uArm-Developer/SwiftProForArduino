@@ -1,10 +1,12 @@
 # Swift Pro Firmware V4.9.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
 
 ----------
-## Update Summary for v4.9.0
+## Update Summary for v4.10.0
 
-* Fix M2410 bug
-* Add M2413 interface
+* Fix M2210 frequency bug
+* Fix G0 Speed bug
+* Fix stop and recover bug
+* Add P2236 G2207 G2208 interface
 * Add M2400 S7 work mode
 
 ## Caution
@@ -20,11 +22,11 @@
 
 First, connect to uArm using the serial terminal of your choice.Set the baud rate to 115200 as 8-N-1 (8-bits, no parity, and 1-stop bit.) .Cmd list reference to [protocol documents](doc/).
 
-* move cmd support **G0,G1,G2004,G2201,G2202,G2204,G2205**.
+* move cmd support **G0,G1,G2004,G2201,G2202,G2204,G2205,G2206,G2207,G2208**.
 * setting cmd support **M17,M204,M2019,M2120,M2121,M2122,M2201,M2202,M2203,M2210,M2215,M2220,M2221,M2222,M2231,M2232,M2233,M2400,M2401,M2410,M2411,M2240,M2241**.                                                                                                                                                                           
 not support currently **M2211,M2212,M2213,M2234,M2245**.
 * query cmd support 
-**P2200,P2201,P2202,P2203,P2204,P2205,P2206,P2220,P2221,P2231,P2231,P2232,P2233,P2234,P2240,P2241,P2242,P2400**.                                                                  
+**P2200,P2201,P2202,P2203,P2204,P2205,P2206,P2220,P2221,P2231,P2231,P2232,P2233,P2234,P2236,P2240,P2241,P2242,P2400**.                                                                  
 ----------
 ## How to upgrade uArm
 

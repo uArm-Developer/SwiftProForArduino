@@ -252,6 +252,40 @@ void st_go_idle()
 }
 
 
+
+// Stepper shutdown
+void st_go_idle_2() 
+{
+  // Disable Stepper Driver Interrupt. Allow Stepper Port Reset Interrupt to finish, if active.
+  TIMSK1 &= ~(1<<OCIE1A); // Disable Timer1 interrupt
+  TCCR1B = (TCCR1B & ~((1<<CS12) | (1<<CS11))) | (1<<CS10); // Reset clock to no prescaling.
+  busy = false;
+  
+  // Set stepper driver idle state, disabled or enabled, depending on settings and circumstances.
+  bool pin_state = false; // Keep enabled.
+  if (((settings.stepper_idle_lock_time != 0xff) || sys_rt_exec_alarm) && sys.state != STATE_HOMING) {
+    // Force stepper dwell to lock axes for a defined amount of time to ensure the axes come to a complete
+    // stop and not drift from residual inertial forces at the end of the last movement.
+//    delay_ms(settings.stepper_idle_lock_time);
+    pin_state = true; // Override. Disable steppers.
+  }
+  if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)) { pin_state = !pin_state; } // Apply pin invert.
+  
+  //if (pin_state) { STEPPERS_DISABLE_PORT |= (1<<STEPPERS_DISABLE_BIT); }
+  //else { STEPPERS_DISABLE_PORT &= ~(1<<STEPPERS_DISABLE_BIT); }
+	// <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//	if (pin_state){
+//		ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
+//		ARMR_STEPPERS_DISABLE_PORT |= ARMR_STEPPERS_DISABLE_MASK;
+//		BASE_STEPPERS_DISABLE_PORT |= BASE_STEPPERS_DISABLE_MASK;
+//	}else{
+//		ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
+//		ARMR_STEPPERS_DISABLE_PORT &= (~ARMR_STEPPERS_DISABLE_MASK);
+//		BASE_STEPPERS_DISABLE_PORT &= (~BASE_STEPPERS_DISABLE_MASK);		
+//	}
+	
+}
+
 /* "The Stepper Driver Interrupt" - This timer interrupt is the workhorse of Grbl. Grbl employs
    the venerable Bresenham line algorithm to manage and exactly synchronize multi-axis moves.
    Unlike the popular DDA algorithm, the Bresenham algorithm is not susceptible to numerical
@@ -320,7 +354,7 @@ ISR(TIMER1_COMPA_vect)
   #else  // Normal operation
     //STEP_PORT = (STEP_PORT & ~STEP_MASK) | st.step_outbits;
     
-    ARML_STEP_PORT = (ARML_STEP_PORT & ~ARML_STEP_MASK) | (st.step_outbits & (1<<ARML_STEP_BIT))<<6;
+    	ARML_STEP_PORT = (ARML_STEP_PORT & ~ARML_STEP_MASK) | (st.step_outbits & (1<<ARML_STEP_BIT))<<6;
 		ARMR_STEP_PORT = (ARMR_STEP_PORT & ~ARMR_STEP_MASK) | (st.step_outbits & (1<<ARMR_STEP_BIT))<<2;
 		BASE_STEP_PORT = (BASE_STEP_PORT & ~BASE_STEP_MASK) | (st.step_outbits & (1<<BASE_STEP_BIT))>>2;
   #endif  
@@ -518,7 +552,18 @@ void st_reset()
 	BASE_DIRECTION_PORT = (BASE_DIRECTION_PORT & ~BASE_DIRECTION_MASK) | (dir_port_invert_mask & (1<<BASE_DIRECTION_BIT))>>1;	
 }
 
+void st_reset2()
+{
+	memset(&prep, 0, sizeof(st_prep_t));
+	memset(&st, 0, sizeof(stepper_t));
+	st.exec_segment = NULL;
+	pl_block = NULL;  // Planner block pointer used by segment buffer
+	segment_buffer_tail = 0;
+	segment_buffer_head = 0; // empty = tail
+	segment_next_head = 1;
+	busy = false;
 
+}
 // Initialize and start the stepper motor subsystem
 void stepper_init()
 {

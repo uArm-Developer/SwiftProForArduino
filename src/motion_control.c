@@ -42,7 +42,6 @@
   // If enabled, check for soft limit violations. Placed here all line motions are picked up
   // from everywhere in Grbl.
   if (bit_istrue(settings.flags,BITFLAG_SOFT_LIMIT_ENABLE)) { limits_soft_check(target); }    
-      
   // If in check gcode mode, prevent motion by blocking planner. Soft limits still work.
   if (sys.state == STATE_CHECK_MODE) { return; }
     
@@ -67,7 +66,7 @@
 	float final_angle[3];
 	
 	float x= target[X_AXIS], y= target[Y_AXIS], z = target[Z_AXIS];
-
+	if ((uarm.motor_state_bits&0x07)!=0x07) return UARM_ENABLE_ERROR;
 	coord_effect2arm( &x, &y, &z );                               // calculate the arm current coord
 	coord_to_angle( x, y, z,																			
 									&final_angle[X_AXIS], &final_angle[Y_AXIS], &final_angle[Z_AXIS] ); // calculate final angle
@@ -84,14 +83,15 @@
 	if( is_angle_legal( final_angle[X_AXIS], final_angle[Y_AXIS], final_angle[Z_AXIS] ) == false ){   // check the angle
 		return UARM_COORD_ERROR;
 	}
-
+	
 //	angle_to_coord( final_angle[X_AXIS], final_angle[Y_AXIS], final_angle[Z_AXIS], &x, &y, &z );
 //	coord_arm2effect( &x, &y, &z );
 	
 //	target[X_AXIS] = x;
 //	target[Y_AXIS] = y;
 //	target[Z_AXIS] = z;
-	
+	if(feed_rate!=0)
+	{
 	step_to_coord( uarm.target_step[X_AXIS], uarm.target_step[Y_AXIS], uarm.target_step[Z_AXIS], 
 								 &current_coord[X_AXIS], &current_coord[Y_AXIS], &current_coord[Z_AXIS]);				// calculate the arm current coord  
 	coord_arm2effect( &current_coord[X_AXIS], &current_coord[Y_AXIS], &current_coord[Z_AXIS] );		// calculate the effect current coord  
@@ -138,7 +138,8 @@
 		coord_effect2arm( &final_coord[X_AXIS], &final_coord[Y_AXIS], &final_coord[Z_AXIS] );		// <! convert the position
 
 		coord_to_angle( final_coord[X_AXIS], final_coord[Y_AXIS], final_coord[Z_AXIS],																			
-											&angle_x, &angle_y, &angle_z ); 																			// <! calculate final angle
+											&angle_x, &angle_y
+, &angle_z ); 																			// <! calculate final angle
 											
 		if( is_angle_legal( angle_x, angle_y, angle_z ) == false ){ 														// check the angle
 			continue;
@@ -160,19 +161,25 @@
 	      else { break; }
 	  } while (1);	
 
-		uarm.target_step[X_AXIS] = final_step[X_AXIS];
+		uarm.target_step[X_AXIS] = final_step[X_AXIS];   
 		uarm.target_step[Y_AXIS] = final_step[Y_AXIS];
 		uarm.target_step[Z_AXIS] = final_step[Z_AXIS];
 		
 		final_step[X_AXIS] = (final_step[X_AXIS]) / (settings.steps_per_mm[X_AXIS]);
 		final_step[Y_AXIS] = (final_step[Y_AXIS]) / (settings.steps_per_mm[Y_AXIS]); 
 		final_step[Z_AXIS] = (final_step[Z_AXIS]) / (settings.steps_per_mm[Z_AXIS]);
+	
+			plan_buffer_line(final_step, feed_rate, invert_feed_rate);
 		
-		plan_buffer_line(final_step, feed_rate, invert_feed_rate);
-		
-		//DB_PRINT_STR( "%d %d %d\r\n", final_step[X_AXIS], final_step[Y_AXIS], final_step[Z_AXIS] );
-		uarm.run_flag = true;
-		
+			//DB_PRINT_STR( "%d %d %d\r\n", final_step[X_AXIS], final_step[Y_AXIS], final_step[Z_AXIS] );
+			uarm.run_flag = true;
+	
+
+	}
+	}
+	else
+	{
+		return STATUS_OK;
 	}
 	return STATUS_OK;
 }
@@ -459,7 +466,7 @@ void mc_reset()
     if ((sys.state & (STATE_CYCLE | STATE_HOMING)) || (sys.suspend == SUSPEND_ENABLE_HOLD)) {
       if (sys.state == STATE_HOMING) { bit_true_atomic(sys_rt_exec_alarm, EXEC_ALARM_HOMING_FAIL); }
       else { bit_true_atomic(sys_rt_exec_alarm, EXEC_ALARM_ABORT_CYCLE); }
-      st_go_idle(); // Force kill steppers. Position has likely been lost.
+      st_go_idle_2(); // Force kill steppers. Position has likely been lost.
     }
   }
 }

@@ -80,6 +80,9 @@ typedef struct {
   int32_t probe_position[N_AXIS]; // Last probe position in machine coordinates and steps.
   uint8_t probe_succeeded;        // Tracks if last probing cycle was successful.
   uint8_t homing_axis_lock;       // Locks axes when limits engage. Used as an axis motion mask in the stepper ISR.
+  int 	  check_cnt;             //check_motor
+  bool 	  rest_flag;			//
+  bool    print_reset_flag;
 } system_t;
 extern system_t sys;
 

@@ -116,6 +116,12 @@ static void add_result_to_report(uint8_t result, char *str){		// <! create repor
 				}
 				strcat( str, "E26" );
 			break;
+			case UARM_ENABLE_ERROR:
+				if( strlen(str) ){
+					strcat( str, " " );
+				}
+				strcat( str, "E27" );
+			break;				
 			default:			
 				if( strlen(str) ){
 					strcat( str, " " );
@@ -134,7 +140,6 @@ static void add_result_to_report(uint8_t result, char *str){		// <! create repor
 void parse_cmd_line(void){
 	if( strlen(asyn_pack.line) ){																									// <! asyn cmd is not empty
 		asyn_pack.parse_result = gc_execute_line(asyn_pack.line);
-		
 		add_result_to_report( asyn_pack.parse_result, asyn_pack.report_str );
 	
 		asyn_pack.line_parse_done = true;
@@ -151,9 +156,9 @@ void parse_cmd_line(void){
 		}
 
 		syn_queue[syn_parse_sp].parse_result = gc_execute_line(syn_queue[syn_parse_sp].line);
-		
-		add_result_to_report( syn_queue[syn_parse_sp].parse_result, syn_queue[syn_parse_sp].report_str );
-		
+		if(sys.print_reset_flag==false)
+			add_result_to_report( syn_queue[syn_parse_sp].parse_result, syn_queue[syn_parse_sp].report_str );
+	
 		syn_queue[syn_parse_sp].line_parse_done = true;
 		memset( syn_queue[syn_parse_sp].line, 0x0, CMD_BUFFER_SIZE );	
 		
@@ -186,7 +191,8 @@ void report_parse_result(void){
 
 	if( uarm.cycle_report_flag ){																	//<! cycle report coord
 		uarm.cycle_report_flag = false;
-		cycle_report_coord();
+//		if(sys.state =STATE_CYCLE)
+			cycle_report_coord();
 	}
 
 	static uint8_t limit_per_status = 0;																//<! report limit sw 											
@@ -399,6 +405,1039 @@ static enum uarm_protocol_e uarm_cmd_g2206(char *payload){
 	}
 }
 
+static enum uarm_protocol_e uarm_cmd_g2207(char *payload){
+	char speed_str[20],direction_str[20];
+	float speed;
+	int direction;
+	float x = 0, y = 0, z = 0, angle_e=0,x_l=0,y_l=0,z_l=0,z_z=0;
+	float angle_l = 0, angle_r = 0, angle_b =0,angle_ab=0,h2=0,angle_z=0,length=0,s=0;
+	char l_str[20] = {0}, r_str[20] = {0}, b_str[20] = {0}, e_str[20] = {0};
+	float target[3];
+	float final_angle_l=0,final_angle_r=0,final_angle_b=0;
+	float angle_ar=0,angle_br=0,cnt=0,cnt2=0;
+	uint8_t rtn =0 ;
+	if(rtn = sscanf(payload, "N%d F%[0-9-+.]",&direction,speed_str)<2)
+	{
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return UARM_CMD_ERROR;
+	}else{
+		if( !read_float(speed_str, NULL, &speed) ){ return false; }
+	}
+
+
+	angle_l = calculate_current_angle(CHANNEL_ARML);		// <! calculate init angle
+	angle_r = calculate_current_angle(CHANNEL_ARMR);
+	angle_b = calculate_current_angle(CHANNEL_BASE)-90;
+
+	angle_to_coord( angle_l, angle_r, angle_b, &x, &y, &z );
+
+	coord_arm2effect( &x, &y, &z );
+
+	step_to_coord( uarm.target_step[X_AXIS], uarm.target_step[Y_AXIS], uarm.target_step[Z_AXIS], 
+								 &target[X_AXIS], &target[Y_AXIS], &target[Z_AXIS] );
+	coord_arm2effect( &target[X_AXIS], &target[Y_AXIS], &target[Z_AXIS] );
+	if(speed<0)
+	{
+		direction+=3;
+		speed = -speed;
+	}
+	switch(direction)
+	{
+		case 0:
+
+/*********************************************************************************************/
+			final_angle_l = angle_l;
+			final_angle_r = angle_r;
+			final_angle_b = angle_b;
+			x_l = x;
+			z_l = z;
+			y_l = y;
+
+			final_angle_l = final_angle_l /RAD_TO_DEG;
+			final_angle_r = final_angle_r /RAD_TO_DEG;
+			h2 = ARM_A *sin(final_angle_l)- ARM_B*sin(final_angle_r);
+			angle_ab = ARMA_ARMB_MAX_ANGLE-2;
+			final_angle_l = (180-angle_ab)/2;
+			final_angle_l = final_angle_l /RAD_TO_DEG;
+			length = ARM_A *cos(final_angle_l)*2;
+			s = sqrt(length*length-h2*h2);
+			s += length_center_to_origin + uarm.param.front_offset;
+			final_angle_b = asin(y/s);
+			x = s*cos(final_angle_b);
+			coord_effect2arm( &x, &y, &z );
+			coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+
+			if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false) 
+			{
+				final_angle_l = angle_l;
+				final_angle_r = angle_r;
+				final_angle_b = angle_b;
+				x = x_l;
+						y = y_l;
+						z = z_l;
+				final_angle_l = final_angle_l /RAD_TO_DEG;
+				final_angle_r = final_angle_r /RAD_TO_DEG;
+				h2 = ARM_A *sin(final_angle_l)- ARM_B*sin(final_angle_r);
+					
+				final_angle_r =(ARMB_MIN_ANGLE+1)/RAD_TO_DEG;
+				final_angle_l = asin((ARM_B*sin(final_angle_r)+h2)/ARM_A)*RAD_TO_DEG;
+				final_angle_l = final_angle_l /RAD_TO_DEG;
+				s = ARM_A*cos(final_angle_l)+ARM_B*cos(final_angle_r);
+				s += length_center_to_origin+uarm.param.front_offset;
+				final_angle_b = asin(y_l/s);
+				x = s*cos(final_angle_b);
+				coord_effect2arm( &x, &y, &z );
+				coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+				if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false) 
+				{
+					final_angle_l = angle_l;
+					final_angle_r = angle_r;
+					final_angle_b = angle_b;
+					x = x_l;
+					y = y_l;
+					z = z_l;
+					final_angle_l = final_angle_l /RAD_TO_DEG;
+					final_angle_r = final_angle_r /RAD_TO_DEG;
+					h2 = ARM_A *sin(final_angle_l)- ARM_B*sin(final_angle_r);					
+					final_angle_l = (ARMA_MIN_ANGLE+1)/RAD_TO_DEG;
+					final_angle_r = asin((ARM_A*sin(final_angle_l)-h2)/ARM_B)*RAD_TO_DEG;	
+					final_angle_r = final_angle_r/RAD_TO_DEG;
+					s = ARM_A * cos(final_angle_l)+ ARM_B*cos(final_angle_r);
+					s += length_center_to_origin + uarm.param.front_offset; //doubt
+
+					final_angle_b = asin(y_l/s);
+					x = s*cos(final_angle_b);
+					coord_effect2arm( &x, &y, &z );
+					coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+					
+					if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false) 
+					{
+										
+					}
+					else
+					{
+					
+						final_angle_b = asin(y_l/s);
+						x = s*cos(final_angle_b);
+						
+					}
+				}
+				else
+				{
+					final_angle_b = asin(y_l/s);
+					x = s*cos(final_angle_b);
+				}
+			}
+			else
+			{
+				final_angle_b = asin(y_l/s);
+				x = s*cos(final_angle_b);
+			}
+			if(x>x_l)
+			{
+				if(abs(x-x_l)>0.7)
+				{
+					
+				}
+				else
+				{
+				
+					x+=20;//to report error
+				}
+			}
+			else
+			{
+							x = x+50;
+			}
+			target[X_AXIS] =x;
+			
+		break;
+	
+		case 3:
+
+			final_angle_l = angle_l;
+			final_angle_r = angle_r;
+			final_angle_b = angle_b;
+			x_l = x;
+			z_l = z;
+			y_l = y;
+			final_angle_l = final_angle_l /RAD_TO_DEG;
+			final_angle_r = final_angle_r /RAD_TO_DEG;
+			h2 = ARM_A *sin(final_angle_l)- ARM_B*sin(final_angle_r);
+			angle_ab = ARMA_ARMB_MIN_ANGLE+1;
+			final_angle_l = (180-angle_ab)/2;
+			final_angle_l = final_angle_l /RAD_TO_DEG;
+			length = ARM_A *cos(final_angle_l)*2;
+			s = sqrt(length*length-h2*h2);
+			s += length_center_to_origin + uarm.param.front_offset;
+			final_angle_b = asin(y/s);
+			x = s*cos(final_angle_b);
+			coord_effect2arm( &x, &y, &z );
+
+			coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+			
+			if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false)            //CHANGE 
+			{	
+				final_angle_l = angle_l;
+				final_angle_r = angle_r;
+				final_angle_b = angle_b;
+				x = x_l;
+						y = y_l;
+						z = z_l;
+				final_angle_l = final_angle_l /RAD_TO_DEG;
+				final_angle_r = final_angle_r /RAD_TO_DEG;
+				h2 = ARM_A *sin(final_angle_l)- ARM_B*sin(final_angle_r);
+					
+				final_angle_r =(ARMB_MAX_ANGLE-1)/RAD_TO_DEG;
+				final_angle_l = asin((ARM_B*sin(final_angle_r)+h2)/ARM_A)*RAD_TO_DEG;
+				final_angle_l = final_angle_l /RAD_TO_DEG;
+				s = ARM_A*cos(final_angle_l)+ARM_B*cos(final_angle_r);
+				s += length_center_to_origin+uarm.param.front_offset;
+				final_angle_b = asin(y/s);
+				x = s*cos(final_angle_b);
+				coord_effect2arm( &x, &y, &z );
+				coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+				if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false)			//CHANGE 
+				{
+					final_angle_l = angle_l;
+					final_angle_r = angle_r;
+					final_angle_b = angle_b;
+					x = x_l;
+						y = y_l;
+						z = z_l;
+					final_angle_l = final_angle_l /RAD_TO_DEG;
+					final_angle_r = final_angle_r /RAD_TO_DEG;
+					h2 = ARM_A *sin(final_angle_l)- ARM_B*sin(final_angle_r);
+					final_angle_l = (ARMA_MAX_ANGLE-1)/RAD_TO_DEG;
+					final_angle_r = asin((ARM_A*sin(final_angle_l)-h2)/ARM_B)*RAD_TO_DEG;	
+					final_angle_r = final_angle_r/RAD_TO_DEG;
+					s = ARM_A * cos(final_angle_l)+ ARM_B*cos(final_angle_r);
+					s += length_center_to_origin + uarm.param.front_offset; //doubt
+
+					final_angle_b = asin(y/s);
+					x = s*cos(final_angle_b);
+					coord_effect2arm( &x, &y, &z );
+					coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+					if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false)	
+					{
+						final_angle_l = angle_l;
+						final_angle_r = angle_r;
+						final_angle_b = angle_b;
+						x = x_l;
+						y = y_l;
+							z = z_l;
+						final_angle_l = final_angle_l /RAD_TO_DEG;
+						final_angle_r = final_angle_r /RAD_TO_DEG;
+						h2 = ARM_A *sin(final_angle_l)- ARM_B*sin(final_angle_r);	
+						s = ARM_A * cos(final_angle_l)+ ARM_B*cos(final_angle_r);
+						
+						s += length_center_to_origin + uarm.param.front_offset; //doubt
+						final_angle_b = asin(y/s);
+						final_angle_b = final_angle_b*RAD_TO_DEG;
+
+						final_angle_l =  (ARMA_MIN_ANGLE)/RAD_TO_DEG;
+						final_angle_r = asin((h2)/ARM_B)*RAD_TO_DEG;
+						final_angle_r = 180+final_angle_r;
+
+						final_angle_r = (int)(final_angle_r);
+						final_angle_r = final_angle_r/RAD_TO_DEG;
+						s = ARM_A * cos(final_angle_l)+ ARM_B*cos(final_angle_r);
+						s += length_center_to_origin + uarm.param.front_offset; //doubt
+
+						final_angle_b = asin(y_l/s);
+						
+						x = s*cos(final_angle_b)+2;
+						coord_effect2arm( &x, &y, &z );
+						coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+						if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false)	
+						{
+							x=3;
+						}
+						else
+						{
+								final_angle_b = asin(y_l/s);
+								x = s*cos(final_angle_b)+2;
+						}
+					}
+					else
+					{
+						final_angle_b = asin(y_l/s);
+						x = s*cos(final_angle_b);
+					}
+				}
+				else
+				{
+				
+					final_angle_b = asin(y_l/s);
+					x = s*cos(final_angle_b);
+				}
+			}
+			else
+			{
+				final_angle_b = asin(y_l/s);
+				x = s*cos(final_angle_b);
+			}
+			if(x<x_l)
+			{
+				if(abs(x-x_l)>0.7)
+				{}
+				else
+				{
+					x-=20;//to report error
+				}
+			}
+			else
+			{
+				x-=20;
+			}
+			target[X_AXIS] =x;
+
+
+		break;
+
+
+
+		
+		case 1:
+			final_angle_l = angle_l;
+			final_angle_r = angle_r;
+			final_angle_b = angle_b;
+			x_l = x;
+			z_l = z;
+			y_l = y;
+			final_angle_l = final_angle_l /RAD_TO_DEG;
+			final_angle_r = final_angle_r /RAD_TO_DEG;
+			h2 = ARM_A*sin(final_angle_l)-ARM_B*sin(final_angle_r);
+			
+			angle_ab = ARMA_ARMB_MAX_ANGLE-2;
+			
+			final_angle_l = (180-angle_ab)/2;
+			final_angle_l = final_angle_l /RAD_TO_DEG;
+			length = ARM_A *cos(final_angle_l)*2;
+			s = sqrt(length*length-h2*h2);
+			s += length_center_to_origin+uarm.param.front_offset;
+			final_angle_b = acos(x_l/s);
+			y= s*sin(final_angle_b);
+			coord_effect2arm( &x, &y, &z );
+
+			coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+			
+			if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false)   		
+			{
+				//ARM_B
+				final_angle_l = angle_l;
+				final_angle_r = angle_r;
+				final_angle_b = angle_b;
+				x = x_l;
+						y = y_l;
+						z = z_l;
+				final_angle_l = final_angle_l /RAD_TO_DEG;
+				final_angle_r = final_angle_r /RAD_TO_DEG;
+				h2 = ARM_A *sin(final_angle_l)- ARM_B*sin(final_angle_r);
+					
+				final_angle_r =(ARMB_MIN_ANGLE+1)/RAD_TO_DEG;
+				final_angle_l = asin((ARM_B*sin(final_angle_r)+h2)/ARM_A)*RAD_TO_DEG;
+				final_angle_l = final_angle_l /RAD_TO_DEG;
+				s = ARM_A*cos(final_angle_l)+ARM_B*cos(final_angle_r);
+				s += length_center_to_origin+uarm.param.front_offset;
+				final_angle_b = acos(x_l/s);
+				y= s*sin(final_angle_b);
+				
+				coord_effect2arm( &x, &y, &z );
+
+				coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+
+				dtostrf( x, 5, 4, l_str );
+				dtostrf( y, 5, 4, r_str );
+				dtostrf( z, 5, 4, b_str );
+					
+				final_angle_r = abs(final_angle_r);
+				if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false) 
+				{
+					
+					
+					final_angle_l = angle_l;
+					final_angle_r = angle_r;
+					final_angle_b = angle_b;
+					x = x_l;
+					y = y_l;
+					z = z_l;
+					final_angle_l = final_angle_l /RAD_TO_DEG;
+					final_angle_r = final_angle_r /RAD_TO_DEG;
+					h2 = ARM_A *sin(final_angle_l)- ARM_B*sin(final_angle_r);
+					final_angle_l = (26+1)/RAD_TO_DEG;
+					final_angle_r = asin((ARM_A*sin(final_angle_l)-h2)/ARM_B)*RAD_TO_DEG;	
+					final_angle_r = final_angle_r/RAD_TO_DEG;
+					s = ARM_A * cos(final_angle_l)+ ARM_B*cos(final_angle_r);
+					s += length_center_to_origin + uarm.param.front_offset; //doubt
+
+					final_angle_b = acos(x_l/s);
+					y= s*sin(final_angle_b);
+					
+					coord_effect2arm( &x, &y, &z );
+
+					coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+					if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false) 
+					{
+						if(y_l>0)
+							y = y_l;
+						else
+							y= -y_l;
+					}
+					else
+					{
+							final_angle_b = acos(x_l/s);
+							y= s*sin(final_angle_b);
+
+					}
+
+				}
+				else
+				{
+					final_angle_b = acos(x_l/s);
+					y= s*sin(final_angle_b);
+					
+				}
+					
+			}
+			else
+			{			
+				final_angle_b = acos(x_l/s);
+				y= s*sin(final_angle_b);
+
+			}
+			if(y>y_l)
+			{
+				if(abs(y-y_l)>0.7)
+				{
+
+				}
+				else
+				{
+					y+=20;//report error
+				}
+			}
+			else
+			{
+				y+=20;
+			}
+			target[Y_AXIS] =y;
+	
+		break;
+		case 4:
+
+/*************************************************************************************/
+				final_angle_l = angle_l;
+				final_angle_r = angle_r;
+				final_angle_b = angle_b;
+				x_l = x;
+				z_l = z;
+				y_l = y;
+				final_angle_l = final_angle_l /RAD_TO_DEG;
+				final_angle_r = final_angle_r /RAD_TO_DEG;
+				h2 = ARM_A*sin(final_angle_l)-ARM_B*sin(final_angle_r);
+				
+				angle_ab = ARMA_ARMB_MAX_ANGLE-2;
+				
+				final_angle_l = (180-angle_ab)/2;
+				final_angle_l = final_angle_l /RAD_TO_DEG;
+				length = ARM_A *cos(final_angle_l)*2;
+				s = sqrt(length*length-h2*h2);
+				s += length_center_to_origin+uarm.param.front_offset;
+				final_angle_b = acos(x/s);
+				y= s*sin(final_angle_b);
+				coord_effect2arm( &x, &y, &z );
+
+				coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+				
+				if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false)   		
+				{
+					//ARM_B
+					final_angle_l = angle_l;
+					final_angle_r = angle_r;
+					final_angle_b = angle_b;
+					x = x_l;
+						y = y_l;
+						z = z_l;
+					final_angle_l = final_angle_l /RAD_TO_DEG;
+					final_angle_r = final_angle_r /RAD_TO_DEG;
+					h2 = ARM_A *sin(final_angle_l)- ARM_B*sin(final_angle_r);
+						
+					final_angle_r =(ARMB_MIN_ANGLE+1)/RAD_TO_DEG;
+					final_angle_l = asin((ARM_B*sin(final_angle_r)+h2)/ARM_A)*RAD_TO_DEG;
+					final_angle_l = final_angle_l /RAD_TO_DEG;
+					s = ARM_A*cos(final_angle_l)+ARM_B*cos(final_angle_r);
+					s += length_center_to_origin+uarm.param.front_offset;
+					final_angle_b = acos(x/s);
+					y= s*sin(final_angle_b);
+					
+					coord_effect2arm( &x, &y, &z );
+
+					coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+					if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false) 
+					{
+						
+						
+						final_angle_l = angle_l;
+						final_angle_r = angle_r;
+						final_angle_b = angle_b;
+						x = x_l;
+						y = y_l;
+						z = z_l;
+						final_angle_l = final_angle_l /RAD_TO_DEG;
+						final_angle_r = final_angle_r /RAD_TO_DEG;
+						h2 = ARM_A *sin(final_angle_l)- ARM_B*sin(final_angle_r);
+						final_angle_l = (ARMA_MIN_ANGLE+1)/RAD_TO_DEG;
+						final_angle_r = asin((ARM_A*sin(final_angle_l)-h2)/ARM_B)*RAD_TO_DEG;	
+						final_angle_r = final_angle_r/RAD_TO_DEG;
+						s = ARM_A * cos(final_angle_l)+ ARM_B*cos(final_angle_r);
+						s += length_center_to_origin + uarm.param.front_offset; //doubt
+
+						final_angle_b = acos(x/s);
+						y= s*sin(final_angle_b);
+						
+						coord_effect2arm( &x, &y, &z );
+
+						coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+						if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false) 
+						{
+								if(y_l<0)
+										y = y_l;
+									else
+										y= -y_l;
+						}
+						else
+						{
+								final_angle_b = acos(x_l/s);
+								y= s*sin(final_angle_b);
+
+						}
+
+					}
+					else
+					{
+						final_angle_b = acos(x_l/s);
+						y= s*sin(final_angle_b);
+						
+					}
+						
+				}
+				else
+				{
+						final_angle_b = acos(x_l/s);
+						y= s*sin(final_angle_b);
+
+				}
+				y= -y;
+				if(y<y_l)
+				{
+					if(abs(y-y_l)>0.7)
+					{
+
+					}
+					else
+					{
+						y-=20;//report error
+					}
+				}
+				else
+				{
+					y-=20;
+				}
+				target[Y_AXIS] =y;
+		
+			break;
+
+
+				
+		break;
+		case 2:
+
+				final_angle_l = angle_l;
+				final_angle_r = angle_r;
+				final_angle_b = angle_b;
+				x_l = x;
+				z_l = z;
+				y_l = y;
+				z_z = z;
+				final_angle_l = final_angle_l /RAD_TO_DEG;
+				final_angle_r = final_angle_r /RAD_TO_DEG;
+				h2 = ARM_A*sin(final_angle_l)-ARM_B*sin(final_angle_r);
+				s = ARM_A*cos(final_angle_l)+ARM_B*cos(final_angle_r);
+				final_angle_l = (ARMA_MAX_ANGLE-1)/RAD_TO_DEG;
+				final_angle_r = (s-ARM_A*cos(final_angle_l))/ARM_B;
+				final_angle_r = acos(final_angle_r);
+				h2 -= ARM_A*sin(final_angle_l)-ARM_B*sin(final_angle_r);
+				z -=h2;
+				
+				coord_effect2arm( &x, &y, &z );
+				coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+				if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false) 
+				{
+					final_angle_l = angle_l;
+					final_angle_r = angle_r;
+					final_angle_b = angle_b;
+					x = x_l;
+					y = y_l;
+					z = z_l;
+					final_angle_l = final_angle_l /RAD_TO_DEG;
+					final_angle_r = final_angle_r /RAD_TO_DEG;
+					h2 = ARM_A*sin(final_angle_l)-ARM_B*sin(final_angle_r);
+					s = ARM_A*cos(final_angle_l)+ARM_B*cos(final_angle_r);
+					final_angle_r = (ARMB_MIN_ANGLE+1)/RAD_TO_DEG;
+					final_angle_l = acos((s-ARM_B*cos(final_angle_r))/ARM_A);
+					h2 -= ARM_A*sin(final_angle_l)-ARM_B*sin(final_angle_r);	
+					z -=h2;
+					
+					coord_effect2arm( &x, &y, &z );
+					coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+					if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false) 
+					{
+						final_angle_l = angle_l;
+						final_angle_r = angle_r;
+						final_angle_b = angle_b;
+						x = x_l;
+						y = y_l;
+						z = z_l;
+
+						final_angle_l = final_angle_l /RAD_TO_DEG;
+						final_angle_r = final_angle_r /RAD_TO_DEG;
+						h2 = ARM_A*sin(final_angle_l)-ARM_B*sin(final_angle_r);
+						s = ARM_A*cos(final_angle_l)+ARM_B*cos(final_angle_r);	
+						angle_ab = ARMA_ARMB_MAX_ANGLE-1;
+						angle_z = ((180-angle_ab)/2)/RAD_TO_DEG;
+						length = cos(angle_z)*ARM_A +cos(angle_z)*ARM_B;
+						h2 -= sqrt(abs(length*length-s*s));
+						z -=h2;
+						coord_effect2arm( &x, &y, &z );
+						coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+						if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false) 
+						{
+
+									
+
+
+						}
+						else
+						{
+							z_l -=h2;	
+
+						}
+							
+					}
+					else
+					{
+						z_l -=h2;		
+					}
+					
+				}
+				else
+				{
+					z_l -=h2;			
+				}
+				if(z_l>z_z)
+				{
+					if(abs(z_z-z_l)>0.7)
+					{
+					}
+					else
+					{
+						z_l +=20;
+					}
+				}
+				else
+				{
+
+					z_l +=20;
+				}
+				target[Z_AXIS] = z_l;
+				
+		break;
+		case 5:
+
+		final_angle_l = angle_l;
+		final_angle_r = angle_r;
+		final_angle_b = angle_b;
+		x_l = x;
+		z_l = z;
+		y_l = y;
+		z_z = z;
+		final_angle_l = final_angle_l /RAD_TO_DEG;
+		final_angle_r = final_angle_r /RAD_TO_DEG;	
+		s = ARM_A *cos(final_angle_l)+ ARM_B*cos(final_angle_r);
+		h2 = ARM_A*sin(final_angle_l)-ARM_B*sin(final_angle_r);	
+
+		final_angle_r = (ARMB_MAX_ANGLE-2)/RAD_TO_DEG;
+		final_angle_l = acos((s-ARM_B*cos(final_angle_r))/ARM_A);
+		h2 -= ARM_A*sin(final_angle_l)-ARM_B*sin(final_angle_r);
+		z -= h2;
+		coord_effect2arm( &x, &y, &z );
+		coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+		if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false) 
+		{
+			final_angle_l = angle_l;
+			final_angle_r = angle_r;
+			final_angle_b = angle_b;
+			x = x_l;
+			y = y_l;
+			z = z_l;
+
+			final_angle_l = final_angle_l /RAD_TO_DEG;
+			final_angle_r = final_angle_r /RAD_TO_DEG;
+			h2 = ARM_A*sin(final_angle_l)-ARM_B*sin(final_angle_r);
+			s = ARM_A*cos(final_angle_l)+ARM_B*cos(final_angle_r);	
+
+			final_angle_l = (ARMA_MIN_ANGLE+1)/RAD_TO_DEG;
+			final_angle_r = acos((s-ARM_A*cos(final_angle_l))/ARM_B);
+			h2 -= ARM_A*sin(final_angle_l)-ARM_B*sin(final_angle_r);	
+			z -=h2;
+			coord_effect2arm( &x, &y, &z );
+			coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+			if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false) 
+			{
+				final_angle_l = angle_l;
+				final_angle_r = angle_r;
+				final_angle_b = angle_b;
+				x = x_l;
+				y = y_l;
+				z = z_l;
+
+				final_angle_l = final_angle_l /RAD_TO_DEG;
+				final_angle_r = final_angle_r /RAD_TO_DEG;
+				h2 = ARM_A*sin(final_angle_l)-ARM_B*sin(final_angle_r);
+				s = ARM_A*cos(final_angle_l)+ARM_B*cos(final_angle_r);	
+
+				angle_ab = ARMA_ARMB_MIN_ANGLE+1;
+				angle_z = ((180-angle_ab)/2)/RAD_TO_DEG;
+				length = cos(angle_z)*ARM_A +cos(angle_z)*ARM_B;
+				h2 -= sqrt(abs(length*length-s*s));
+				z -=h2;
+				coord_effect2arm( &x, &y, &z );
+				coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+				
+				if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false)
+				{
+
+					if((180-angle_l-angle_r)>(ARMA_ARMB_MAX_ANGLE-2))
+					{
+						final_angle_l = angle_l;
+						final_angle_r = angle_r;
+						final_angle_b = angle_b;
+						x = x_l;
+						y = y_l;
+						z = z_l;
+						
+						final_angle_l = final_angle_l /RAD_TO_DEG;
+						final_angle_r = final_angle_r /RAD_TO_DEG;
+						h2 = ARM_A*sin(final_angle_l)-ARM_B*sin(final_angle_r);
+						s = ARM_A*cos(final_angle_l)+ARM_B*cos(final_angle_r);	
+
+						h2 -= ARM_A*sin(final_angle_r)-ARM_B*sin(final_angle_l);
+						z -=h2;
+						coord_effect2arm( &x, &y, &z );
+						coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+						
+						if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false)
+						{
+						}
+						else
+						{
+									if(h2>0)
+										z_l -=h2;
+									else
+										z_l = z_l;
+						}
+					}
+					else
+					{
+						final_angle_l = angle_l;
+						final_angle_r = angle_r;
+						final_angle_b = angle_b;
+						x = x_l;
+						y = y_l;
+						z = z_l;
+
+						final_angle_l = final_angle_l /RAD_TO_DEG;
+						final_angle_r = final_angle_r /RAD_TO_DEG;
+						h2 = ARM_A*sin(final_angle_l)-ARM_B*sin(final_angle_r);
+						s = ARM_A*cos(final_angle_l)+ARM_B*cos(final_angle_r);	
+						angle_ab = ARMA_ARMB_MAX_ANGLE-1;
+						angle_z = ((180-angle_ab)/2)/RAD_TO_DEG;
+						length = cos(angle_z)*ARM_A +cos(angle_z)*ARM_B;
+						h2 -= sqrt(abs(length*length-s*s));
+						z -=h2;
+						coord_effect2arm( &x, &y, &z );
+						coord_to_angle(x,y,z,&final_angle_l,&final_angle_r,&final_angle_b);
+
+						final_angle_l = final_angle_l /RAD_TO_DEG;
+						final_angle_r = final_angle_r /RAD_TO_DEG;
+
+						h2 += sqrt(abs(length*length-s*s));
+						h2 -= ARM_A*sin(final_angle_r)-ARM_B*sin(final_angle_l);
+						z_l -=h2;
+						if(is_angle_legal(final_angle_l,final_angle_r,final_angle_b)==false) 
+							{
+
+						}
+						else
+						{
+							z_l -=h2;	
+						}
+					}
+				}
+				else
+				{
+					z_l -=h2;	   
+				}
+			}
+			else
+			{
+				z_l -=h2;	  
+			}	
+		}
+		else
+		{
+			z_l -=h2;	   
+		}
+		if(z_l<z_z)
+		{
+			if(abs(z_z-z_l)>0.7)
+			{
+			}
+			else
+			{
+				z_l -=20;
+			}
+		}
+		else
+		{
+			z_l -=20;
+		}
+		target[Z_AXIS] = z_l;	
+		break;
+	}
+	return mc_line( 1, target, speed, false );
+}
+
+static enum uarm_protocol_e uarm_cmd_g2208(char *payload){
+	char speed_str[20],direction_str[20];
+	float angle_AB;
+	float speed;
+	int direction;
+	uint8_t rtn;
+	
+	float final_angle_l=0,final_angle_r=0,final_angle_b=0;
+	if(rtn = sscanf(payload, "N%d F%[0-9-+.]",&direction,speed_str)<2)
+	{
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return UARM_CMD_ERROR;
+	}else{
+		if( !read_float(speed_str, NULL, &speed) ){ return false; }
+		float angle_l = 0, angle_r = 0, angle_b = 0;
+		char l_str[20] = {0}, r_str[20] = {0};
+
+		final_angle_l=angle_l = calculate_current_angle(CHANNEL_ARML);		// <! calculate init angle
+		final_angle_r=angle_r = calculate_current_angle(CHANNEL_ARMR);
+		final_angle_b=angle_b = calculate_current_angle(CHANNEL_BASE)-90;
+
+		angle_AB = 180-(angle_l+angle_r);
+		if(speed<0)
+		{
+			direction+=3;
+			speed = -speed;
+		}
+		if(speed ==0)
+		{
+
+		}
+		else
+		{
+
+			switch(direction)
+			{
+				case 0: final_angle_b = 90; 
+					if(abs(final_angle_b-angle_b)<0.7)
+						final_angle_b =200;
+					angle_b = final_angle_b;
+				break;
+				case 3: final_angle_b = -90;
+					if(abs(final_angle_b-angle_b)<0.7)
+						final_angle_b =-200;
+				angle_b = final_angle_b;
+				break;
+
+				case 1:	
+					angle_AB = ARMA_ARMB_MIN_ANGLE;
+					final_angle_l = 180-angle_AB-angle_r;
+					if(final_angle_l>(ARMA_MAX_ANGLE-1))
+						final_angle_l = ARMA_MAX_ANGLE-1;					
+				final_angle_l = (int)final_angle_l;
+				if(abs(final_angle_l-angle_l)<0.7)
+					final_angle_l =200;
+				angle_l = final_angle_l;
+				break;
+
+
+				
+				case 4: 
+
+					angle_AB =ARMA_ARMB_MAX_ANGLE;
+					final_angle_l = 180-angle_AB-angle_r+0.4;	
+					if(final_angle_l<(ARMB_MIN_ANGLE+1))
+						final_angle_l = ARMB_MIN_ANGLE+1;
+					if(abs(final_angle_l-angle_l)<0.7)
+						final_angle_l =200;
+					angle_l = final_angle_l;
+
+				break;
+
+				case 2: 
+
+					angle_AB =ARMA_ARMB_MIN_ANGLE;
+					final_angle_r =180-angle_AB-angle_l;
+					if(final_angle_r >(ARMB_MAX_ANGLE-1))
+						final_angle_r = ARMB_MAX_ANGLE-1;
+					final_angle_r = (int)final_angle_r;
+
+					if(abs(final_angle_r-angle_r)<0.7)
+						final_angle_r =200;
+					angle_r = final_angle_r;
+
+				break;
+				case 5: 
+
+					angle_AB =ARMA_ARMB_MAX_ANGLE;
+					final_angle_r = 180-angle_AB-angle_l+0.4;
+					if(final_angle_r <(ARMB_MIN_ANGLE+1))
+						final_angle_r = ARMB_MIN_ANGLE+1;
+					if(abs(final_angle_r-angle_r)<0.7)
+						final_angle_r =200;
+					angle_r = final_angle_r;					
+				break;
+				
+			}
+		}
+		
+		float target[3] = {0};
+		angle_to_coord( angle_l, angle_r, angle_b, &target[X_AXIS], &target[Y_AXIS], &target[Z_AXIS] );				
+		coord_arm2effect( &target[X_AXIS], &target[Y_AXIS], &target[Z_AXIS] );
+		
+		return mc_line( 0, target, speed, false );		
+	
+	}
+}
+
+
+static enum uarm_protocol_e uarm_cmd_g2209(char *payload){
+	uint8_t rtn;
+	float speed;
+	int direction;
+	char speed_str[20],direction_str[20];
+	float final_step[3];
+	float final_angle_l=0,final_angle_r=0,final_angle_b=0;
+	float angle_l = 0, angle_r = 0, angle_b = 0;
+	int  offeset = 2;
+	
+	float x = 0, y = 0, z = 0, angle_e;
+	if(rtn = sscanf(payload, "F%[0-9-+.]",speed_str)<1)
+	{
+			DB_PRINT_STR( "sscanf %d\r\n", rtn );
+			return UARM_CMD_ERROR;
+	}else
+	{
+	if( !read_float(speed_str, NULL, &speed) ){ return false; }
+
+			final_angle_l=angle_l = calculate_current_angle(CHANNEL_ARML);		// <! calculate init angle
+			final_angle_r=angle_r = calculate_current_angle(CHANNEL_ARMR);
+			final_angle_b=angle_b = calculate_current_angle(CHANNEL_BASE);		
+
+			if(angle_b>(BASE_MAX_ANGLE+90))
+			{
+			
+				final_angle_b = BASE_MAX_ANGLE+90-offeset;
+				final_step[Z_AXIS] = (final_angle_b-angle_b)*80/(settings.steps_per_mm[Z_AXIS]);
+			}
+			else if(angle_b <(BASE_MIN_ANGLE+90))
+			{
+				final_angle_b = BASE_MIN_ANGLE+90+offeset;
+				final_step[Z_AXIS] = (final_angle_b-angle_b)*80/(settings.steps_per_mm[Z_AXIS]);
+			}
+			else 
+			{
+				final_step[Z_AXIS] = uarm.target_step[Z_AXIS] ;
+				final_step[Z_AXIS] = (final_step[Z_AXIS]) / (settings.steps_per_mm[Z_AXIS]);
+			}
+			if(angle_l>ARMA_MAX_ANGLE)
+			{
+				final_angle_l = ARMA_MAX_ANGLE-offeset;
+				final_step[X_AXIS] =  (final_angle_l-angle_l)*80/(settings.steps_per_mm[X_AXIS]);
+			
+			}
+			else if (angle_l<ARMA_MIN_ANGLE)
+			{
+				final_angle_l = ARMA_MIN_ANGLE+offeset;
+				final_step[X_AXIS] =  (final_angle_l-angle_l)*80/(settings.steps_per_mm[X_AXIS]);
+
+			}
+			else 
+			{
+				final_step[X_AXIS] = uarm.target_step[X_AXIS] ;
+				final_step[X_AXIS] = (final_step[X_AXIS]) / (settings.steps_per_mm[X_AXIS]);
+			}
+
+			
+			if(angle_r>ARMB_MAX_ANGLE)
+			{
+				final_angle_r = ARMB_MAX_ANGLE-offeset;
+				final_step[Y_AXIS] =  (final_angle_r-angle_r)*80/(settings.steps_per_mm[Y_AXIS]);
+			
+			}
+			else if (angle_r<ARMB_MIN_ANGLE)
+			{
+				final_angle_r = ARMB_MIN_ANGLE+offeset;
+				final_step[Y_AXIS] =  (final_angle_r-angle_r)*80/(settings.steps_per_mm[Y_AXIS]);
+
+			}
+			else 
+			{
+				final_step[Y_AXIS] = uarm.target_step[Y_AXIS] ;
+				final_step[Y_AXIS] = (final_step[Y_AXIS]) / (settings.steps_per_mm[Y_AXIS]);
+			}
+
+
+			final_angle_b =final_angle_b- 90;
+			angle_to_coord(final_angle_l,final_angle_r,final_angle_b,&x,&y,&z);
+			coord_arm2effect(&x,&y,&z);
+			uarm.coord_x = x;
+			uarm.coord_y = y;
+			uarm.coord_z = z;
+			coord_to_step(x,y,z,&uarm.target_step[X_AXIS],&uarm.target_step[Y_AXIS],&uarm.target_step[Z_AXIS]);
+				uarm.init_arml_angle = final_angle_l;
+			uarm.init_armr_angle = final_angle_r;
+			uarm.init_base_angle = final_angle_b+90;
+				plan_buffer_line(final_step, speed, false);
+			
+				
+				uarm.run_flag = true;
+				uarm.restart_flag = true;
+				update_motor_position();
+			
+				uarm.target_step[X_AXIS] = sys.position[X_AXIS];
+				uarm.target_step[Y_AXIS] = sys.position[Y_AXIS];
+				uarm.target_step[Z_AXIS] = sys.position[Z_AXIS];
+				
+
+				return UARM_CMD_OK;
+//				
+//				return mc_line( 0, target, speed, false );		
+	}
+
+
+
+}
+
+
+
 
 enum uarm_protocol_e uarm_execute_g_cmd(uint16_t cmd, char *line, uint8_t *char_counter){
 	switch(cmd){
@@ -423,6 +1462,15 @@ enum uarm_protocol_e uarm_execute_g_cmd(uint16_t cmd, char *line, uint8_t *char_
 			break;
 		case 2206:
 								return uarm_cmd_g2206(line);
+			break;
+		case 2207:
+								return uarm_cmd_g2207(line);
+			break;
+		case 2208:
+								return uarm_cmd_g2208(line);
+			break;
+		case 2209:
+								return uarm_cmd_g2209(line);
 			break;
 	}
 
@@ -566,10 +1614,22 @@ static void uarm_cmd_m2123(uint8_t param){
 			break;
 		case 1:
 						uarm.motor_position_check = true;
+						update_motor_position();
 			break;
 	}
 }
 
+static void uarm_cmd_m2124(uint8_t param){
+
+		switch( param ){
+		case 0:
+					uarm.beep_state = 0;
+			break;
+		case 1:
+					uarm.beep_state = 1;
+			break;
+	}
+}
 static void uarm_cmd_m2201(uint8_t param){		// <! lock n motor
 	switch(param){
 		case 0:
@@ -685,7 +1745,7 @@ static void uarm_cmd_m2203(uint8_t param){	// <! get motor status
 static bool uarm_cmd_m2205(char *payload){
 	int rtn;
 	char sn_num[13];
-	if( rtn = sscanf(payload, "VUB%[0-9.]", sn_num ) < 1 ){
+	if( rtn = sscanf(payload, "VUB%[0-F.]", sn_num ) < 1 ){
 		DB_PRINT_STR( "sscanf %d\r\n", rtn );
 		return false;
 	}else{
@@ -908,6 +1968,8 @@ static void uarm_cmd_m2231(uint8_t param){		// <! control pump
 	switch(param){
 		case 0:	pump_off();	break;
 		case 1: pump_on();	break;
+		case 2: pump_suction();break;
+
 	}
 }
 
@@ -1012,16 +2074,37 @@ static void uarm_cmd_m2400(uint8_t param){	// <! set work mode
 						end_effector_deinit();
 						uarm.param.work_mode = WORK_MODE_USER;
 						read_user_endoffest();
-//						dtostf(uarm.param.high_offset,5,4,h_str);	
-//						dtostf(uarm.param.front_offset,5,4,s_str);
-//						sprintf( tail_report_str, " H%s S%s R%s\n", h_str, s_str);				
+		
 		break;
-		case 8: 
+		case WORK_MODE_ClAM_JAW:
+					end_effector_deinit();
+					uarm.param.work_mode = WORK_MODE_ClAM_JAW;
+					uarm.param.high_offset 	= DEFAULT_CLAW_JAW_HEIGHT;
+					uarm.param.front_offset = DEFAULT_CLAW_JAW_FRONT;
+					
+		break;
+
+		case WORK_MODE_STEERING_GEAR:
+					end_effector_deinit();
+					uarm.param.work_mode = WORK_MODE_STEERING_GEAR;
+					uarm.param.high_offset 	= DEFAULT_STEERING_GEAR_HEIGHT;
+					uarm.param.front_offset = DEFAULT_STEEPING_GEAR_FRONT;
+					
+		break;
+		case WORK_MODE_CLAMP:
+					end_effector_deinit();
+					uarm.param.work_mode = 	WORK_MODE_CLAMP;
+					uarm.param.high_offset	= DEFAULT_CLAMP_HEIGHT;
+					uarm.param.front_offset = DEFAULT_CLAMP_FRONT;
+				
+		break;
+		case 11: 
 						end_effector_deinit();	
 						uarm.param.work_mode = WORK_MODE_TEST;
 						uarm.param.high_offset 	= DEFAULT_TEST_HEIGHT;
 						uarm.param.front_offset = DEFAULT_TEST_FRONT;				
 		break;
+
 	}
 
 	save_sys_param();
@@ -1166,6 +2249,13 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 									return UARM_CMD_OK;
 								}else{ return UARM_CMD_ERROR; }				
 			break;
+
+		case 2124:
+								if( (line[0]=='V') && (line[1]>='0'&&line[1]<='1') ){
+									uarm_cmd_m2124( line[1]-'0' );
+									return UARM_CMD_OK;
+								}else{ return UARM_CMD_ERROR; }				
+			break;
 		case 2201:
 								if( (line[0]=='N') && (line[1]>='0'&&line[1]<='3') ){
 									uarm_cmd_m2201( line[1]-'0' );
@@ -1245,7 +2335,7 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 								}		
 			break;	
 		case 2231:
-								if( (line[0]=='V') && (line[1]>='0'&&line[1]<='1') ){
+								if( (line[0]=='V') && (line[1]>='0'&&line[1]<='2') ){
 									uarm_cmd_m2231( line[1]-'0' );
 									return UARM_CMD_OK;
 								}else{ return UARM_CMD_ERROR; }
@@ -1299,7 +2389,7 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 			//DB_PRINT_STR( "M2307\r\n" );
 			break;	
 		case 2400:
-								if( (line[0]=='S') && (line[1]>='0'&&line[1]<='8') ){
+								if( (line[0]=='S') && (line[1]>='0'&&line[1]<='11') ){
 									uarm_cmd_m2400( line[1]-'0' );
 									return UARM_CMD_OK;
 								}else{ return UARM_CMD_ERROR; }	
@@ -1319,7 +2409,8 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 								}else{
 									return UARM_CMD_ERROR;
 								} 
-			break;
+			break;
+
 		case 2412:
 								if( uarm_cmd_m2412(line) == true ){
 									return UARM_CMD_OK;
@@ -1333,7 +2424,8 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 								}else{
 									return UARM_CMD_ERROR;
 								} 
-			break;								
+			break;
+								
 		case 2500:
 								if( uarm_cmd_m2500() == true ){
 									return UARM_CMD_OK;
@@ -1480,6 +2572,22 @@ static void uarm_cmd_p2234(void){
 static void uarm_cmd_p2235(void){
 	sprintf( tail_report_str, " V%d\n", get_laser_status() );	
 }
+
+static bool uarm_cmd_p2236(char *payload){
+	uint8_t rtn=0;
+	int button;
+	if(rtn = sscanf(payload,"N%d",&button)<1){
+		DB_PRINT_STR("sscanf %d\r\n",rtn);
+		return false;
+	}else{
+		if(button <0 || button>1) {return false;}
+		int value = get_button_status(button);
+		sprintf(tail_report_str, " V%d\n",value);
+		
+	}
+	return true;
+}
+
 
 static bool uarm_cmd_p2240(char *payload){
 	uint8_t rtn = 0;
@@ -1630,6 +2738,13 @@ enum uarm_protocol_e uarm_execute_p_cmd(uint16_t cmd, char *line, uint8_t *char_
 							uarm_cmd_p2235();
 							return UARM_CMD_OK;			
 			break;
+		case 2236:			
+							if( uarm_cmd_p2236(line) == true ){
+								return UARM_CMD_OK;
+							}else{
+								return UARM_CMD_ERROR;
+							} 
+			break;					
 		case 2240:
 							if( uarm_cmd_p2240(line) == true ){
 								return UARM_CMD_OK;

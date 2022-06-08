@@ -85,7 +85,12 @@ int main(void)
     sys_rt_exec_alarm = 0;
     sys.suspend = false;
     sys.soft_limit = false;
-              
+    sys.print_reset_flag = false;   
+	if(uarm.reset_flag)
+	{
+		DB_PRINT_STR("ok\n");
+		uarm.reset_flag=false;
+	}
     // Start Grbl main loop. Processes program inputs and executes them.
     protocol_main_loop();
     

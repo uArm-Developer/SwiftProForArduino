@@ -51,35 +51,58 @@ enum uarm_work_mode_e {
 	WORK_MODE_STEPER_STANDARD,							// <! standard steper mode
 	WORK_MODE_TOUCH_PEN,
 	WORK_MODE_USER,
+	WORK_MODE_ClAM_JAW,
+	WORK_MODE_STEERING_GEAR,
+	WORK_MODE_CLAMP,
 	WORK_MODE_TEST,
+
+};
+enum uarm_device_e{
+	UARM_PRO=0,
+	UARM_2500,
+	UARM_MINI2,
 };
 
+extern enum uarm_device_e uarm_device;
 
 #if	defined(UARM_MINI)
 
-#define DEFAULT_NORMAL_HEIGHT 	55.0
-#define DEFAULT_NORMAL_FRONT		45.0
 
-#define DEFAULT_LASER_HEIGHT		0.0
-#define DEFAULT_LASER_FRONT 		0.0
+#define DEFAULT_NORMAL_HEIGHT 	13.98
+#define DEFAULT_NORMAL_FRONT		33.44
 
+#define DEFAULT_LASER_HEIGHT		79.2
+#define DEFAULT_LASER_FRONT 		53.6
 #define DEFAULT_3DPRINT_HEIGHT	0.0
 #define DEFAULT_3DPRINT_FRONT 	0.0
 
-#define DEFAULT_PEN_HEIGHT			0.0
-#define DEFAULT_PEN_FRONT 			0.0	
+#define DEFAULT_PEN_HEIGHT			32.38
+#define DEFAULT_PEN_FRONT 			58.96	
 
-#define DEFAULT_STEP_FLAT_HEIGHT		0.0
-#define DEFAULT_STEP_FLAT_FRONT 		0.0
+#define DEFAULT_STEP_FLAT_HEIGHT		43.16
+#define DEFAULT_STEP_FLAT_FRONT 		64.52
 
 #define DEFAULT_STEP_STANDARD_HEIGHT		0.0
 #define DEFAULT_STEP_STANDARD_FRONT 		0.0
 
-#define DEFAULT_ROUND_PEN_HEIGHT		0.0
-#define DEFAULT_ROUND_PEN_FRONT 		0.0
+#define DEFAULT_ROUND_PEN_HEIGHT		65.7
+#define DEFAULT_ROUND_PEN_FRONT 		44.02
+
+#define DEFAULT_CLAW_JAW_HEIGHT		60.96
+#define DEFAULT_CLAW_JAW_FRONT		64.52	
+
+#define DEFAULT_STEERING_GEAR_HEIGHT	54.4
+#define DEFAULT_STEEPING_GEAR_FRONT		45.39
+
+#define DEFAULT_CLAMP_HEIGHT			31.3
+#define DEFAULT_CLAMP_FRONT				95.43
+
 
 #define DEFAULT_TEST_HEIGHT 		0.0
 #define DEFAULT_TEST_FRONT			0.0
+
+
+
 
 #elif defined(UARM_2500)
 	#define DEFAULT_NORMAL_HEIGHT 	74.55
@@ -103,9 +126,19 @@ enum uarm_work_mode_e {
 	#define DEFAULT_ROUND_PEN_HEIGHT		77.2
 	#define DEFAULT_ROUND_PEN_FRONT 		54.5
 
+	#define DEFAULT_CLAW_JAW_HEIGHT		60.96
+	#define DEFAULT_CLAW_JAW_FRONT		64.52	
+
+	
+	#define DEFAULT_STEERING_GEAR_HEIGHT	74.55
+	#define DEFAULT_STEEPING_GEAR_FRONT		56.65
+
+	#define DEFAULT_CLAMP_HEIGHT			74.55
+	#define DEFAULT_CLAMP_FRONT				56.65
+	
 	#define DEFAULT_TEST_HEIGHT 		25.49
 	#define DEFAULT_TEST_FRONT			44.5
-
+	
 
 #else
 	#define DEFAULT_NORMAL_HEIGHT		74.55
@@ -129,6 +162,15 @@ enum uarm_work_mode_e {
 	#define DEFAULT_ROUND_PEN_HEIGHT   	77.2
 	#define DEFAULT_ROUND_PEN_FRONT		 	54.5
 
+	#define DEFAULT_CLAW_JAW_HEIGHT		0
+	#define DEFAULT_CLAW_JAW_FRONT		0	
+	
+	#define DEFAULT_STEERING_GEAR_HEIGHT	74.55
+	#define DEFAULT_STEEPING_GEAR_FRONT		56.65
+	
+	#define DEFAULT_CLAMP_HEIGHT			74.55
+	#define DEFAULT_CLAMP_FRONT				56.65
+	
 	#define DEFAULT_TEST_HEIGHT   	25.49
 	#define DEFAULT_TEST_FRONT		 	44.5
 #endif
@@ -151,6 +193,10 @@ struct uarm_state_t {
 	double init_armr_angle;
 	double init_base_angle;	
 
+	double stop_arml_angle;
+	double stop_armr_angle;
+	double stop_base_angle;
+	
 	int32_t target_step[3];
 
 	float coord_x;
@@ -162,13 +208,15 @@ struct uarm_state_t {
 	volatile bool cycle_report_flag;
 	volatile bool run_done_report_flag;
 	volatile bool run_flag;
+	volatile bool restart_flag;
 
 	bool effect_origin_check;
 	bool effect_ldie;
 	bool beep_ldie;
 	bool power_state;
 	bool motor_position_check;
-	
+	bool reset_flag;
+	bool beep_state;
 };
 
 extern struct uarm_state_t uarm;

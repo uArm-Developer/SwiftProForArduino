@@ -20,6 +20,13 @@
 */
 
 #include "grbl.h"
+#include "uarm_debug.h"
+#include "uarm_protocol.h"
+#include "uarm_common.h"
+#include "uarm_peripheral.h"
+#include "uarm_coord_convert.h"
+#include "uarm_angle.h"
+#include "uarm_swift.h"
 
 
 uint8_t serial_rx_buffer[RX_BUFFER_SIZE];
@@ -29,14 +36,14 @@ volatile uint8_t serial_rx_buffer_tail = 0;
 uint8_t serial_tx_buffer[TX_BUFFER_SIZE];
 uint8_t serial_tx_buffer_head = 0;
 volatile uint8_t serial_tx_buffer_tail = 0;
-
+extern uint8_t syn_pack_remain;
 enum serial_mode_e{
 	UART0 = 0,
 	UART1,
 	UART2,
 	UART3,
 } current_uart = UART0;
-
+static bool check_flag=false;
 
 #ifdef ENABLE_XONXOFF
   volatile uint8_t flow_ctrl = XON_SENT; // Flow control state variable
@@ -331,20 +338,56 @@ ISR(USART0_RX_vect)
 {
   uint8_t data = UDR0;
   uint8_t next_head;
+ 
 	current_uart = UART0;
 	
   // Pick off realtime command characters directly from the serial stream. These characters are
   // not passed into the buffer, but these set system state flag bits for realtime execution.
   switch (data) {
-    case CMD_STATUS_REPORT: bit_true_atomic(sys_rt_exec_state, EXEC_STATUS_REPORT); break; // Set as true
-    case CMD_CYCLE_START:   bit_true_atomic(sys_rt_exec_state, EXEC_CYCLE_START); break; // Set as true
-    case CMD_FEED_HOLD:     bit_true_atomic(sys_rt_exec_state, EXEC_FEED_HOLD); break; // Set as true
-    case CMD_SAFETY_DOOR:   bit_true_atomic(sys_rt_exec_state, EXEC_SAFETY_DOOR); break; // Set as true
-    case CMD_RESET:         mc_reset(); break; // Call motion control reset routine.
+    case CMD_STATUS_REPORT: 
+		bit_true_atomic(sys_rt_exec_state, EXEC_STATUS_REPORT); 
+  	break; // Set as true
+    case CMD_CYCLE_START:   
+		bit_true_atomic(sys_rt_exec_state, EXEC_CYCLE_START); 
+		
+		DB_PRINT_STR("ok\n");
+	break; // Set as true
+    case CMD_FEED_HOLD:     
+		bit_true_atomic(sys_rt_exec_state, EXEC_FEED_HOLD);
+
+		DB_PRINT_STR("ok @9 V0\n");
+	
+	break; // Set as true
+    case CMD_SAFETY_DOOR:   
+		bit_true_atomic(sys_rt_exec_state, EXEC_SAFETY_DOOR); 
+	break; // Set as true
+    case CMD_RESET:   
+
+		mc_reset(); 
+		plan_reset();
+		sys.print_reset_flag =true;
+		if(uarm.motor_position_check)
+		{
+			sys.rest_flag = true;
+			uarm.motor_position_check=0;	
+			update_motor_position();
+			sys.check_cnt = 0;
+			uarm.motor_position_check=1;
+		}
+		else
+		{
+			update_motor_position();
+			DB_PRINT_STR("ok\n");	
+		}
+		sys_rt_exec_alarm=0;
+		//syn_pack_remain--;
+	sys.state =STATE_IDLE;	
+	break; // Call motion control reset routine.
     default: // Write character to buffer    
       next_head = serial_rx_buffer_head + 1;
       if (next_head == RX_BUFFER_SIZE) { next_head = 0; }
     
+	
       // Write data to buffer unless it is full.
       if (next_head != serial_rx_buffer_tail) {
         serial_rx_buffer[serial_rx_buffer_head] = data;
@@ -358,6 +401,7 @@ ISR(USART0_RX_vect)
         #endif
         
       }
+	  break;
       //TODO: else alarm on overflow?
   }
 }

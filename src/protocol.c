@@ -166,13 +166,21 @@ void protocol_main_loop()
 	    protocol_auto_cycle_start();
 	    protocol_execute_realtime();  // Runtime command check point.
 	    if (sys.abort) { return; } // Bail to main() program loop to reset system. 
-
+	
 			report_parse_result();
 			if( uarm.motor_position_check ){
 				check_motor_positon();
 			}
+			if ((uarm.restart_flag==true)&&(sys.state == STATE_IDLE))
+				{
+				update_motor_position();
+				uarm.restart_flag=false;
+				}
+				if(sys.print_reset_flag==true)
+					sys.print_reset_flag = false;
 
 	  }
+
   }
 	
   return; /* Never reached */

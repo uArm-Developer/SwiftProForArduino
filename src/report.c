@@ -91,7 +91,10 @@ void report_status_message(uint8_t status_code)
 		break;
 		case STATUS_ENCODER_ERROR:
 			printString("E26\n");
-		break;			
+		break;	
+		case STATUS_ENABLE_ERROR:
+			printString("E27\n");
+		break;		
         default:
           // Remaining g-code parser errors with error codes
           printPgmString(PSTR("Invalid gcode ID:"));

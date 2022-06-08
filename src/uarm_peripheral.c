@@ -159,6 +159,7 @@ void end_effector_check_limit(void){
 		uarm.effect_origin_check = false;
 		PORTH &= ~(1<<5);	// <! DIR counterclockwise
 		steper_current_angle = -uarm.param.effect_angle_offset;
+//		DB_PRINT_STR( "detected!\r\n" );
 		end_effector_set_angle(90);
 	}
 	if( step_count == 0 ){			// <! check timeout
@@ -177,10 +178,10 @@ void end_effect_adjust_angle(void){
  /*  beep driver
 	*
 	*/
-uint16_t beep_duration = 520;	
+unsigned long beep_duration = 520;	
 static void beep_creater_callback(void){
   static bool state = false;
-  static uint16_t cnt  = 0;
+  static unsigned long cnt  = 0;
   if( !state ){
     state = true;
     PORTL |= (1<<5);  
@@ -199,10 +200,12 @@ void beep_tone(unsigned long duration, double frequency){
 	uarm.beep_ldie = false;
   DDRL  |= 1<<5;  
   PORTL &= ~(1<<5); 
-	beep_duration = duration * 2;
-   
-  time2_set( frequency / 2000000.0, beep_creater_callback );
+	beep_duration = (duration *2*frequency/1000)-1;
+//     DB_PRINT_STR("beep_duration");
+//  DB_PRINT_INT(beep_duration);
+  time2_set( frequency , beep_creater_callback );
   time2_start();	
+  
 }
 
 
@@ -220,13 +223,16 @@ void cycle_report_coord(void){
 	angle_e = servo_get_angle();
 
 	angle_to_coord( angle_l, angle_r, angle_b, &x, &y, &z );
-
+//
 	coord_arm2effect( &x, &y, &z );
+
+	
+
 	dtostrf( x, 5, 4, l_str );
 	dtostrf( y, 5, 4, r_str );
 	dtostrf( z, 5, 4, b_str );
 	dtostrf( angle_e, 5, 4, e_str );
-	
+//	DB_PRINT_INT(sys.state);
 	uart_printf( "@3 X%s Y%s Z%s R%s\n", l_str, r_str, b_str, e_str );
 }
 
@@ -615,27 +621,43 @@ double getE2PROMData(unsigned char device, unsigned int addr, unsigned char type
 }
 
 void read_hardware_version(void){
-#define HARD_MASK	 ( 1<<6 | 1<<5 | 1<<4 | 1<<3 )
-	DDRJ &= ~HARD_MASK;
-	if( (PINJ & HARD_MASK) == (1 << 6) ){
-		settings_store_global_setting( 4, 1 );
-		strcpy( hardware_version, "V3.3.1" );
-		settings_store_global_setting( 3, 0 );
-	}else if( (PINJ & HARD_MASK) == 0x00 ){			// <! old version hardware
-		settings_store_global_setting( 4, 1 );
-		strcpy( hardware_version, "V3.3.0" );
-		settings_store_global_setting( 3, 7 );
-	}else if((PINJ & HARD_MASK) == (1 << 5)){
-		settings_store_global_setting( 4, 1 );
-		strcpy( hardware_version, "V3.3.2" );	
-		settings_store_global_setting( 3, 0 );
-	}else{
-		settings_store_global_setting( 4, 1 );
-		strcpy( hardware_version, "V0.0.0" );
-		settings_store_global_setting( 3, 0 );
-	}
+#define HARD_MASK	 ( 1<<6 | 1<<5 | 1<<4 | 1<<3 |1<<2)
+		DDRJ &= ~HARD_MASK;
+		if( (PINJ & HARD_MASK) == (1 << 6) ){
+			settings_store_global_setting( 4, 1 );
+			strcpy( hardware_version, "V3.3.1" );
+			settings_store_global_setting( 3, 0 );
+		}else if( (PINJ & HARD_MASK) == 0x00 ){ 		// <! old version hardware
+			settings_store_global_setting( 4, 1 );
+			strcpy( hardware_version, "V3.3.0" );
+			settings_store_global_setting( 3, 7 );
+		}else if((PINJ & HARD_MASK) == (1 << 5)){
+			settings_store_global_setting( 4, 1 );
+			strcpy( hardware_version, "V3.3.2" );	
+			settings_store_global_setting( 3, 0 );
+		}else if((PINJ & HARD_MASK) == (1<<4)){
+			if(PINJ &HARD_MASK ==(1<<2))
+			{
+				settings_store_global_setting( 4, 1 );
+				strcpy( hardware_version, "V3.3.4" );		//uArm Mini Version hardware
+				uarm_device = UARM_MINI2;
+				settings_store_global_setting( 3, 0 );
+			}
+			else
+			{
+				settings_store_global_setting( 4, 1 );
+				strcpy( hardware_version, "V3.3.3" );		//uArm Mini Version hardware
+				uarm_device = UARM_MINI2;
+				settings_store_global_setting( 3, 0 );
+			}
+		}else{
+			settings_store_global_setting( 4, 1 );
+			strcpy( hardware_version, "V0.0.0" );
+			settings_store_global_setting( 3, 0 );
+		}
+	
+		settings_init();
 
-	settings_init();
 	
 }
 
@@ -715,27 +737,93 @@ pump_state_t pump_get_state()
 void pump_on(void){
 	DDRG |= 0x10;		// PG4 PUMP_D5_N
 	DDRG |= 0x20;		// PG5 PUMP_D5
+	DDRF |= 0x08;
 	
-	PORTG |= 0x10;
-	PORTG &= (~0x20); 	
+	if((PINJ & HARD_MASK) == (1<<4))
+	{	
+		PORTG &= (~0x10); 
+
+		PORTG |= 0x20;
+
+	}
+	else
+	{
+		PORTG &= (~0x20);	
+			
+		PORTG |= 0x10;
+	}
+	PORTF |= 0x08;	 
+
 
 
 	pump_set_state(PUMP_STATE_ON);
+
 }
 
-void pump_off(void){
-	if (pump_get_state() == PUMP_STATE_ON)
-	{
+
+void pump_suction(void)
+{
 
 		DDRG |= 0x10;	// PG4 PUMP_D5_N
 		DDRG |= 0x20;	// PG5 PUMP_D5
-			
-		PORTG &= (~0x10);
-		PORTG |= 0x20;	
+		DDRF |= 0x08;  // 
+				
+	if((PINJ & HARD_MASK) == (1<<4))
+	{
 
+		PORTG &= (~0x20);	
+					
+		PORTG |= 0x10;	
 
-		pump_set_state(PUMP_STATE_VALVE_ON);
 	}
+	else
+	{
+		PORTG &= (~0x10); 
+
+		PORTG |= 0x20;
+	}
+		PORTF &= (~0x08);	 
+				
+		pump_set_state(PUMP_STATE_SUCTION);
+	
+}
+
+
+void pump_off(void){
+	if ((pump_get_state() == PUMP_STATE_ON)||(pump_get_state() == PUMP_STATE_SUCTION))
+		{
+	
+			DDRG |= 0x10;	// PG4 PUMP_D5_N
+			DDRG |= 0x20;	// PG5 PUMP_D5
+			DDRF |= 0x08;  // 
+		
+	
+		
+			PORTF &= (~0x08);
+			PORTG &= (~0x10); 
+			if((PINJ & HARD_MASK) == (1<<4))
+			{
+				if(pump_get_state() == PUMP_STATE_ON)
+				{
+					PORTG &= (~0x20);
+					PORTG |= 0x10;
+					delay_ms(50);
+					PORTG &= (~0x10); 
+				}
+				else
+				{
+					
+					PORTG |= 0x20;	 
+				}
+			}
+			else
+			{
+				PORTG |= 0x20;
+			}
+			
+			pump_set_state(PUMP_STATE_VALVE_ON);
+		}
+
 }
 void pump_tick(void)
 {
@@ -748,31 +836,38 @@ void pump_tick(void)
 	case PUMP_STATE_OFF:
 		valve_on_times = 0;
 		break;
-		
+	case PUMP_STATE_SUCTION:
+		valve_on_times = 0;
+		break;
 	case PUMP_STATE_ON:
 		valve_on_times = 0;
 		break;
 	
 	case PUMP_STATE_VALVE_ON:
 		valve_on_times++;
-		PORTG |= 0x20; 
 
 		if ( (PINJ & HARD_MASK) >0x00)
-		{
+		{		
 
 				valve_on_times = 0;
-				DDRG |= 0x10; 	// PG4 PUMP_D5_N
-				DDRG |= 0x20; 	// PG5 PUMP_D5
+				DDRG |= 0x10;	// PG4 PUMP_D5_N
+				DDRG |= 0x20;	// PG5 PUMP_D5
+				DDRF |= 0x08;  // 
+						
 		
-				PORTG &= (~0x10);
-				PORTG |= 0x20;	
+
+				PORTG &= (~0x10); 
+				
+//				PORTG |= 0x20;	 
+				PORTF &= (~0x08);
+
 				pump_state = PUMP_STATE_OFF;
 
-	
 		}
 		else
 		{
 			
+			PORTG |= 0x20; 
 			delay_ms(50);
 			if (valve_on_times >= VALVE_ON_TIMES_MAX)
 			{
@@ -798,11 +893,29 @@ void pump_tick(void)
 	}
 }
 
-
+uint16_t get_pump_adc()
+{
+uint16_t pump_adc=0;
+	 ADCSRA=0;
+	  ADMUX=0x41;
+	    ADCSRB |= 0x08;
+		    ADCSRA =       1 << ADEN   // enable ADC
+           |       1 << ADSC   // start conversion
+           |       1 << ADIF   // clear flag
+           |   7; // divide by 128
+                 while (!(ADCSRA & 1 << ADIF)) // wait until flag is set
+		pump_adc =ADC;
+	ADCSRA |= (1 << ADIF); 
+		return 		 pump_adc;
+}
 uint8_t get_pump_status(void){
 	if( (PORTG & 0x10) == 0x00 ){ return 0; }
 	uint16_t value = analogRead(A9);
-
+	uint16_t value2 = get_pump_adc();
+	DB_PRINT_STR("value:");
+	DB_PRINT_INT(value);
+		DB_PRINT_STR("      value2:");
+	DB_PRINT_INT(value2);
 	if( value < 10){
 		return 0;
 	}else if( value <= 70 ){
@@ -811,6 +924,40 @@ uint8_t get_pump_status(void){
 		return 1;
 	}	
 }
+
+/* button
+*
+*/
+void button_init()
+{
+	PORTE |= 0xC0;//12 8 4  11
+	// set button pin as input
+	DDRE &= 0X3F;
+
+}
+
+
+
+
+uint8_t get_button_status(uint8_t button){
+		if(button)
+		{
+			if(PINE&(1<<6)){
+				return 1;
+			}else{
+				return 0;
+			}
+		}
+		else
+		{
+			if(PINE&(1<<7)){
+				return 1;
+			}else{
+				return 0;
+			}
+		}
+}
+
 
 /*	gripper
  *		
@@ -886,30 +1033,31 @@ uint8_t get_power_status(void){
 }
 
 void check_motor_positon(void){
-	static int cnt = 0;
+//	static int cnt = 0;
 
 	if( sys.state == STATE_IDLE && uarm.motor_state_bits == 0x0F && uarm.power_state ){
 		
-		if( cnt++ > 20 ){
+		if( sys.check_cnt++ > 20 ){
 			float current_angle_l = 0, current_angle_r = 0, current_angle_b = 0;
 
 			coord_to_angle( uarm.coord_x, uarm.coord_y, uarm.coord_z, &current_angle_l, &current_angle_r, &current_angle_b );
-
 			float reg_angle_l = calculate_current_angle(CHANNEL_ARML);		
 			float reg_angle_r = calculate_current_angle(CHANNEL_ARMR);
 			float reg_angle_b = calculate_current_angle(CHANNEL_BASE) ;
+
 
 			if( fabs(current_angle_l-reg_angle_l)>0.5 || fabs(current_angle_r-reg_angle_r)>0.5 || fabs(current_angle_b-reg_angle_b+90)>0.5 ){
 				char l_str[20], r_str[20], b_str[20];
 
 				memset(&sys, 0, sizeof(system_t));  // Clear all system variables
 				plan_sync_position();
-	    	gc_sync_position();
-			
+	    		gc_sync_position();
+
 				uarm.init_arml_angle = reg_angle_l;
 				uarm.init_armr_angle = reg_angle_r;
 				uarm.init_base_angle = reg_angle_b;
-	//			beep_tone(260, 1000);
+				if(uarm.beep_state)
+					beep_tone(260, 1000);
 
 				uarm.target_step[X_AXIS] = sys.position[X_AXIS];
 				uarm.target_step[Y_AXIS] = sys.position[Y_AXIS];
@@ -925,7 +1073,7 @@ void check_motor_positon(void){
 			}
 		}
 	}else{
-		cnt = 0;
+		sys.check_cnt = 0;
 	}
 }
 
@@ -962,4 +1110,15 @@ void update_motor_position(void){
 
 }
 
+
+void update_motor_position2(void){
+
+	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML);
+	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);
+	uarm.init_base_angle = calculate_current_angle(CHANNEL_BASE);
+
+	angle_to_coord( uarm.init_arml_angle, uarm.init_armr_angle, uarm.init_base_angle-90,
+										&(uarm.coord_x), &(uarm.coord_y), &(uarm.coord_z) );	
+
+}
 

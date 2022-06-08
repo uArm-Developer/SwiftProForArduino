@@ -56,6 +56,7 @@
 
 #define STATUS_UARM_ERROR	50
 #define STATUS_ENCODER_ERROR 51
+#define STATUS_ENABLE_ERROR 52
 
 // Define Grbl alarm codes.
 #define ALARM_HARD_LIMIT_ERROR 1

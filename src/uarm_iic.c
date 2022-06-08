@@ -66,7 +66,7 @@
 #define EEPROM_SDA_L		{EEPROM_SDA_RESET;}
 #define EEPROM_READ_SDA     EEPROM_SDA_READ
 
-
+//#define sort_i2c
 static void eeprom_delay_us()
 {
 
@@ -249,24 +249,50 @@ unsigned char eeprom_iic_readbuf(unsigned char *buf,unsigned char device_addr,un
 
 static void arml_iic_start(void)
 {
+#ifdef sort_i2c
   ARML_SDA_H;
+  ARML_SCK_H;            
+  delay_us(1);  
+  ARML_SDA_L;        
+  delay_us(1); 
+
+  ARML_SCK_L;       
+  delay_us(1);
+#else
+	  ARML_SDA_H;
   ARML_SCK_H;            
   delay_us(5);  
   ARML_SDA_L;        
   delay_us(5);  
   ARML_SCK_L;       
   delay_us(2);
+ #endif
+ 
+
 }
 
 static void arml_iic_stop(void)
 {
+#ifdef sort_i2c
   ARML_SCK_L;             
   ARML_SDA_L;             
-  delay_us(5);
+  delay_us(1);
+
+
   ARML_SCK_H;
-  delay_us(5);       
+  delay_us(1);
+
   ARML_SDA_H;             
-  delay_us(5);       
+  delay_us(1);
+#else
+	ARML_SCK_L; 			
+	 ARML_SDA_L;			 
+	 delay_us(5);
+	 ARML_SCK_H;
+	 delay_us(5);		
+	 ARML_SDA_H;			 
+	 delay_us(5);  
+#endif
 }
 
 static uint8_t arml_iic_wait_ack(void)
@@ -277,7 +303,18 @@ static uint8_t arml_iic_wait_ack(void)
 
 
   ARML_SDA_INPUT;
+#ifdef sort_i2c
+  while(ARML_READ_SDA)
+  {
+    ucErrTime++;
+    if(ucErrTime>50)
+    {
+      arml_iic_stop();
+      return 1;
+    }
+  }
 
+ #else
   while(ARML_READ_SDA)
   {
     ucErrTime++;
@@ -287,7 +324,8 @@ static uint8_t arml_iic_wait_ack(void)
       return 1;
     }
   }
-  
+
+ #endif
   ARML_SCK_L;             
   delay_us(2);  
   return 0;  
@@ -295,6 +333,18 @@ static uint8_t arml_iic_wait_ack(void)
 
 static void arml_iic_ack(void)
 {
+#ifdef sort_i2c
+  ARML_SCK_L;               
+  ARML_SDA_L;            
+  delay_us(1);
+  ARML_SCK_H;
+  delay_us(1);      
+  
+  ARML_SCK_L;           
+  delay_us(1);      
+  ARML_SDA_H;  
+  delay_us(1);
+#else
   ARML_SCK_L;               
   ARML_SDA_L;            
   delay_us(2);
@@ -305,10 +355,23 @@ static void arml_iic_ack(void)
   delay_us(2);      
   ARML_SDA_H;  
   delay_us(2);
+#endif
 }
 
 static void arml_iic_nack(void)
 {
+#ifdef sort_i2c
+  ARML_SCK_L;           
+  ARML_SDA_H;           
+  delay_us(1);
+  ARML_SCK_H;
+  delay_us(1);      
+  
+  ARML_SCK_L;            
+  delay_us(1);     
+  ARML_SDA_H;  
+  delay_us(1);
+#else
   ARML_SCK_L;           
   ARML_SDA_H;           
   delay_us(2);
@@ -319,12 +382,33 @@ static void arml_iic_nack(void)
   delay_us(2);     
   ARML_SDA_H;  
   delay_us(2);
+ #endif
 }
 
 static void arml_iic_send_byte(uint8_t data)
 {
   uint8_t i; 
+ #ifdef sort_i2c
   for(i=0;i<8;i++)
+  { 
+    ARML_SCK_L;           
+    if(data&0x80)  
+      ARML_SDA_H          
+    else
+      ARML_SDA_L
+    delay_us(1); 
+    ARML_SCK_H;      
+    delay_us(1); 
+    ARML_SCK_L;       
+    data<<=1;
+    delay_us(1);
+  }
+  
+  delay_us(1);  
+  ARML_SDA_H;  
+  delay_us(1);
+ #else
+for(i=0;i<8;i++)
   { 
     ARML_SCK_L;           
     if(data&0x80)  
@@ -342,13 +426,41 @@ static void arml_iic_send_byte(uint8_t data)
   delay_us(2);  
   ARML_SDA_H;  
   delay_us(2);
+ #endif
 }
 
 static uint8_t arml_iic_read_byte(uint8_t ack)
 {
   uint8_t i,receive=0;
+ #ifdef sort_i2c
+  delay_us(1);  
+  ARML_SDA_H;  
+  delay_us(1);
   
-  delay_us(2);  
+  for(i=0;i<8;i++)
+  {
+    ARML_SCK_L;     
+    delay_us(1);
+    ARML_SCK_H;      
+    receive<<=1;
+    delay_us(1);
+    ARML_SDA_INPUT;
+
+    if(ARML_READ_SDA)
+      receive|=0x01;
+    else
+      receive&=0xfe;
+    delay_us(1);
+  }
+  if(!ack)
+    arml_iic_nack();
+  else
+    arml_iic_ack();
+  
+  ARML_SCK_L;             
+  delay_us(1);
+#else
+ delay_us(2);  
   ARML_SDA_H;  
   delay_us(2);
   
@@ -374,7 +486,8 @@ static uint8_t arml_iic_read_byte(uint8_t ack)
   
   ARML_SCK_L;             
   delay_us(2);
-  
+ #endif
+ 
   return receive;
 }
 
@@ -388,7 +501,11 @@ static void arml_iic_write_onebyte(uint8_t deviceaddr,uint8_t writeaddr,uint8_t 
   arml_iic_send_byte(writedata);
   arml_iic_wait_ack();
   arml_iic_stop();
-  delay_us(10);              
+#ifdef sort_i2c
+  delay_us(1); 
+#else
+	delay_us(10);			   
+#endif	
 }
 
 static uint8_t arml_iic_read_onebyte(uint8_t deviceaddr,uint8_t readaddr)
@@ -410,24 +527,45 @@ static uint8_t arml_iic_read_onebyte(uint8_t deviceaddr,uint8_t readaddr)
 
 static void armr_iic_start(void)
 {
+#ifdef sort_i2c
   ARMR_SDA_H;
+  ARMR_SCK_H;            
+  delay_us(1);  
+  ARMR_SDA_L;        
+  delay_us(1);  
+  ARMR_SCK_L;       
+  delay_us(1);
+ #else
+   ARMR_SDA_H;
   ARMR_SCK_H;            
   delay_us(5);  
   ARMR_SDA_L;        
   delay_us(5);  
   ARMR_SCK_L;       
   delay_us(2);
+ #endif
+ 
 }
 
 static void armr_iic_stop(void)
 {
+#ifdef sort_i2c
   ARMR_SCK_L;             
+  ARMR_SDA_L;             
+  delay_us(1);
+  ARMR_SCK_H;
+  delay_us(1);       
+  ARMR_SDA_H;             
+  delay_us(1);     
+#else
+	ARMR_SCK_L;             
   ARMR_SDA_L;             
   delay_us(5);
   ARMR_SCK_H;
   delay_us(5);       
   ARMR_SDA_H;             
-  delay_us(5);       
+  delay_us(5); 
+ #endif
 }
 
 static uint8_t armr_iic_wait_ack(void)
@@ -438,17 +576,29 @@ static uint8_t armr_iic_wait_ack(void)
 
 
   ARMR_SDA_INPUT;
-
+#ifdef sort_i2c
   while(ARMR_READ_SDA)
   {
     ucErrTime++;
-    if(ucErrTime>250)
+    if(ucErrTime>50)
     {
       armr_iic_stop();
       return 1;
     }
   }
-  
+ #else
+  while(ARMR_READ_SDA)
+   {
+	 ucErrTime++;
+	 if(ucErrTime>250)
+	 {
+	   armr_iic_stop();
+	   return 1;
+	 }
+   }
+
+
+ #endif
   ARMR_SCK_L;             
   delay_us(2);  
   return 0;  
@@ -456,7 +606,19 @@ static uint8_t armr_iic_wait_ack(void)
 
 static void armr_iic_ack(void)
 {
+#ifdef sort_i2c
   ARMR_SCK_L;               
+  ARMR_SDA_L;            
+  delay_us(1);
+  ARMR_SCK_H;
+  delay_us(1);      
+  
+  ARMR_SCK_L;           
+  delay_us(1);      
+  ARMR_SDA_H;  
+  delay_us(1);
+ #else
+   ARMR_SCK_L;               
   ARMR_SDA_L;            
   delay_us(2);
   ARMR_SCK_H;
@@ -466,25 +628,61 @@ static void armr_iic_ack(void)
   delay_us(2);      
   ARMR_SDA_H;  
   delay_us(2);
+ #endif
+ 
 }
 
 static void armr_iic_nack(void)
 {
+#ifdef sort_i2c
   ARMR_SCK_L;           
   ARMR_SDA_H;           
-  delay_us(2);
+  delay_us(1);
   ARMR_SCK_H;
-  delay_us(5);      
+  delay_us(1);      
   
   ARMR_SCK_L;            
-  delay_us(2);     
+  delay_us(1);     
   ARMR_SDA_H;  
-  delay_us(2);
+  delay_us(1);
+#else
+	ARMR_SCK_L; 		  
+	ARMR_SDA_H; 		  
+	delay_us(2);
+	ARMR_SCK_H;
+	delay_us(5);	  
+	
+	ARMR_SCK_L; 		   
+	delay_us(2);	 
+	ARMR_SDA_H;  
+	delay_us(2);
+#endif
+
 }
 
 static void armr_iic_send_byte(uint8_t data)
 {
   uint8_t i; 
+ #ifdef sort_i2c
+  for(i=0;i<8;i++)
+  { 
+    ARMR_SCK_L;           
+    if(data&0x80)  
+      ARMR_SDA_H          
+    else
+      ARMR_SDA_L
+    delay_us(1); 
+    ARMR_SCK_H;      
+    delay_us(1); 
+    ARMR_SCK_L;       
+    data<<=1;
+    delay_us(1);
+  }
+  
+  delay_us(1);  
+  ARMR_SDA_H;  
+  delay_us(1);
+ #else
   for(i=0;i<8;i++)
   { 
     ARMR_SCK_L;           
@@ -503,13 +701,41 @@ static void armr_iic_send_byte(uint8_t data)
   delay_us(2);  
   ARMR_SDA_H;  
   delay_us(2);
+ #endif
 }
 
 static uint8_t armr_iic_read_byte(uint8_t ack)
 {
   uint8_t i,receive=0;
+ #ifdef sort_i2c
+  delay_us(1);  
+  ARMR_SDA_H;  
+  delay_us(1);
   
-  delay_us(2);  
+  for(i=0;i<8;i++)
+  {
+    ARMR_SCK_L;     
+    delay_us(1);
+    ARMR_SCK_H;      
+    receive<<=1;
+    delay_us(1);
+    ARMR_SDA_INPUT;
+
+    if(ARMR_READ_SDA)
+      receive|=0x01;
+    else
+      receive&=0xfe;
+    delay_us(1);
+  }
+  if(!ack)
+    armr_iic_nack();
+  else
+    armr_iic_ack();
+  
+  ARMR_SCK_L;             
+  delay_us(1);
+ #else
+   delay_us(2);  
   ARMR_SDA_H;  
   delay_us(2);
   
@@ -535,7 +761,7 @@ static uint8_t armr_iic_read_byte(uint8_t ack)
   
   ARMR_SCK_L;             
   delay_us(2);
-  
+ #endif
   return receive;
 }
 
@@ -549,7 +775,11 @@ static void armr_iic_write_onebyte(uint8_t deviceaddr,uint8_t writeaddr,uint8_t 
   armr_iic_send_byte(writedata);
   armr_iic_wait_ack();
   armr_iic_stop();
-  delay_us(10);              
+#ifdef sort_i2c
+  delay_us(1); 
+#else
+	delay_us(10);			   
+#endif	    
 }
 
 static uint8_t armr_iic_read_onebyte(uint8_t deviceaddr,uint8_t readaddr)
@@ -571,30 +801,74 @@ static uint8_t armr_iic_read_onebyte(uint8_t deviceaddr,uint8_t readaddr)
 
 static void base_iic_start(void)
 {
+#ifdef sort_i2c
   BASE_SDA_H;
   BASE_SCK_H;            
-  delay_us(5);  
+  delay_us(1);  
   BASE_SDA_L;        
-  delay_us(5);  
+  delay_us(1);  
   BASE_SCK_L;       
-  delay_us(2);
+  delay_us(1);
+ #else
+	BASE_SDA_H;
+	BASE_SCK_H; 		   
+	delay_us(5);  
+	BASE_SDA_L; 	   
+	delay_us(5);  
+	BASE_SCK_L; 	  
+	delay_us(2);
+#endif
+
 }
 
 static void base_iic_stop(void)
 {
+#ifdef sort_i2c
   BASE_SCK_L;             
   BASE_SDA_L;             
-  delay_us(5);
+  delay_us(1);
   BASE_SCK_H;
-  delay_us(5);       
+  delay_us(1);       
   BASE_SDA_H;             
-  delay_us(5);       
+  delay_us(1);     
+#else
+
+	BASE_SCK_L; 			
+	BASE_SDA_L; 			
+	delay_us(5);
+	BASE_SCK_H;
+	delay_us(5);	   
+	BASE_SDA_H; 			
+	delay_us(5);
+
+ #endif
+ 
 }
 
 static uint8_t base_iic_wait_ack(void)
 {
   uint8_t ucErrTime=0;
-  BASE_SDA_H;delay_us(2); 
+  #ifdef sort_i2c
+  BASE_SDA_H;delay_us(1); 
+  BASE_SCK_H;delay_us(1);  
+
+
+  BASE_SDA_INPUT;
+
+  while(BASE_READ_SDA)
+  {
+    ucErrTime++;
+    if(ucErrTime>50)
+    {
+      base_iic_stop();
+      return 1;
+    }
+  }
+  
+  BASE_SCK_L;             
+  delay_us(1);  
+ #else
+   BASE_SDA_H;delay_us(2); 
   BASE_SCK_H;delay_us(2);  
 
 
@@ -612,12 +886,25 @@ static uint8_t base_iic_wait_ack(void)
   
   BASE_SCK_L;             
   delay_us(2);  
+ #endif
   return 0;  
 }
 
 static void base_iic_ack(void)
 {
+#ifdef sort_i2c
   BASE_SCK_L;               
+  BASE_SDA_L;            
+  delay_us(1);
+  BASE_SCK_H;
+  delay_us(1);      
+  
+  BASE_SCK_L;           
+  delay_us(1);      
+  BASE_SDA_H;  
+  delay_us(1);
+ #else
+ 	  BASE_SCK_L;               
   BASE_SDA_L;            
   delay_us(2);
   BASE_SCK_H;
@@ -627,25 +914,41 @@ static void base_iic_ack(void)
   delay_us(2);      
   BASE_SDA_H;  
   delay_us(2);
+ #endif
 }
 
 static void base_iic_nack(void)
 {
+#ifdef sort_i2c
   BASE_SCK_L;           
   BASE_SDA_H;           
-  delay_us(2);
+  delay_us(1);
   BASE_SCK_H;
-  delay_us(5);      
+  delay_us(1);      
   
   BASE_SCK_L;            
-  delay_us(2);     
+  delay_us(1);     
   BASE_SDA_H;  
-  delay_us(2);
+  delay_us(1);
+#else
+	BASE_SCK_L; 		  
+	BASE_SDA_H; 		  
+	delay_us(2);
+	BASE_SCK_H;
+	delay_us(5);	  
+	
+	BASE_SCK_L; 		   
+	delay_us(2);	 
+	BASE_SDA_H;  
+	delay_us(2);
+#endif
+
 }
 
 static void base_iic_send_byte(uint8_t data)
 {
   uint8_t i; 
+ #ifdef sort_i2c
   for(i=0;i<8;i++)
   { 
     BASE_SCK_L;           
@@ -653,41 +956,65 @@ static void base_iic_send_byte(uint8_t data)
       BASE_SDA_H          
     else
       BASE_SDA_L
-    delay_us(5); 
+    delay_us(1); 
     BASE_SCK_H;      
-    delay_us(5); 
+    delay_us(1); 
     BASE_SCK_L;       
     data<<=1;
-    delay_us(5);
+    delay_us(1);
   }
   
-  delay_us(2);  
+  delay_us(1);  
   BASE_SDA_H;  
-  delay_us(2);
+  delay_us(1);
+ #else
+	for(i=0;i<8;i++)
+	 { 
+	   BASE_SCK_L;			 
+	   if(data&0x80)  
+		 BASE_SDA_H 		 
+	   else
+		 BASE_SDA_L
+	   delay_us(5); 
+	   BASE_SCK_H;		
+	   delay_us(5); 
+	   BASE_SCK_L;		 
+	   data<<=1;
+	   delay_us(5);
+	 }
+	 
+	 delay_us(2);  
+	 BASE_SDA_H;  
+	 delay_us(2);
+
+
+
+ #endif
+ 
 }
 
 static uint8_t base_iic_read_byte(uint8_t ack)
 {
   uint8_t i,receive=0;
-  
-  delay_us(2);  
+  #ifdef sort_i2c
+  delay_us(1);  
   BASE_SDA_H;  
-  delay_us(2);
+  delay_us(1);
   
   for(i=0;i<8;i++)
   {
     BASE_SCK_L;     
-    delay_us(5);
+    delay_us(1);
     BASE_SCK_H;      
     receive<<=1;
-    delay_us(5);
+    delay_us(1);
     BASE_SDA_INPUT;
 
     if(BASE_READ_SDA)
       receive|=0x01;
     else
       receive&=0xfe;
-    delay_us(5);
+    delay_us(1);
   }
   if(!ack)
     base_iic_nack();
@@ -695,8 +1022,35 @@ static uint8_t base_iic_read_byte(uint8_t ack)
     base_iic_ack();
   
   BASE_SCK_L;             
-  delay_us(2);
+  delay_us(1);
+  #else
+  delay_us(2);	
+   BASE_SDA_H;	
+   delay_us(2);
+   
+   for(i=0;i<8;i++)
+   {
+	 BASE_SCK_L;	 
+	 delay_us(5);
+	 BASE_SCK_H;	  
+	 receive<<=1;
+	 delay_us(5);
+	 BASE_SDA_INPUT;
   
+	 if(BASE_READ_SDA)
+	   receive|=0x01;
+	 else
+	   receive&=0xfe;
+	 delay_us(5);
+   }
+   if(!ack)
+	 base_iic_nack();
+   else
+	 base_iic_ack();
+   
+   BASE_SCK_L;			   
+   delay_us(2);
+  #endif
   return receive;
 }
 
@@ -710,7 +1064,11 @@ static void base_iic_write_onebyte(uint8_t deviceaddr,uint8_t writeaddr,uint8_t 
   base_iic_send_byte(writedata);
   base_iic_wait_ack();
   base_iic_stop();
-  delay_us(10);              
+#ifdef sort_i2c
+  delay_us(1); 
+#else
+	delay_us(10);			   
+#endif	           
 }
 
 static uint8_t base_iic_read_onebyte(uint8_t deviceaddr,uint8_t readaddr)

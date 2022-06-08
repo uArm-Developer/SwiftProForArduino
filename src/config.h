@@ -292,7 +292,7 @@
 // value. This also ensures that a planned motion always completes and accounts for any floating-point
 // round-off errors. Although not recommended, a lower value than 1.0 mm/min will likely work in smaller
 // machines, perhaps to 0.1mm/min, but your success may vary based on multiple factors.
-#define MINIMUM_FEED_RATE 1.0 // (mm/min)
+#define MINIMUM_FEED_RATE 0.0 // (mm/min)
 
 // Number of arc generation iterations by small angle approximation before exact arc trajectory 
 // correction with expensive sin() and cos() calcualtions. This parameter maybe decreased if there 
