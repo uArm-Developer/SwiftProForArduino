@@ -1,4 +1,4 @@
-# Swift Pro Firmware V4.9.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
+# Swift Pro Firmware V4.10.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
 
 ----------
 ## Update Summary for v4.10.0
@@ -7,7 +7,6 @@
 * Fix G0 Speed bug
 * Fix stop and recover bug
 * Add P2236 G2207 G2208 interface
-* Add M2400 S7 work mode
 
 ## Caution
 #### The current firmware is not perfect and will be updated periodically
