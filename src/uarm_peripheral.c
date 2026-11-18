@@ -1041,7 +1041,7 @@ void check_motor_positon(void){
 			float reg_angle_l = calculate_current_angle(CHANNEL_ARML);		
 			float reg_angle_r = calculate_current_angle(CHANNEL_ARMR);
 			float reg_angle_b = calculate_current_angle(CHANNEL_BASE) ;
-
+			sys.check_cnt = 0;
 
 			if( fabs(current_angle_l-reg_angle_l)>0.5 || fabs(current_angle_r-reg_angle_r)>0.5 || fabs(current_angle_b-reg_angle_b+90)>0.5 ){
 				char l_str[20], r_str[20], b_str[20];

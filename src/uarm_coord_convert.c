@@ -101,17 +101,18 @@ void coord_to_angle(float x, float y, float z, float *anglea, float *angleb, flo
 
   // get the base rotation angle
   
-	if( x == 0 ){
-		if(y > 0){
-			*anglec = 90;
-		}else{
-			*anglec = -90;
-		}
-	}else if(x <0){
-		*anglec = NAN;	// <! cann't arrive
-	}else{
-		*anglec = atan(y / x) * RAD_TO_DEG;
-	}	
+	// if( x == 0 ){
+	// 	if(y > 0){
+	// 		*anglec = 90;
+	// 	}else{
+	// 		*anglec = -90;
+	// 	}
+	// }else if(x <0){
+	// 	*anglec = NAN;	// <! cann't arrive
+	// }else{
+	// 	*anglec = atan(y / x) * RAD_TO_DEG;
+	// }
+	*anglec = atan2(y, x) * RAD_TO_DEG;
 	
 
 //	DB_PRINT_STR("coord abc:");
@@ -142,18 +143,18 @@ void coord_to_step(float x, float y, float z, float *x_step, float *y_step, floa
 void coord_arm2effect(float *x, float *y, float *z){
 	float anglec;
 
-	if( *x == 0 ){
-		if(*y > 0){
-			anglec = 90 / RAD_TO_DEG;
-		}else{
-			anglec = -90 / RAD_TO_DEG;
-		}
-	}else if(*x < 0){
-		anglec = NAN;	// <! cann't arrive
-	}else{
-		anglec = atan(*y / *x);
-	}	
-
+	// if( *x == 0 ){
+	// 	if(*y > 0){
+	// 		anglec = 90 / RAD_TO_DEG;
+	// 	}else{
+	// 		anglec = -90 / RAD_TO_DEG;
+	// 	}
+	// }else if(*x < 0){
+	// 	anglec = NAN;	// <! cann't arrive
+	// }else{
+	// 	anglec = atan(*y / *x);
+	// }
+	anglec = atan2(*y, *x);
 	*x += uarm.param.front_offset * cos(anglec); 
 	*y += uarm.param.front_offset * sin(anglec);
 	*z -= uarm.param.high_offset;	
@@ -163,18 +164,18 @@ void coord_arm2effect(float *x, float *y, float *z){
 void coord_effect2arm(float *x, float *y, float *z){
 	float anglec;
 
-	if( *x == 0 ){
-		if(*y > 0){
-			anglec = 90 / RAD_TO_DEG;
-		}else{
-			anglec = -90 / RAD_TO_DEG;
-		}
-	}else if(*x < 0){
-		anglec = NAN;	// <! cann't arrive
-	}else{
-		anglec = atan(*y / *x);
-	}	
-
+	// if( *x == 0 ){
+	// 	if(*y > 0){
+	// 		anglec = 90 / RAD_TO_DEG;
+	// 	}else{
+	// 		anglec = -90 / RAD_TO_DEG;
+	// 	}
+	// }else if(*x < 0){
+	// 	anglec = NAN;	// <! cann't arrive
+	// }else{
+	// 	anglec = atan(*y / *x);
+	// }
+	anglec = atan2(*y, *x);
 	*x -= uarm.param.front_offset * cos(anglec); 
 	*y -= uarm.param.front_offset * sin(anglec);
 	*z += uarm.param.high_offset;		
