@@ -56,24 +56,39 @@ static float get_point_b_angle(enum angle_channel_e channel){
 }
 
 static uint16_t read_angle_reg_value(enum angle_channel_e channel){
-	uint16_t temp_value = 0, max = 0, min = 0, sum_value = 0, aver_value = 0;
-	temp_value = ((uint16_t)iic_read_byte(channel, (0x36<<1), 0x0e))<<8 | iic_read_byte(channel, (0x36<<1), 0x0f);
-	max = temp_value;
-	min = temp_value;
-	sum_value = temp_value;
+	int32_t first_value = 0, temp_value = 0, sum_value = 0, max = 0, min = 0, aver_value = 0;
+	first_value = ((uint16_t)iic_read_byte(channel, (0x36<<1), 0x0e))<<8 | iic_read_byte(channel, (0x36<<1), 0x0f);
+	if( first_value > 4095 ){
+		DB_PRINT_STR("Encoder communication failure, channel %d, value %ld\n", channel, first_value);
+		return 0;// The value of AS5600 is within the range of [0, 4095]. Any value outside this range is considered a communication anomaly.
+	}
+	max = min = sum_value = first_value;
 	
 	for( int i=1; i < 5; i++ ){
 		temp_value = ((uint16_t)iic_read_byte(channel, (0x36<<1), 0x0e))<<8 | iic_read_byte(channel, (0x36<<1), 0x0f);
-		if( temp_value > max ){ max = temp_value; }
-		if( temp_value < min ){ min = temp_value; }
+		if(temp_value > 4095){
+			DB_PRINT_STR("Encoder communication failure, channel %d, value %ld\n", channel, temp_value);
+			return 0;// The value of AS5600 is within the range of [0, 4095]. Any value outside this range is considered a communication anomaly.
+		}
+		if(temp_value - first_value > 2048){
+			temp_value -= 4096;
+		}else if(temp_value - first_value < -2048){
+			temp_value += 4096;
+		}
+		if(temp_value > max)
+			max = temp_value;
+		if(temp_value < min)
+			min = temp_value;
 		sum_value += temp_value;
 	}
 	
 	aver_value = ((sum_value - max - min)/3);
-	if( aver_value > 4096 ){
-		return 0;
+	if(aver_value > 4095){
+		aver_value -= 4096;
+	}else if (aver_value < 0)
+	{
+		aver_value += 4096;
 	}
-	
 	return aver_value;
 }
 

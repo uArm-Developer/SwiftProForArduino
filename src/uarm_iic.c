@@ -463,6 +463,7 @@ static uint8_t arml_iic_read_byte(uint8_t ack)
  delay_us(2);  
   ARML_SDA_H;  
   delay_us(2);
+  ARML_SDA_INPUT;
   
   for(i=0;i<8;i++)
   {
@@ -471,7 +472,6 @@ static uint8_t arml_iic_read_byte(uint8_t ack)
     ARML_SCK_H;      
     receive<<=1;
     delay_us(5);
-    ARML_SDA_INPUT;
 
     if(ARML_READ_SDA)
       receive|=0x01;
@@ -738,6 +738,7 @@ static uint8_t armr_iic_read_byte(uint8_t ack)
    delay_us(2);  
   ARMR_SDA_H;  
   delay_us(2);
+  ARMR_SDA_INPUT;
   
   for(i=0;i<8;i++)
   {
@@ -746,7 +747,6 @@ static uint8_t armr_iic_read_byte(uint8_t ack)
     ARMR_SCK_H;      
     receive<<=1;
     delay_us(5);
-    ARMR_SDA_INPUT;
 
     if(ARMR_READ_SDA)
       receive|=0x01;
@@ -1027,6 +1027,7 @@ static uint8_t base_iic_read_byte(uint8_t ack)
   delay_us(2);	
    BASE_SDA_H;	
    delay_us(2);
+   BASE_SDA_INPUT;
    
    for(i=0;i<8;i++)
    {
@@ -1035,7 +1036,6 @@ static uint8_t base_iic_read_byte(uint8_t ack)
 	 BASE_SCK_H;	  
 	 receive<<=1;
 	 delay_us(5);
-	 BASE_SDA_INPUT;
   
 	 if(BASE_READ_SDA)
 	   receive|=0x01;
