@@ -137,6 +137,7 @@ u8 Y_IIC_ReadByte(u8 ack)
   delayMicroseconds(2);  
   Y_SDA_H;  
   delayMicroseconds(2);
+  pinMode(Y_SDA_PIN, INPUT); 
   
   for(i=0;i<8;i++)
   {
@@ -145,7 +146,6 @@ u8 Y_IIC_ReadByte(u8 ack)
     Y_SCK_H;      
     receive<<=1;
     delayMicroseconds(5);
-    pinMode(Y_SDA_PIN, INPUT); 
     if(Y_READ_SDA)
       receive|=0x01;
     else

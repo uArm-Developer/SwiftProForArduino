@@ -147,6 +147,7 @@ u8 Z_IIC_ReadByte(u8 ack)
   delayMicroseconds(2);  
   Z_SDA_H;  
   delayMicroseconds(2);
+  Z_SDA_INPUT;
   
   for(i=0;i<8;i++)
   {
@@ -155,7 +156,6 @@ u8 Z_IIC_ReadByte(u8 ack)
     Z_SCK_H;      
     receive<<=1;
     delayMicroseconds(5);
-    Z_SDA_INPUT;
 
     if(Z_READ_SDA)
       receive|=0x01;

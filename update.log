@@ -1,3 +1,7 @@
+v3.3.0 20261117
+fix IIC read timing
+fix angle filtering across the 0/4095 boundary
+
 v3.2.0 20171025
 new stable version release.
 
