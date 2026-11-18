@@ -635,8 +635,8 @@ void read_hardware_version(void){
 			settings_store_global_setting( 4, 1 );
 			strcpy( hardware_version, "V3.3.2" );	
 			settings_store_global_setting( 3, 0 );
-		}else if((PINJ & HARD_MASK) == (1<<4)){
-			if(PINJ &HARD_MASK ==(1<<2))
+		}else if((PINJ & (1<<4) )== (1<<4)){
+			if((PINJ & (1<<2) )== (1<<2))
 			{
 				settings_store_global_setting( 4, 1 );
 				strcpy( hardware_version, "V3.3.4" );		//uArm Mini Version hardware
@@ -912,10 +912,7 @@ uint8_t get_pump_status(void){
 	if( (PORTG & 0x10) == 0x00 ){ return 0; }
 	uint16_t value = analogRead(A9);
 	uint16_t value2 = get_pump_adc();
-	DB_PRINT_STR("value:");
-	DB_PRINT_INT(value);
-		DB_PRINT_STR("      value2:");
-	DB_PRINT_INT(value2);
+	DB_PRINT_STR("value:%d value2:%d\r\n", value, value2);
 	if( value < 10){
 		return 0;
 	}else if( value <= 70 ){
