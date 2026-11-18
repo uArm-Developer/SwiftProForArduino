@@ -1,12 +1,13 @@
-# Swift Pro Firmware V4.10.0 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
+# Swift Pro Firmware V4.10.3 (Base on [Grbl v0.9j](https://github.com/grbl/grbl) )
 
 ----------
-## Update Summary for v4.10.0
+## Update Summary for v4.10.3
 
-* Fix M2210 frequency bug
-* Fix G0 Speed bug
-* Fix stop and recover bug
-* Add P2236 G2207 G2208 interface
+* Fix hardware version detection
+* Fix default Z acceleration and arm angle limits
+* Fix encoder IIC reads and AS5600 angle wraparound filtering
+* Fix coordinate conversion at movement limits
+* Fix motor position check interval overflow
 
 ## Caution
 #### The current firmware is not perfect and will be updated periodically
