@@ -128,10 +128,10 @@ float get_current_angle(uint8_t index)
 	float angle = 0.0;
 
 	
-	uint16_t value[5] = {0.0};
-	uint16_t max_value = 0;
-	uint16_t min_value = 0xffff;
-	uint32_t sum_value = 0;
+	int32_t value[5] = {0};
+	int32_t max_value = 0;
+	int32_t min_value = 0xffff;
+	int32_t sum_value = 0;
 	bool invalid = false;
 
 	do 
@@ -145,6 +145,12 @@ float get_current_angle(uint8_t index)
 		{
 			value[i] =  get_current_angle_adc(index);
 			//debugPrint("value[%d] = %d\r\n", i, value[i]);
+
+			// Unwrap samples around the first reading before filtering.
+			if (value[i] - value[0] > 2048)
+				value[i] -= 4096;
+			else if (value[i] - value[0] < -2048)
+				value[i] += 4096;
 
 			if (max_value < value[i])
 				max_value = value[i];
@@ -161,7 +167,12 @@ float get_current_angle(uint8_t index)
 			invalid = true;
 	}while(invalid);
 	
-	uint16_t cur_value = (sum_value - max_value - min_value) / 3;//get_current_angle_adc(index);
+	int32_t average_value = (sum_value - max_value - min_value) / 3;
+	if (average_value > 4095)
+		average_value -= 4096;
+	else if (average_value < 0)
+		average_value += 4096;
+	uint16_t cur_value = average_value;
 	
 	//debugPrint("cur_value = %d\r\n", cur_value);
 	
